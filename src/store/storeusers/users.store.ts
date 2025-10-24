@@ -1,0 +1,212 @@
+import { create } from "zustand";
+import type { Permissions, Users } from "../../domain/models/users/users.domain";
+import type { UsersRepository } from "../../domain/repositories/users/users.repositories";
+import type { Result } from "../../domain/models/task/task.domain";
+import { showConfirmationAlert, showToast } from "../../sweetalert/Sweetalert";
+
+interface UsersState {
+    initialValues: Users,
+    users: Users[],
+    total: number,
+    loading: boolean,
+    error: string | null,
+    fetchUsers: (repo: UsersRepository) => Promise<void>,
+    logout: (repo: UsersRepository) => Promise<void>,
+    login: (user: Users, repo: UsersRepository) => Promise<void>,
+    permissions: Permissions[],
+    fetchAddUser: (repo: UsersRepository, user: Users) => Promise<void>,
+    deleteUser: (repo: UsersRepository, user: Users) => Promise<void>,
+    setInitialValues: (user: Users, type: "form" | "permission") => void;
+    modalForm: boolean,
+    modalPermission: boolean,
+    setModalForm: () => void;
+    setModalPermission: () => void;
+    resetValues: () => void;
+    fetchPermissions: (repo: UsersRepository) => Promise<void>,
+
+}
+export const useUsersState = create<UsersState>((set, get) => ({
+    modalForm: false,
+    modalPermission: false,
+
+    initialValues: {
+        fullName: "",
+        id: 0,
+        email: "",
+        maternalSurname: "",
+        firstName: "",
+        password: "",
+        active: false,
+        paternalSurname: "",
+        permissions: [3]
+    },
+    users: [],
+    permissions: [],
+    fetchPermissions: async (repo: UsersRepository) => {
+        try {
+            const data = await repo.getPermissions()
+            if (data.ok == true) {
+                set({ permissions: data.data })
+            }
+        } catch (error: unknown) {
+            let message = "";
+            if (error instanceof Error) {
+                message = error.message
+            }
+        }
+    },
+    total: 0,
+    error: null,
+    loading: false,
+    resetValues: () => {
+        set({
+            initialValues: {
+                fullName: "",
+                id: 0,
+                email: "",
+                maternalSurname: "",
+                firstName: "",
+                password: "",
+                active: false,
+                paternalSurname: "",
+                permissions: [3]
+            }
+        })
+    },
+    setModalPermission: () => {
+        set({ modalPermission: !get().modalPermission })
+    },
+    setModalForm: () => {
+
+        set({ modalForm: !get().modalForm })
+
+    },
+    setInitialValues: (user: Users, type: "form" | "permission") => {
+        set({ initialValues: user })
+        if (type == "form") {
+
+            get().setModalForm()
+        } else {
+            get().setModalPermission()
+
+        }
+    },
+    fetchUsers: async (repo: UsersRepository) => {
+        set({ loading: true })
+        try {
+            const data = await repo.getAll()
+            if (data.ok == true) {
+                set({ users: data.data, loading: false, total: data.data.length + 1 })
+            }
+            set({ loading: false })
+        } catch (error: unknown) {
+            let message = "";
+            if (error instanceof Error) {
+                message = error.message
+            }
+            set({ error: message, loading: false })
+        }
+    },
+    logout: async (repo: UsersRepository) => {
+        try {
+            const data = await repo.logout()
+            if (data.ok == true) {
+                showToast(data.message, "success");
+                localStorage.clear()
+                window.location.href = "/";
+
+            }
+
+        } catch (error: unknown) {
+            let message = "";
+            if (error instanceof Error) {
+                message = error.message
+            }
+            set({ error: message, loading: false })
+        }
+    },
+    login: async (user: Users, repo: UsersRepository) => {
+        try {
+            const data = await repo.login(user)
+            if (data.ok == true) {
+                showToast(data.message, "success");
+                const token = (data.data as any).token
+                localStorage.setItem("token", token)
+                localStorage.setItem("permisos",JSON.stringify((data.data as any).permisos))
+                localStorage.setItem("name",(data.data as any).user.fullName)
+
+                window.location.href = "/#/fichastecnicas";
+
+
+            }
+        } catch (error: unknown) {
+            let message = "";
+            if (error instanceof Error) {
+                message = error.message
+            }
+            set({ error: message, loading: false })
+        }
+    },
+    fetchAddUser: async (repo: UsersRepository, user: Users) => {
+        set({ modalForm: false })
+
+        try {
+            const result = await repo.register(user)
+            if (result.ok) {
+
+                set({ modalForm: false })
+
+                showToast(result.message, "success");
+                await showConfirmationAlert("Datos de cuenta", {
+                    html: `
+    <div style="text-align:left; line-height:1.5;">
+      <p>⚠️ <strong>Este usuario iniciará sesión con los siguientes datos:</strong></p>
+      <p>📧 <strong>Correo:</strong> ${user.email}</p>
+      <p>🔑 <strong>Contraseña temporal:</strong> ${result.data.password}</p>
+      <p>Se recomienda <strong>cambiar la contraseña</strong> después del primer inicio de sesión.</p>
+    </div>
+  `
+                }).then(async (isConfirmed) => {
+                    // Recargamos los usuarios después de cerrar el modal, confirmando o no
+                    await get().fetchUsers(repo);
+                });
+
+            }
+            else {
+                showToast(String(result.error), "error");
+                await get().fetchUsers(repo);
+
+
+            }
+        } catch (err: unknown) {
+            let message = "";
+            if (err instanceof Error) {
+                message = err.message
+                showToast(message, "error");
+
+            }
+            set({ error: message, loading: false, modalForm: false })
+
+        }
+    },
+    deleteUser: async (repo: UsersRepository, user: Users) => {
+        try {
+            const result = await repo.delete(user)
+            if (result.ok) {
+                await get().fetchUsers(repo);
+                showToast(result.message, "success");
+
+            }
+        } catch (err: unknown) {
+            let message = "";
+            if (err instanceof Error) {
+                message = err.message
+                showToast(message, "error");
+
+            }
+            set({ error: message, loading: false })
+        }
+    }
+}))
+
+

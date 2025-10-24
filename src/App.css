@@ -1,0 +1,102 @@
+
+.bg {
+            margin: 0;
+            padding: 0;
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            color: #B8B6AF;
+            overflow: hidden;
+        }
+
+        /* Imagen de fondo como tapiz sin márgenes */
+        .bg::before {
+            background-image: url('./assets/background.png');
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-repeat: repeat;
+            background-size: 350px 350px;
+            background-position: 0 0; /* Sin offset inicial */
+            z-index: 1;
+            filter: brightness(0.7);
+        }
+
+        /* Gradiente encima de la imagen */
+        .bg::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+background: linear-gradient(135deg, rgba(155,34,66,0.7) 50%, rgba(101,29,50,0.6) 70%);
+            opacity: 0.6;
+            z-index: 2;
+        }
+
+        /* Contenido encima de todo */
+        .bg > * {
+            position: relative;
+            z-index: 3;
+        }
+
+
+
+
+.class_cp{
+    background-color: #9ca3af !important;
+}
+.class_au{
+    background-color: #000000 !important;
+    color:white !important;
+   
+}
+.class_vobo{
+    background-color: #0F766E !important;
+    color:white !important;
+}
+.class_as{
+    background-color: #a855f7 !important;
+   
+}
+.class_co{
+    background-color: #f97316 !important;
+   
+}
+.class_oc{
+    background-color: #ec4899 !important;
+   
+}
+.class_rec{
+    background-color: #ef4444 !important;
+   
+}
+.class_ca{
+    background-color: #ef4444 !important;
+   
+}
+.class_re{
+    background-color: #06b6d4 !important;
+   
+}
+.class_su{
+    background-color: #8bce26 !important;
+   
+}
+.provedor_new {
+    background-color: #edff9f !important; /* Amarillo claro */
+}
+
+.provedor_accepted {
+    background-color: #a8e6a1 !important; /* Verde claro */
+}
+
+.provedor_canceled {
+    background-color: #ffb3b3 !important; /* Rojo suave */
+}
+
+/* Establecer la animación de movimiento de la bolita */
