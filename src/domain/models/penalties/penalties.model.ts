@@ -37,5 +37,6 @@ export interface Penalties {
    // Step 5 (opcional)
    image_penaltie?: string;
    images_evidences?: Array<string>;
+   images_evidences_car?: Array<string>;
    [key: string]: any;
 }

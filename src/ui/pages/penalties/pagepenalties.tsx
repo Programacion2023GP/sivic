@@ -29,6 +29,7 @@ import { ArrowDownToDotIcon } from "lucide-react";
 import CustomDataDisplay from "../../components/movil/view/customviewmovil";
 import { penaltyDisplayConfig } from "./model";
 import { FloatingActionButton } from "../../components/movil/button/custombuttommovil";
+import { DateFormat, formatDatetime } from "../../../utils/formats";
 // -----------------------------
 // Tipos y Constantes
 // -----------------------------
@@ -50,7 +51,7 @@ const FIELDS_BY_STEP: Record<number, string[]> = {
    2: ["municipal_police", "civil_protection"],
    3: ["command_vehicle", "command_troops", "command_details", "filter_supervisor"],
    4: ["name", "cp", "city", "age", "amountAlcohol", "number_of_passengers", "plate_number", "detainee_phone_number", "curp", "observations"],
-   5: ["image_penaltie", "images_evidences"]
+   5: ["image_penaltie", "images_evidences", "images_evidences_car"]
 };
 
 const RESPONSIVE_CONFIG = { "2xl": 6, xl: 6, lg: 12, md: 12, sm: 12 };
@@ -59,8 +60,8 @@ const RESPONSIVE_CONFIG = { "2xl": 6, xl: 6, lg: 12, md: 12, sm: 12 };
 // Componentes auxiliares
 // -----------------------------
 const FormSection = ({ title, children }: FormSectionProps) => (
-   <div className="w-full bg-white rounded-xl mb-8 relative">
-      {title && <h3 className="text-lg font-bold text-gray-800 mb-4">{title}</h3>}
+   <div className="relative w-full mb-8 bg-white rounded-xl">
+      {title && <h3 className="mb-4 text-lg font-bold text-gray-800">{title}</h3>}
       {children}
    </div>
 );
@@ -78,7 +79,7 @@ const Stepper = ({ steps, activeStep, setActiveStep }: StepperProps) => {
    );
 
    return (
-      <div className="w-full mb-8 bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-2xl shadow-sm">
+      <div className="w-full p-6 mb-8 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl">
          <div className="flex items-center justify-between w-full max-w-5xl mx-auto">
             {steps.map((step, i) => {
                const isActive = activeStep === i;
@@ -87,7 +88,7 @@ const Stepper = ({ steps, activeStep, setActiveStep }: StepperProps) => {
                const isLast = i === steps.length - 1;
 
                return (
-                  <div key={i} className="relative flex-1 flex flex-col items-center text-center">
+                  <div key={i} className="relative flex flex-col items-center flex-1 text-center">
                      {/* Línea de conexión */}
                      {!isLast && (
                         <div
@@ -179,6 +180,7 @@ const PagePenalities = () => {
    const [citys, setCity] = useState({ loading: false, citys: [] });
    const [contraloria, setContraloria] = useState({ loading: false, employes: [] as any[], error: null as string | null });
    const [oficiales, setOficiales] = useState({ loading: false, employes: [] as any[], error: null as string | null });
+   const [proteccionCivil, setProteccionCivil] = useState({ loading: false, employes: [] as any[], error: null as string | null });
 
    // -----------------------------
    // Validación Schema
@@ -262,11 +264,22 @@ const PagePenalities = () => {
       }
    }, [fetchData]);
 
+   const initProteccionCivil = useCallback(async () => {
+      setProteccionCivil({ loading: true, employes: [], error: null });
+      try {
+         const data = await fetchData("proteccioncivil");
+         setProteccionCivil({ loading: false, employes: data?.data?.result || [], error: null });
+      } catch (error: any) {
+         setProteccionCivil({ loading: false, employes: [], error: error.message });
+      }
+   }, [fetchData]);
+
    useEffect(() => {
       fetchPenalties(api);
       fetchDoctor(apiDoc);
       initContraloria();
       initOficiales();
+      initProteccionCivil();
    }, []);
 
    // -----------------------------
@@ -320,6 +333,18 @@ const PagePenalities = () => {
          }
       },
       [oficiales.employes]
+   );
+   const handleProteccionCivilChange = useCallback(
+      (field: string, value: any) => {
+         if (formikRef.current) {
+            const proteccionCivilSeleccionado = proteccionCivil.employes.find((proteccionCivil) => proteccionCivil.value == value);
+            if (proteccionCivilSeleccionado) {
+               formikRef.current.setFieldValue("proteccionCivil_payroll", proteccionCivilSeleccionado.codigoEmpleado);
+               formikRef.current.setFieldValue("person_oficial", value);
+            }
+         }
+      },
+      [proteccionCivil.employes]
    );
 
    const handleStepNavigation = useCallback((direction: "next" | "prev") => {
@@ -418,8 +443,9 @@ const PagePenalities = () => {
                      options={[
                         { id: "Servicio público", name: "Servicio público" },
                         { id: "Carga", name: "Carga" },
-                        { id: "Ninguno", name: "Ninguno" }
+                        { id: "Particular", name: "Particular" }
                      ]}
+                     responsive={RESPONSIVE_CONFIG}
                      idKey="id"
                      labelKey="name"
                   />
@@ -430,6 +456,7 @@ const PagePenalities = () => {
                         { id: 1, name: "1" },
                         { id: 2, name: "2" }
                      ]}
+                     responsive={RESPONSIVE_CONFIG}
                      idKey="id"
                      labelKey="name"
                   />
@@ -439,7 +466,16 @@ const PagePenalities = () => {
             return (
                <div className="space-y-4">
                   <FormikInput name="municipal_police" label="Policía Municipal" responsive={RESPONSIVE_CONFIG} />
-                  <FormikInput name="civil_protection" label="Protección Civil" responsive={RESPONSIVE_CONFIG} />
+                  <FormikAutocomplete
+                     label="Protección Civil"
+                     name="civil_protection"
+                     options={proteccionCivil.employes}
+                     loading={proteccionCivil.loading}
+                     responsive={RESPONSIVE_CONFIG}
+                     idKey="value"
+                     labelKey="text"
+                     // handleModified={handleProteccionCivilChange}
+                  />
                </div>
             );
          case 3:
@@ -478,9 +514,10 @@ const PagePenalities = () => {
             );
          case 5:
             return (
-               <div className="space-y-4">
+               <div className="flex justify-between ">
                   <FormikImageInput name="image_penaltie" maxFiles={1} label="Multa" />
-                  <FormikImageInput name="images_evidences" maxFiles={1} label="Evidencia" />
+                  <FormikImageInput name="images_evidences" maxFiles={1} label="Evidencia del ciudadano" />
+                  <FormikImageInput name="images_evidences_car" maxFiles={1} label="Evidencia del vehículo" />
                </div>
             );
          default:
@@ -497,7 +534,7 @@ const PagePenalities = () => {
             modalTitle="Multa"
             onClose={setOpen}
             form={() => (
-               <div className="relative w-full mb-6 mt-1">
+               <div className="relative w-full mt-1 mb-6">
                   <FormikForm
                      ref={formikRef}
                      validationSchema={validationSchema}
@@ -507,7 +544,7 @@ const PagePenalities = () => {
                      }}
                   >
                      {() => (
-                        <div className="space-y-6 w-full">
+                        <div className="w-full space-y-6">
                            {/* Stepper */}
                            <Stepper steps={steps} activeStep={activeStep} setActiveStep={setActiveStep} />
 
@@ -515,7 +552,7 @@ const PagePenalities = () => {
                            <div className="bg-white rounded-xl p-6 shadow-sm min-h-[400px] w-full">{renderStepContent()}</div>
 
                            {/* Botones de navegación */}
-                           <div className="flex justify-between items-center pt-4 border-t border-gray-200">
+                           <div className="flex items-center justify-between pt-4 border-t border-gray-200">
                               <div className="text-sm text-gray-500">
                                  Paso {activeStep + 1} de {steps.length}
                               </div>
@@ -583,7 +620,7 @@ const PagePenalities = () => {
                      mobileConfig={{
                         listTile: {
                            leading: (penalty) => (
-                              <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold">
+                              <div className="flex items-center justify-center w-10 h-10 font-bold text-white bg-red-500 rounded-full">
                                  {penalty.name?.charAt(0) || "P"}
                               </div>
                            ),
@@ -619,12 +656,13 @@ const PagePenalities = () => {
                         { field: "detainee_released_to", headerName: "Persona que acudio" },
 
                         { field: "image_penaltie", headerName: "Foto Multa", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
-                        { field: "images_evidences", headerName: "Foto evidencia", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
+                        { field: "images_evidences", headerName: "Foto evidencia del ciudadano", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
+                        { field: "images_evidences_car", headerName: "Foto evidencia del vehículo", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
                         { field: "doctor", headerName: "Doctor" },
                         { field: "cedula", headerName: "Cedula del doctor" },
 
-                        { field: "time", headerName: "Hora" },
-                        { field: "date", headerName: "Fecha" },
+                        { field: "time", headerName: "Hora", renderField: (v) => <>{formatDatetime(`2025-01-01 ${v}`, true, DateFormat.H_MM_SS_A)}</> },
+                        { field: "date", headerName: "Fecha", renderField: (v) => <>{formatDatetime(v, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)}</> },
                         { field: "person_contraloria", headerName: "Contraloría" },
                         { field: "oficial_payroll", headerName: "Nómina Oficial" },
                         { field: "person_oficial", headerName: "Oficial" },
@@ -675,7 +713,7 @@ const PagePenalities = () => {
                            </PermissionRoute>
                            <PermissionRoute requiredPermission={"multas_actualizar"}>
                               <Tooltip content="Editar multa">
-                                 <CustomButton size="sm" color="yellow" onClick={() => handleEdit(row)}>
+                                 <CustomButton size="sm" color="yellow" onClick={() => handleChangePenaltie(row)}>
                                     <CiEdit />
                                  </CustomButton>
                               </Tooltip>
@@ -705,7 +743,8 @@ const PagePenalities = () => {
                   columns={[
                      { field: "id", headerName: "Folio" },
                      { field: "image_penaltie", headerName: "Foto Multa", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
-                     { field: "images_evidences", headerName: "Foto evidencia", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
+                     { field: "images_evidences", headerName: "Foto evidencia del ciudadano", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
+                     { field: "images_evidences_car", headerName: "Foto evidencia del vehículo", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
                      { field: "time", headerName: "Hora" },
                      { field: "date", headerName: "Fecha" },
                      { field: "person_contraloria", headerName: "Contraloría" },

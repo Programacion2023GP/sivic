@@ -101,7 +101,8 @@ export const usePenaltiesStore = create<PenaltiesStore>((set, get) => ({
             amountAlcohol: 0,
             curp: null,
             image_penaltie: null,
-            images_evidences: []
+            images_evidences: [],
+            images_evidences_car: []
          }
       });
    },
@@ -146,7 +147,8 @@ export const usePenaltiesStore = create<PenaltiesStore>((set, get) => ({
       amountAlcohol: 0,
       curp: null,
       image_penaltie: null,
-      images_evidences: []
+      images_evidences: [],
+      images_evidences_car: []
    },
 
    loading: false,
