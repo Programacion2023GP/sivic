@@ -5,7 +5,7 @@ import * as Yup from "yup";
 import CompositePage from "../../components/compositecustoms/compositePage";
 import FormikForm from "../../formik/Formik";
 import { FormikAutocomplete, FormikImageInput, FormikInput, FormikNativeTimeInput, FormikRadio, FormikTextArea } from "../../formik/FormikInputs/FormikInput";
-import { CustomButton } from "../../components/button/custombuttom";
+import { CustomButton, CustomButtonMovil, FloatingActionButton } from "../../components/button/custombuttom";
 import { PenaltiesApi } from "../../../infrastructure/penalties/penalties.infra";
 import type { Penalties } from "../../../domain/models/penalties/penalties.model";
 import CustomTable from "../../components/table/customtable";
@@ -13,7 +13,7 @@ import { VscDiffAdded } from "react-icons/vsc";
 import { LuRefreshCcw } from "react-icons/lu";
 import { CiEdit } from "react-icons/ci";
 import { showConfirmationAlert, showToast } from "../../../sweetalert/Sweetalert";
-import { FaRegFilePdf, FaTrash } from "react-icons/fa";
+import { FaPlus, FaRegFilePdf, FaTrash } from "react-icons/fa";
 import { PermissionRoute } from "../../../App";
 import PhotoZoom from "../../components/images/images";
 import Spinner from "../../components/loading/loading";
@@ -24,6 +24,8 @@ import { useDoctorStore } from "../../../store/doctor/doctor.store";
 import { DoctorApi } from "../../../infrastructure/doctor/doctor.infra";
 import PdfPreview from "../../components/pdfview/pdfview";
 import MultaPDF from "../courts/pdf/pdfpenalties";
+import { FiEdit, FiMoreVertical, FiTrash, FiTrash2 } from "react-icons/fi";
+import { ArrowDownToDotIcon } from "lucide-react";
 // -----------------------------
 // Tipos y Constantes
 // -----------------------------
@@ -536,6 +538,18 @@ const PagePenalities = () => {
             )}
             table={() => (
                <PermissionRoute requiredPermission={"multas_ver"}>
+                  <div className="absolute z-20 right-2 bottom-2">
+                     <FloatingActionButton
+                        onClick={() => {
+                           resetInitialValues();
+                           setActiveStep(0);
+                           setOpen();
+                        }}
+                        icon={<FaPlus />}
+                        color="primary"
+                        size="normal"
+                     />
+                  </div>
                   <CustomTable
                      conditionExcel={"multas_exportar"}
                      headerActions={() => (
@@ -563,6 +577,53 @@ const PagePenalities = () => {
                      data={penalties}
                      paginate={[5, 10, 25, 50, 100, 500, 1000]}
                      loading={loading}
+                     mobileConfig={{
+                        listTile: {
+                           leading: (penalty) => (
+                              <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-bold">
+                                 {penalty.name?.charAt(0) || "P"}
+                              </div>
+                           ),
+                           title: (penalty) => <span className="font-semibold">{penalty.name || "Sin nombre"}</span>,
+                           subtitle: (penalty) => <span className="text-gray-600">{penalty.description || "Sin descripción"}</span>
+                        },
+
+                        swipeActions: {
+                           left: [
+                              {
+                                 icon: <FiTrash2 size={18} />,
+                                 color: "bg-red-500",
+                                 action: (penalty) => removePenaltie(penalty, api)
+                              }
+                           ],
+                           right: [
+                              {
+                                 icon: <FiEdit size={18} />,
+                                 color: "bg-blue-500",
+                                 action: (penalty) => handleChangePenaltie(penalty)
+                              }
+                           ]
+                        },
+                        bottomSheet: {
+                           height: 70,
+                           showCloseButton: true,
+                           builder: (penalty, onClose) => (
+                              <div className="p-6">
+                                 <h2 className="text-xl font-bold mb-4">{penalty.name}</h2>
+                                 <p className="text-gray-600 mb-2">
+                                    <strong>Descripción:</strong> {penalty.description}
+                                 </p>
+                                 <p className="text-gray-600 mb-2">
+                                    <strong>Monto:</strong> ${penalty.amount}
+                                 </p>
+                                 <p className="text-gray-600 mb-2">
+                                    <strong>Fecha:</strong> {penalty.date}
+                                 </p>
+                                 {/* Agrega más campos según tu modelo de datos */}
+                              </div>
+                           )
+                        }
+                     }}
                      columns={[
                         { field: "id", headerName: "Folio" },
                         { field: "name", headerName: "Nombre" },
