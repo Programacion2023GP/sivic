@@ -4,6 +4,22 @@
 
 ---
 
+## 🔧 **v2.0.0.13** · *🧪 Beta*
+📅 **Fecha:** 13 de noviembre de 2025, 3:44 p.m.  
+👤 **Autor:** Nes  
+🧭 **Tipo:** Build
+
+**✨ Mejoras**
+- Formulario de Multas
+   - Se hizo selector el personal de proteccion civil
+   - Se cambio el valor del tipo de servicio de Ninguno->Particular
+   - Se agrego un segundo campo de subir evidencia para ciudadano y para su vehículo
+   - se modifico el diseño de formulario levemente, poniendo a un lado dichos campos
+
+
+
+---
+
 ## 🔧 **v2.0.0.12** · *🧪 Beta*
 📅 **Fecha:** 11 de noviembre de 2025, 12:55 p.m.  
 👤 **Autor:**   

@@ -61,7 +61,7 @@ const MainLayout = () => {
       () => [
          { prefix: "usuarios_", route: "/usuarios", icon: <FaUserTie />, label: "Usuarios" },
          { prefix: "multas_", route: "/multa", icon: <FaFileInvoiceDollar />, label: "Multas" },
-         { prefix: "multas_", route: "/juzgados", icon: <FaFileInvoiceDollar />, label: "Juzgados" },
+         // { prefix: "multas_", route: "/juzgados", icon: <FaFileInvoiceDollar />, label: "Juzgados" },
          { prefix: "vista_", route: "/logs", icon: <FaCode />, label: "Logs" },
          {
             prefix: "catalogo_",
@@ -119,18 +119,17 @@ const MainLayout = () => {
          </PermissionPrefixRoute>
       ));
 
-
    return (
       <div className="flex h-screen w-full overflow-hidden bg-[#f8f9fa]">
          {open && (
-            <div className="w-64 flex-shrink-0 shadow-md">
+            <div className="flex-shrink-0 w-64 shadow-md">
                <Sidebar name="Sistema" borderR>
                   {renderSidebarItems(sidebarItems)}
                </Sidebar>
             </div>
          )}
 
-         <div className="flex-1 flex flex-col min-w-0">
+         <div className="flex flex-col flex-1 min-w-0">
             <Header id="btn-menu" setOpenSidebar={toggleSidebar} userName={localStorage.getItem("name") || ""} />
 
             <main className="flex-1 p-6 overflow-auto bg-white">
@@ -145,10 +144,10 @@ const MainLayout = () => {
 
 // 💡 Componente separado para el prompt de instalación
 const InstallPrompt = ({ onInstall, onClose }: { onInstall: () => void; onClose: () => void }) => (
-   <div className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50">
+   <div className="fixed z-50 p-4 text-white bg-blue-600 rounded-lg shadow-lg bottom-4 right-4">
       <div className="flex items-center gap-3">
          <span>📱 Instalar App</span>
-         <button onClick={onInstall} className="bg-white text-blue-600 px-3 py-1 rounded-md font-semibold hover:bg-blue-100 transition-colors">
+         <button onClick={onInstall} className="px-3 py-1 font-semibold text-blue-600 transition-colors bg-white rounded-md hover:bg-blue-100">
             Instalar
          </button>
          <button onClick={onClose} className="text-white hover:text-gray-200">
