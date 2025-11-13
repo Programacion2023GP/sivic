@@ -269,8 +269,8 @@ const RangeConfigModal: React.FC<{
    if (!isOpen) return null;
 
    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-         <div className="bg-white rounded-lg p-6 w-96 max-h-[80vh] overflow-y-auto">
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 lg:p-4">
+         <div className="bg-white rounded-lg p-4 lg:p-6 w-full max-w-md lg:max-w-lg max-h-[80vh] overflow-y-auto">
             <h3 className="text-lg font-bold mb-4">Configurar rangos para {field}</h3>
 
             <div className="space-y-4">
@@ -291,7 +291,7 @@ const RangeConfigModal: React.FC<{
                         <select
                            value={localConfig.type}
                            onChange={(e) => setLocalConfig({ ...localConfig, type: e.target.value as "number" | "date" | "custom" })}
-                           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                           className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm lg:text-base"
                         >
                            <option value="number">Numérico</option>
                            <option value="date" disabled={!isDateField}>
@@ -309,7 +309,7 @@ const RangeConfigModal: React.FC<{
                               type="number"
                               value={localConfig.step || 5}
                               onChange={(e) => setLocalConfig({ ...localConfig, step: Number(e.target.value) })}
-                              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm lg:text-base"
                               min="1"
                            />
                         </div>
@@ -418,7 +418,7 @@ const RangeConfigModal: React.FC<{
                                     customRanges: e.target.value.split("\n").filter(Boolean)
                                  })
                               }
-                              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-24"
+                              className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 h-24 text-sm lg:text-base"
                               placeholder="Ejemplo:&#10;0-17&#10;18-25&#10;26-35"
                            />
                         </div>
@@ -428,10 +428,13 @@ const RangeConfigModal: React.FC<{
             </div>
 
             <div className="flex gap-2 mt-6">
-               <button onClick={() => onSave(localConfig)} className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+               <button
+                  onClick={() => onSave(localConfig)}
+                  className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm lg:text-base"
+               >
                   Guardar
                </button>
-               <button onClick={onClose} className="flex-1 bg-gray-300 py-2 rounded-lg hover:bg-gray-400 transition-colors font-medium">
+               <button onClick={onClose} className="flex-1 bg-gray-300 py-2 rounded-lg hover:bg-gray-400 transition-colors font-medium text-sm lg:text-base">
                   Cancelar
                </button>
             </div>
@@ -487,21 +490,22 @@ const AdvancedAnalyticsDashboard = ({ data = SAMPLE_DATA, fieldLabels = SAMPLE_L
       }
    }, [savedCharts]);
 
-const getFieldLabel = (fieldKey: string): string => {
-   // Si no existe en fieldLabels, devolver el fieldKey como fallback
-   return fieldLabels[fieldKey] || fieldKey;
-};
- const availableFields = useMemo(() => {
-    if (!data || data.length === 0) return [];
+   const getFieldLabel = (fieldKey: string): string => {
+      // Si no existe en fieldLabels, devolver el fieldKey como fallback
+      return fieldLabels[fieldKey] || fieldKey;
+   };
 
-    // Solo incluir campos que existen en fieldLabels
-    return Object.keys(data[0])
-       .filter((field) => fieldLabels[field]) // ← FILTRO CLAVE: Solo campos que están en fieldLabels
-       .map((field) => ({
-          key: field,
-          label: getFieldLabel(field)
-       }));
- }, [data, fieldLabels]);
+   const availableFields = useMemo(() => {
+      if (!data || data.length === 0) return [];
+
+      // Solo incluir campos que existen en fieldLabels
+      return Object.keys(data[0])
+         .filter((field) => fieldLabels[field]) // ← FILTRO CLAVE: Solo campos que están en fieldLabels
+         .map((field) => ({
+            key: field,
+            label: getFieldLabel(field)
+         }));
+   }, [data, fieldLabels]);
 
    const getUniqueValues = (field: string) => {
       if (!field || !data) return [];
@@ -1087,12 +1091,12 @@ const getFieldLabel = (fieldKey: string): string => {
 
    if (!data || data.length === 0) {
       return (
-         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-8">
+         <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-4 lg:p-8">
             <div className="text-center">
-               <div className="inline-block p-8 bg-white rounded-2xl shadow-xl">
-                  <BarChart3 className="w-20 h-20 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-xl font-bold text-gray-800 mb-2">No hay datos disponibles</h3>
-                  <p className="text-gray-600 mb-4">Importa datos para comenzar a crear gráficas interactivas</p>
+               <div className="inline-block p-6 lg:p-8 bg-white rounded-2xl shadow-xl">
+                  <BarChart3 className="w-16 h-16 lg:w-20 lg:h-20 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg lg:text-xl font-bold text-gray-800 mb-2">No hay datos disponibles</h3>
+                  <p className="text-gray-600 mb-4 text-sm lg:text-base">Importa datos para comenzar a crear gráficas interactivas</p>
                </div>
             </div>
          </div>
@@ -1101,12 +1105,16 @@ const getFieldLabel = (fieldKey: string): string => {
 
    return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
-         {/* Panel Lateral */}
-         <div className={`fixed left-0 top-0 h-full bg-white shadow-2xl transition-all duration-300 z-40 ${showConfig ? "w-96" : "w-0"} overflow-hidden`}>
+         {/* Panel Lateral - RESPONSIVE */}
+         <div
+            className={`fixed lg:relative left-0 top-0 h-full bg-white shadow-2xl transition-all duration-300 z-40 ${
+               showConfig ? "w-80 lg:w-96" : "w-0"
+            } overflow-hidden`}
+         >
             <div className="h-full flex flex-col">
-               <div className="bg-[#9B2242] border border-[#651D32] text-white p-6 flex justify-between items-center">
+               <div className="bg-[#9B2242] border border-[#651D32] text-white p-4 lg:p-6 flex justify-between items-center">
                   <div>
-                     <h2 className="text-xl font-bold">{editingChart ? "Editar Gráfica" : "Nueva Gráfica"}</h2>
+                     <h2 className="text-lg lg:text-xl font-bold">{editingChart ? "Editar Gráfica" : "Nueva Gráfica"}</h2>
                      <p className="text-sm text-cyan-100 mt-1">Configura tu visualización</p>
                   </div>
                   <button
@@ -1121,7 +1129,7 @@ const getFieldLabel = (fieldKey: string): string => {
                   </button>
                </div>
 
-               <div className="flex-1 overflow-y-auto p-6 space-y-6">
+               <div className="flex-1 overflow-y-auto p-4 lg:p-6 space-y-4 lg:space-y-6">
                   {/* Título */}
                   <div>
                      <label className="block text-sm font-semibold text-gray-700 mb-2">📝 Título</label>
@@ -1129,7 +1137,7 @@ const getFieldLabel = (fieldKey: string): string => {
                         type="text"
                         value={currentConfig.title}
                         onChange={(e) => setCurrentConfig({ ...currentConfig, title: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
+                        className="w-full px-3 lg:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 text-sm lg:text-base"
                         placeholder="Ej: Ventas por Mes"
                      />
                   </div>
@@ -1148,7 +1156,9 @@ const getFieldLabel = (fieldKey: string): string => {
                            >
                               {React.createElement(type.icon, { className: `w-5 h-5 ${currentConfig.type === type.id ? "text-cyan-600" : "text-gray-600"}` })}
                               <div>
-                                 <div className={`font-medium ${currentConfig.type === type.id ? "text-cyan-700" : "text-gray-700"}`}>{type.name}</div>
+                                 <div className={`font-medium text-sm lg:text-base ${currentConfig.type === type.id ? "text-cyan-700" : "text-gray-700"}`}>
+                                    {type.name}
+                                 </div>
                                  <div className="text-xs text-gray-500 mt-0.5">{type.description}</div>
                               </div>
                            </button>
@@ -1158,7 +1168,7 @@ const getFieldLabel = (fieldKey: string): string => {
 
                   {/* Vista 3D */}
                   {["column", "bar", "pie"].includes(currentConfig.type) && (
-                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                     <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 lg:p-4">
                         <label className="flex items-center gap-3 cursor-pointer">
                            <input
                               type="checkbox"
@@ -1180,7 +1190,7 @@ const getFieldLabel = (fieldKey: string): string => {
                      <select
                         value={currentConfig.xAxis}
                         onChange={(e) => setCurrentConfig({ ...currentConfig, xAxis: e.target.value })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 hover:cursor-pointer"
+                        className="w-full px-3 lg:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 hover:cursor-pointer text-sm lg:text-base"
                      >
                         <option value="">Selecciona un campo...</option>
                         {availableFields.map((field) => (
@@ -1198,7 +1208,7 @@ const getFieldLabel = (fieldKey: string): string => {
                      <select
                         value={currentConfig.aggregation}
                         onChange={(e) => setCurrentConfig({ ...currentConfig, aggregation: e.target.value })}
-                        className="w-full hover:cursor-pointer px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
+                        className="w-full hover:cursor-pointer px-3 lg:px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 text-sm lg:text-base"
                      >
                         <option value="count">Contar registros</option>
                         <option value="sum">Sumar valores</option>
@@ -1215,7 +1225,7 @@ const getFieldLabel = (fieldKey: string): string => {
                         <select
                            value={currentConfig.yAxis}
                            onChange={(e) => setCurrentConfig({ ...currentConfig, yAxis: e.target.value })}
-                           className="w-full px-4 py-2 border hover:cursor-pointer border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500"
+                           className="w-full px-3 lg:px-4 py-2 border hover:cursor-pointer border-gray-300 rounded-lg focus:ring-2 focus:ring-cyan-500 text-sm lg:text-base"
                         >
                            <option value="">Selecciona campo numérico...</option>
                            {availableFields.map((field) => (
@@ -1228,21 +1238,21 @@ const getFieldLabel = (fieldKey: string): string => {
                   )}
 
                   {/* Filtros Múltiples */}
-                  <div className="border-t pt-6">
+                  <div className="border-t pt-4 lg:pt-6">
                      <div className="flex justify-between items-center mb-3">
                         <h3 className="text-sm font-semibold text-gray-700">🔍 Filtros Múltiples</h3>
                         <button
                            onClick={addFilter}
-                           className="flex items-center gap-1 px-3 py-1  text-white rounded-lg hover:cursor-pointer bg-[#9B2242] border border-[#651D32] text-xs"
+                           className="flex items-center gap-1 px-3 py-1 text-white rounded-lg hover:cursor-pointer bg-[#9B2242] border border-[#651D32] text-xs"
                         >
                            <Plus className="w-3 h-3" />
                            Agregar Filtro
                         </button>
                      </div>
 
-                     <div className="space-y-4">
+                     <div className="space-y-3 lg:space-y-4">
                         {currentConfig.filters.map((filter, index) => (
-                           <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                           <div key={index} className="border border-gray-200 rounded-lg p-3 lg:p-4 bg-gray-50">
                               <div className="flex justify-between items-center mb-3">
                                  <span className="text-sm font-medium text-gray-700">Filtro {index + 1}</span>
                                  <button onClick={() => removeFilter(index)} className="p-1 hover:bg-red-100 rounded text-red-600" title="Eliminar filtro">
@@ -1375,10 +1385,10 @@ const getFieldLabel = (fieldKey: string): string => {
                   </div>
                </div>
 
-               <div className="p-6 border-t bg-gray-50 space-y-3">
+               <div className="p-4 lg:p-6 border-t bg-gray-50 space-y-3">
                   <button
                      onClick={addChart}
-                     className="w-full px-6 py-3 bg-[#9B2242] border border-[#651D32]text-white rounded-lg hover:cursor-pointer transition-all font-semibold shadow-lg"
+                     className="w-full px-4 lg:px-6 py-2 lg:py-3 bg-[#9B2242] border border-[#651D32] text-white rounded-lg hover:cursor-pointer transition-all font-semibold shadow-lg text-sm lg:text-base"
                   >
                      {editingChart ? "💾 Actualizar" : "✨ Crear Gráfica"}
                   </button>
@@ -1388,13 +1398,14 @@ const getFieldLabel = (fieldKey: string): string => {
                         setEditingChart(null);
                         resetConfig();
                      }}
-                     className="w-full px-6 py-3 hover:cursor-pointer bg-white text-gray-700 rounded-lg hover:bg-gray-100 font-semibold border"
+                     className="w-full px-4 lg:px-6 py-2 lg:py-3 hover:cursor-pointer bg-white text-gray-700 rounded-lg hover:bg-gray-100 font-semibold border text-sm lg:text-base"
                   >
                      Cancelar
                   </button>
                </div>
             </div>
          </div>
+
          {/* Modal de Configuración de Rangos */}
          <RangeConfigModal
             isOpen={rangeConfigModal.isOpen}
@@ -1410,32 +1421,33 @@ const getFieldLabel = (fieldKey: string): string => {
             }}
             data={data} // ¡IMPORTANTE! Pasar los datos para detectar fechas
          />
-         {/* Modal de Plantillas */}
+
+         {/* Modal de Plantillas - RESPONSIVE */}
          {showTemplates && (
-            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-               <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-                  <div className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-6 flex justify-between items-center">
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 lg:p-4">
+               <div className="bg-white rounded-xl lg:rounded-2xl shadow-2xl w-full max-w-2xl lg:max-w-4xl max-h-[90vh] overflow-hidden m-2">
+                  <div className="bg-gradient-to-r from-cyan-500 to-blue-500 text-white p-4 lg:p-6 flex justify-between items-center">
                      <div>
-                        <h2 className="text-2xl font-bold">Plantillas de Gráficas</h2>
-                        <p className="text-cyan-100 mt-1">Selecciona una plantilla predefinida</p>
+                        <h2 className="text-lg lg:text-2xl font-bold">Plantillas de Gráficas</h2>
+                        <p className="text-cyan-100 mt-1 text-sm lg:text-base">Selecciona una plantilla predefinida</p>
                      </div>
-                     <button onClick={() => setShowTemplates(false)} className="p-2 hover:bg-white/20 rounded-lg transition-colors">
-                        <X className="w-6 h-6" />
+                     <button onClick={() => setShowTemplates(false)} className="p-1 lg:p-2 hover:bg-white/20 rounded-lg transition-colors">
+                        <X className="w-5 h-5 lg:w-6 lg:h-6" />
                      </button>
                   </div>
 
-                  <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 overflow-y-auto max-h-[60vh]">
+                  <div className="p-4 lg:p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4 overflow-y-auto max-h-[50vh] lg:max-h-[60vh]">
                      {PREBUILT_CHARTS.map((template) => (
                         <div
                            key={template.id}
-                           className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
+                           className="border border-gray-200 rounded-lg p-3 lg:p-4 hover:shadow-md transition-shadow cursor-pointer"
                            onClick={() => loadPrebuiltChart(template)}
                         >
-                           <div className="flex items-center gap-3 mb-3">
+                           <div className="flex items-center gap-2 lg:gap-3 mb-2 lg:mb-3">
                               {React.createElement(CHART_TYPES.find((t) => t.id === template.type)?.icon || BarChart3, {
-                                 className: `w-5 h-5 ${template.is3D ? "text-purple-500" : "text-cyan-500"}`
+                                 className: `w-4 h-4 lg:w-5 lg:h-5 ${template.is3D ? "text-purple-500" : "text-cyan-500"}`
                               })}
-                              <h3 className="font-semibold text-gray-800">{template.title}</h3>
+                              <h3 className="font-semibold text-gray-800 text-sm lg:text-base">{template.title}</h3>
                            </div>
                            <div className="text-xs text-gray-600 space-y-1">
                               <p>
@@ -1460,10 +1472,10 @@ const getFieldLabel = (fieldKey: string): string => {
                      ))}
                   </div>
 
-                  <div className="p-6 border-t bg-gray-50">
+                  <div className="p-4 lg:p-6 border-t bg-gray-50">
                      <button
                         onClick={() => setShowTemplates(false)}
-                        className="w-full px-6 py-3 bg-white text-gray-700 rounded-lg hover:bg-gray-100 font-semibold border"
+                        className="w-full px-4 lg:px-6 py-2 lg:py-3 bg-white text-gray-700 rounded-lg hover:bg-gray-100 font-semibold border text-sm lg:text-base"
                      >
                         Cerrar
                      </button>
@@ -1471,25 +1483,32 @@ const getFieldLabel = (fieldKey: string): string => {
                </div>
             </div>
          )}
-         {/* Área Principal */}
-         <div className={`flex-1 transition-all duration-300 ${showConfig ? "ml-96" : "ml-0"}`}>
-            <div className="bg-white shadow-sm border-b sticky top-0 z-30">
-               <div className="p-6 flex justify-between items-center">
-                  <div className="flex items-center gap-4">
+
+         {/* Área Principal - RESPONSIVE */}
+         <div className={`flex-1 transition-all duration-300 ${showConfig ? "lg:ml-0" : "ml-0"}`}>
+            <div className="bg-white shadow-sm border-b  top-0 z-30">
+               <div className="p-4 lg:p-6 flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+                  <div className="flex items-center gap-4 w-full lg:w-auto">
                      {!showConfig && (
-                        <button onClick={() => setShowConfig(true)} className="p-2 hover:bg-gray-100 rounded-lg transition-colors" title="Abrir configuración">
+                        <button
+                           onClick={() => setShowConfig(true)}
+                           className="p-2 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+                           title="Abrir configuración"
+                        >
                            <ChevronRight className="w-6 h-6 text-gray-600" />
                         </button>
                      )}
-                     <div>
-                        <h1 className="text-2xl font-bold text-gray-800">Dashboard de Análisis Avanzado</h1>
+                     <div className="flex-1 lg:flex-none">
+                        <h1 className="text-xl lg:text-2xl font-bold text-gray-800">Dashboard de Análisis Avanzado</h1>
                         <p className="text-sm text-gray-600 mt-1">
                            {data.length} registros • {charts.length} gráficas • Filtros múltiples
                         </p>
                      </div>
                   </div>
-                  <div className="flex gap-3">
-                     {/* Botón Importar - CORREGIDO */}
+
+                  {/* Botones - RESPONSIVE */}
+                  <div className="flex flex-wrap gap-2 lg:gap-3 w-full lg:w-auto justify-end">
+                     {/* Botón Importar */}
                      <div className="relative">
                         <input
                            type="file"
@@ -1500,70 +1519,73 @@ const getFieldLabel = (fieldKey: string): string => {
                         />
                         <label
                            htmlFor="import-dashboard"
-                           className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-lg cursor-pointer"
+                           className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all shadow-lg cursor-pointer text-sm lg:text-base"
                         >
-                           <Upload className="w-4 h-4" /> {/* Cambiado de Download a Upload */}
-                           Cargar
+                           <Upload className="w-4 h-4" />
+                           <span className="hidden sm:inline">Cargar</span>
                         </label>
                      </div>
 
-                     {/* Botón Exportar - CORREGIDO */}
+                     {/* Botón Exportar */}
                      <button
                         onClick={exportDashboard}
                         disabled={charts.length === 0}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all shadow-lg ${
+                        className={`flex items-center gap-2 px-3 lg:px-4 py-2 rounded-lg transition-all shadow-lg text-sm lg:text-base ${
                            charts.length === 0 ? "bg-gray-400 cursor-not-allowed" : "bg-purple-600 hover:bg-purple-700 text-white cursor-pointer"
                         }`}
                      >
                         <Download className="w-4 h-4" />
-                        Descargar
+                        <span className="hidden sm:inline">Descargar</span>
                      </button>
 
-                     {/* Los demás botones permanecen igual */}
+                     {/* Botón Plantillas */}
                      <button
                         onClick={() => setShowTemplates(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all shadow-lg cursor-pointer"
+                        className="flex items-center gap-2 px-3 lg:px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-all shadow-lg cursor-pointer text-sm lg:text-base"
                      >
                         <Plus className="w-4 h-4" />
-                        Plantillas
+                        <span className="hidden sm:inline">Plantillas</span>
                      </button>
 
+                     {/* Botón Nueva Gráfica */}
                      <button
                         onClick={() => setShowConfig(true)}
-                        className="flex items-center gap-2 px-6 py-3 bg-[#9B2242] border border-[#651D32] text-white rounded-lg hover:bg-[#8a1e3a] transition-all shadow-lg cursor-pointer"
+                        className="flex items-center gap-2 px-4 lg:px-6 py-2 lg:py-3 bg-[#9B2242] border border-[#651D32] text-white rounded-lg hover:bg-[#8a1e3a] transition-all shadow-lg cursor-pointer text-sm lg:text-base"
                      >
-                        <Plus className="w-5 h-5" />
-                        Nueva Gráfica
+                        <Plus className="w-4 lg:w-5 h-4 lg:h-5" />
+                        <span className="hidden sm:inline">Nueva Gráfica</span>
                      </button>
                   </div>
                </div>
             </div>
 
-            <div className="p-6">
+            <div className="p-4 lg:p-6">
                {charts.length === 0 ? (
-                  <div className="text-center py-20">
-                     <div className="inline-block p-8 bg-white rounded-2xl shadow-xl">
-                        <BarChart3 className="w-24 h-24 mx-auto mb-4 text-cyan-500" />
-                        <h3 className="text-2xl font-bold text-gray-800 mb-2">¡Visualiza tus datos!</h3>
-                        <p className="text-gray-600 mb-6 max-w-md">Crea gráficas personalizadas con filtros múltiples para análisis avanzado</p>
-                        <div className="flex gap-4 justify-center">
+                  <div className="text-center py-10 lg:py-20">
+                     <div className="inline-block p-6 lg:p-8 bg-white rounded-2xl shadow-xl max-w-full mx-4">
+                        <BarChart3 className="w-16 h-16 lg:w-24 lg:h-24 mx-auto mb-4 text-cyan-500" />
+                        <h3 className="text-xl lg:text-2xl font-bold text-gray-800 mb-2">¡Visualiza tus datos!</h3>
+                        <p className="text-gray-600 mb-6 max-w-md text-sm lg:text-base">Crea gráficas personalizadas con filtros múltiples para análisis avanzado</p>
+                        <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 justify-center">
                            <button
                               onClick={() => setShowTemplates(true)}
-                              className="inline-flex items-center gap-2 px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-semibold shadow-lg hover:cursor-pointer"
+                              className="inline-flex items-center justify-center gap-2 px-4 lg:px-6 py-2 lg:py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 font-semibold shadow-lg hover:cursor-pointer text-sm lg:text-base"
                            >
-                              <Plus className="w-5 h-5" /> Usar Plantilla
+                              <Plus className="w-4 lg:w-5 h-4 lg:h-5" />
+                              Usar Plantilla
                            </button>
                            <button
                               onClick={() => setShowConfig(true)}
-                              className="inline-flex items-center gap-2 px-6 py-3  text-white rounded-lg hover:cursor-pointer bg-[#9B2242] border border-[#651D32] font-semibold shadow-lg"
+                              className="inline-flex items-center justify-center gap-2 px-4 lg:px-6 py-2 lg:py-3 text-white rounded-lg hover:cursor-pointer bg-[#9B2242] border border-[#651D32] font-semibold shadow-lg text-sm lg:text-base"
                            >
-                              <Plus className="w-5 h-5" /> Crear Personalizada
+                              <Plus className="w-4 lg:w-5 h-4 lg:h-5" />
+                              Crear Personalizada
                            </button>
                         </div>
                      </div>
                   </div>
                ) : (
-                  <div className={`grid gap-6 ${expandedChart ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-2"}`}>
+                  <div className={`grid gap-4 lg:gap-6 ${expandedChart ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"}`}>
                      {charts.map((chart) => (
                         <div
                            key={chart.id}
@@ -1571,118 +1593,123 @@ const getFieldLabel = (fieldKey: string): string => {
                               expandedChart === chart.id ? "col-span-full" : ""
                            }`}
                         >
-                           <div className="p-4 bg-gradient-to-r from-cyan-500 to-blue-500 text-white flex justify-between items-center">
-                              <div className="flex items-center gap-3">
-                                 {React.createElement(CHART_TYPES.find((t) => t.id === chart.type)?.icon || BarChart3, { className: "w-5 h-5" })}
-                                 <span className="font-semibold">{chart.title}</span>
+                           {/* Header de la gráfica - RESPONSIVE */}
+                           <div className="p-3 lg:p-4 bg-gradient-to-r from-cyan-500 to-blue-500 text-white flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                              <div className="flex items-center gap-3 flex-wrap">
+                                 {React.createElement(CHART_TYPES.find((t) => t.id === chart.type)?.icon || BarChart3, { className: "w-4 h-4 lg:w-5 lg:h-5" })}
+                                 <span className="font-semibold text-sm lg:text-base truncate max-w-[150px] lg:max-w-none">{chart.title}</span>
                                  {chart.is3D && <span className="text-xs bg-white/20 px-2 py-1 rounded">3D</span>}
                                  {chart.filters.length > 0 && (
                                     <span className="text-xs bg-green-500/80 px-2 py-1 rounded flex items-center gap-1">
                                        <Filter className="w-3 h-3" />
-                                       {chart.filters.length} filtro{chart.filters.length !== 1 ? "s" : ""}
+                                       {chart.filters.length}
                                     </span>
                                  )}
                               </div>
-                              <div className="flex gap-1">
+
+                              {/* Botones de acciones - RESPONSIVE */}
+                              <div className="flex gap-1 flex-wrap justify-end">
                                  <button
                                     onClick={() => toggleFullscreen(chart.id)}
-                                    className="flex items-center gap-1 px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm"
+                                    className="flex items-center gap-1 px-2 lg:px-3 py-1 lg:py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-xs lg:text-sm"
                                     title="Pantalla completa"
                                  >
-                                    <ZoomIn className="w-4 h-4" />
+                                    <ZoomIn className="w-3 h-3 lg:w-4 lg:h-4" />
                                  </button>
 
                                  <div className="relative group">
-                                    <button className="flex items-center gap-1 px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm">
-                                       <Download className="w-4 h-4" />
-                                       <span className="text-xs">Exportar</span>
+                                    <button className="flex items-center gap-1 px-2 lg:px-3 py-1 lg:py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-xs lg:text-sm">
+                                       <Download className="w-3 h-3 lg:w-4 lg:h-4" />
+                                       <span className="hidden xs:inline text-xs">Exportar</span>
                                     </button>
-                                    <div className="absolute right-0 top-full mt-1 w-48 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                                    <div className="absolute right-0 top-full mt-1 w-40 lg:w-48 bg-white rounded-lg shadow-xl border border-gray-200 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
                                        <button
                                           onClick={() => exportChartAsPNG(chart.id)}
-                                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg"
+                                          className="flex items-center gap-2 w-full px-3 lg:px-4 py-2 text-xs lg:text-sm text-gray-700 hover:bg-gray-100 rounded-t-lg"
                                        >
-                                          <Image className="w-4 h-4" />
-                                          Descargar PNG
+                                          <Image className="w-3 h-3 lg:w-4 lg:h-4" />
+                                          PNG
                                        </button>
                                        <button
                                           onClick={() => exportChartAsJPEG(chart.id)}
-                                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                          className="flex items-center gap-2 w-full px-3 lg:px-4 py-2 text-xs lg:text-sm text-gray-700 hover:bg-gray-100"
                                        >
-                                          <Image className="w-4 h-4" />
-                                          Descargar JPEG
+                                          <Image className="w-3 h-3 lg:w-4 lg:h-4" />
+                                          JPEG
                                        </button>
                                        <button
                                           onClick={() => exportChartAsSVG(chart.id)}
-                                          className="flex items-center gap-2 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                                          className="flex items-center gap-2 w-full px-3 lg:px-4 py-2 text-xs lg:text-sm text-gray-700 hover:bg-gray-100"
                                        >
-                                          <FileText className="w-4 h-4" />
-                                          Descargar SVG
+                                          <FileText className="w-3 h-3 lg:w-4 lg:h-4" />
+                                          SVG
                                        </button>
                                     </div>
                                  </div>
 
                                  <button
                                     onClick={() => printChart(chart.id)}
-                                    className="flex items-center gap-1 px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm"
+                                    className="flex items-center gap-1 px-2 lg:px-3 py-1 lg:py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-xs lg:text-sm"
                                     title="Imprimir"
                                  >
-                                    <Printer className="w-4 h-4" />
-                                    <span className="text-xs">Imprimir</span>
+                                    <Printer className="w-3 h-3 lg:w-4 lg:h-4" />
+                                    <span className="hidden xs:inline text-xs">Imprimir</span>
                                  </button>
 
                                  <button
                                     onClick={() => toggleExpandChart(chart.id)}
-                                    className="flex items-center gap-1 px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm"
+                                    className="flex items-center gap-1 px-2 lg:px-3 py-1 lg:py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-xs lg:text-sm"
                                     title={expandedChart === chart.id ? "Minimizar" : "Expandir"}
                                  >
-                                    {expandedChart === chart.id ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+                                    {expandedChart === chart.id ? <Minimize2 className="w-3 h-3 lg:w-4 lg:h-4" /> : <Maximize2 className="w-3 h-3 lg:w-4 lg:h-4" />}
                                  </button>
 
                                  <button
                                     onClick={() => editChart(chart)}
-                                    className="flex items-center gap-1 px-3 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-sm"
+                                    className="flex items-center gap-1 px-2 lg:px-3 py-1 lg:py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors text-xs lg:text-sm"
                                     title="Editar"
                                  >
-                                    <Settings className="w-4 h-4" />
+                                    <Settings className="w-3 h-3 lg:w-4 lg:h-4" />
                                  </button>
 
                                  <button
                                     onClick={() => deleteChart(chart.id)}
-                                    className="flex items-center gap-1 px-3 py-2 bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors text-sm"
+                                    className="flex items-center gap-1 px-2 lg:px-3 py-1 lg:py-2 bg-red-500/80 hover:bg-red-500 rounded-lg transition-colors text-xs lg:text-sm"
                                     title="Eliminar"
                                  >
-                                    <Trash2 className="w-4 h-4" />
+                                    <Trash2 className="w-3 h-3 lg:w-4 lg:h-4" />
                                  </button>
                               </div>
                            </div>
 
-                           <div className="p-4">
+                           <div className="p-3 lg:p-4">
                               <div id={`chart-${chart.id}`} className="w-full"></div>
                            </div>
 
-                           <div className="px-4 pb-4 text-xs text-gray-600 border-t pt-3">
-                              <div className="flex flex-wrap gap-4">
-                                 <span>
+                           {/* Footer de la gráfica - RESPONSIVE */}
+                           <div className="px-3 lg:px-4 pb-3 lg:pb-4 text-xs text-gray-600 border-t pt-3">
+                              <div className="flex flex-col sm:flex-row flex-wrap gap-2 lg:gap-4">
+                                 <span className="break-words">
                                     <strong>Eje X:</strong> {getFieldLabel(chart.xAxis)}
                                  </span>
                                  {chart.yAxis && (
-                                    <span>
+                                    <span className="break-words">
                                        <strong>Eje Y:</strong> {getFieldLabel(chart.yAxis)} ({chart.aggregation})
                                     </span>
                                  )}
                                  {chart.filters.length > 0 && (
                                     <span>
-                                       <strong>Filtros:</strong> {chart.filters.length} aplicado{chart.filters.length !== 1 ? "s" : ""}
+                                       <strong>Filtros:</strong> {chart.filters.length}
                                     </span>
                                  )}
                               </div>
-                              {/* Mostrar detalles de los filtros */}
+
+                              {/* Detalles de filtros - RESPONSIVE */}
                               {chart.filters.length > 0 && (
-                                 <div className="mt-2 p-2 bg-gray-50 rounded border">
+                                 <div className="mt-2 p-2 bg-gray-50 rounded border text-xs">
                                     <strong>Detalles de filtros:</strong>
                                     {chart.filters.map((filter, index) => (
-                                       <div key={index} className="text-xs mt-1 ml-2">
+                                       <div key={index} className="mt-1 ml-2 break-words">
                                           {getFieldLabel(filter.field)} {filter.operator === "include" ? "incluye" : "excluye"}: {filter.values.join(", ")}
                                        </div>
                                     ))}

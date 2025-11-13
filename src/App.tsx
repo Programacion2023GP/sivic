@@ -1,7 +1,7 @@
 import { Sidebar } from "./ui/components/sidebar/CustomSidebar";
 import { SidebarItem } from "./ui/components/sidebar/CustomSidebarItem";
 import { Header } from "./ui/components/header/CustomHeader";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import PageDependence from "./ui/pages/catalogues/dependece/pagedependece";
 import { FaUserTie } from "react-icons/fa6";
 import PageUsersPanel from "./ui/pages/pageusers/pageuserspanel";
@@ -23,20 +23,29 @@ import PageCourts from "./ui/pages/courts/pagecourts";
 
 // Componente Layout para las rutas autenticadas
 const MainLayout = () => {
-   const [open, setOpen] = useState<boolean>(false);
-   const [showInstallPrompt, setShowInstallPrompt] = useState<boolean>(false);
+   const [open, setOpen] = useState(false);
+   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 
-   // 🔥 Cargar permisos al montar el layout
    const loadPermissions = usePermissionsStore((state) => state.loadPermissions);
 
+   // 🔥 Cargar permisos al montar
    useEffect(() => {
       loadPermissions();
    }, [loadPermissions]);
 
-   const toogleOpen = useCallback(() => {
-      setOpen(!open);
-   }, [open]);
+   // Escuchar evento de instalación PWA
+   useEffect(() => {
+      const handler = (e: any) => {
+         e.preventDefault();
+         setDeferredPrompt(e);
+         setShowInstallPrompt(true);
+      };
+      window.addEventListener("beforeinstallprompt", handler);
+      return () => window.removeEventListener("beforeinstallprompt", handler);
+   }, []);
+
+   const toggleSidebar = useCallback(() => setOpen((prev) => !prev), []);
 
    const handleInstallClick = async () => {
       if (!deferredPrompt) return;
@@ -47,79 +56,107 @@ const MainLayout = () => {
       setShowInstallPrompt(false);
    };
 
+   // 🧠 Sidebar config (mejor que hardcodear JSX)
+   const sidebarItems = useMemo(
+      () => [
+         { prefix: "usuarios_", route: "/usuarios", icon: <FaUserTie />, label: "Usuarios" },
+         { prefix: "multas_", route: "/multa", icon: <FaFileInvoiceDollar />, label: "Multas" },
+         { prefix: "multas_", route: "/juzgados", icon: <FaFileInvoiceDollar />, label: "Juzgados" },
+         { prefix: "vista_", route: "/logs", icon: <FaCode />, label: "Logs" },
+         {
+            prefix: "catalogo_",
+            label: "Catálogos",
+            children: [
+               {
+                  prefix: ["catalogo_dependencia_", "catalogo_doctor_"],
+                  label: "Alcolímetros",
+                  children: [
+                     {
+                        prefix: "catalogo_dependencia_",
+                        route: "/catalogos/dependencias",
+                        icon: <FaBuildingColumns />,
+                        label: "Dependencias"
+                     },
+                     {
+                        prefix: "catalogo_doctor_",
+                        route: "/catalogos/doctor",
+                        icon: <FaUserDoctor />,
+                        label: "Doctores"
+                     }
+                  ]
+               },
+               {
+                  prefix: ["catalogo_motivo_detencion_"],
+                  label: "Vialidad",
+                  children: [
+                     {
+                        prefix: "catalogo_motivo_detencion_",
+                        route: "/catalogos/motivodet",
+                        icon: <FaStopCircle />,
+                        label: "Motivo detención"
+                     }
+                  ]
+               }
+            ]
+         },
+         {
+            prefix: "reports_",
+            label: "Reportes",
+            children: [{ route: "/reportes/dashboard", prefix: "reports_", icon: <FaChartLine />, label: "Reporte Dinámico" }]
+         }
+      ],
+      []
+   );
+
+   const renderSidebarItems = (items: any[]) =>
+      items.map((item, i) => (
+         <PermissionPrefixRoute requiredPrefix={item.prefix} key={i}>
+            {item.children ? (
+               <SidebarDrop label={item.label}>{renderSidebarItems(item.children)}</SidebarDrop>
+            ) : (
+               <SidebarItem route={item.route} icon={item.icon} label={item.label} />
+            )}
+         </PermissionPrefixRoute>
+      ));
+
+
    return (
       <div className="flex h-screen w-full overflow-hidden bg-[#f8f9fa]">
-         {/* Sidebar */}
          {open && (
-            <div className="w-64 flex-shrink-0">
-               <Sidebar name="Sistema" borderR={true}>
-                  <PermissionPrefixRoute requiredPrefix="usuarios_">
-                     <SidebarItem route="/usuarios" icon={<FaUserTie />} label="Usuarios" />
-                  </PermissionPrefixRoute>
-
-                  <PermissionPrefixRoute requiredPrefix="multas_">
-                     <SidebarItem route="/multa" icon={<FaFileInvoiceDollar />} label="Multas" />
-                  </PermissionPrefixRoute>
-                  <PermissionPrefixRoute requiredPrefix="multas_">
-                     <SidebarItem route="/juzgados" icon={<FaFileInvoiceDollar />} label="Juzgados" />
-                  </PermissionPrefixRoute>
-                  <PermissionPrefixRoute requiredPrefix="vista_">
-                     <SidebarItem route="/logs" icon={<FaCode />} label="Logs" />
-                  </PermissionPrefixRoute>
-                  <PermissionPrefixRoute requiredPrefix="catalogo_">
-                     <SidebarDrop label="Catalogos">
-                        <PermissionPrefixRoute requiredPrefix={["catalogo_dependencia_", "catalogo_doctor_"]}>
-                           <SidebarDrop label="Alcolimetros">
-                              <PermissionPrefixRoute requiredPrefix="catalogo_dependencia_">
-                                 <SidebarItem route="/catalogos/dependencias" icon={<FaBuildingColumns />} label="Dependencias" />
-                              </PermissionPrefixRoute>
-                              <PermissionPrefixRoute requiredPrefix="catalogo_doctor_">
-                                 <SidebarItem route="/catalogos/doctor" icon={<FaUserDoctor />} label="Doctores" />
-                              </PermissionPrefixRoute>
-                           </SidebarDrop>
-                           <PermissionPrefixRoute requiredPrefix={["catalogo_motivo_detencion_"]}>
-                              <SidebarDrop label="Vialidad">
-                                 <PermissionPrefixRoute requiredPrefix="catalogo_motivo_detencion_">
-                                    <SidebarItem route="/catalogos/motivodet" icon={<FaStopCircle />} label="Motivo detención" />
-                                 </PermissionPrefixRoute>
-                              </SidebarDrop>
-                           </PermissionPrefixRoute>
-                        </PermissionPrefixRoute>
-                     </SidebarDrop>
-                  </PermissionPrefixRoute>
-                  <PermissionPrefixRoute requiredPrefix="reports">
-                     <SidebarDrop label="Reportes">
-                        <SidebarItem route="/reportes/dashboard" icon={<FaChartLine />} label="Reporte Dinamico" />
-                     </SidebarDrop>
-                  </PermissionPrefixRoute>
+            <div className="w-64 flex-shrink-0 shadow-md">
+               <Sidebar name="Sistema" borderR>
+                  {renderSidebarItems(sidebarItems)}
                </Sidebar>
             </div>
          )}
 
-         {/* Contenido principal */}
          <div className="flex-1 flex flex-col min-w-0">
-            <Header id="btn-menu" setOpenSidebar={toogleOpen} userName={localStorage.getItem("name") || ""} />
+            <Header id="btn-menu" setOpenSidebar={toggleSidebar} userName={localStorage.getItem("name") || ""} />
+
             <main className="flex-1 p-6 overflow-auto bg-white">
                <Outlet />
             </main>
 
-            {showInstallPrompt && (
-               <div className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50">
-                  <div className="flex items-center gap-3">
-                     <span>📱 Instalar App</span>
-                     <button onClick={handleInstallClick} className="bg-white text-blue-600 px-3 py-1 rounded-md font-semibold hover:bg-blue-100 transition-colors">
-                        Instalar
-                     </button>
-                     <button onClick={() => setShowInstallPrompt(false)} className="text-white hover:text-gray-200">
-                        ×
-                     </button>
-                  </div>
-               </div>
-            )}
+            {showInstallPrompt && <InstallPrompt onInstall={handleInstallClick} onClose={() => setShowInstallPrompt(false)} />}
          </div>
       </div>
    );
 };
+
+// 💡 Componente separado para el prompt de instalación
+const InstallPrompt = ({ onInstall, onClose }: { onInstall: () => void; onClose: () => void }) => (
+   <div className="fixed bottom-4 right-4 bg-blue-600 text-white p-4 rounded-lg shadow-lg z-50">
+      <div className="flex items-center gap-3">
+         <span>📱 Instalar App</span>
+         <button onClick={onInstall} className="bg-white text-blue-600 px-3 py-1 rounded-md font-semibold hover:bg-blue-100 transition-colors">
+            Instalar
+         </button>
+         <button onClick={onClose} className="text-white hover:text-gray-200">
+            ×
+         </button>
+      </div>
+   </div>
+);
 
 // ====================
 // Componentes de permisos ACTUALIZADOS

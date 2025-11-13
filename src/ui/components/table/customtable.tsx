@@ -512,7 +512,7 @@ const CustomTable = <T extends object>({
                {/* Close Button más Flutter-like */}
                {(mobileConfig.bottomSheet.showCloseButton ?? true) && (
                   <motion.button
-                     className="absolute top-3 right-3 z-10 w-10 h-10 hover:cursor-pointer text-red-400 hover:text-red-600 rounded-full flex items-center justify-center transition-colors shadow-md border " // ← Borde + shadow suave
+                     className="absolute top-3 right-3 z-10 w-7 h-7 hover:cursor-pointer text-red-400 hover:text-red-600 rounded-full flex items-center justify-center transition-colors shadow-md border " // ← Borde + shadow suave
                      onClick={closeBottomSheet}
                      whileHover={{
                         scale: 1.05,
@@ -526,7 +526,7 @@ const CustomTable = <T extends object>({
                      <FiX className="text-red-400 hover:text-red-600 text-xl" />
                   </motion.button>
                )}
-
+                  <div className="mb-5"></div>
                {/* Content con mejor espaciado */}
                <div className="max-h-[82vh] overflow-y-auto pb-6 px-1">{mobileConfig.bottomSheet.builder(selectedRowForSheet, closeBottomSheet)}</div>
             </motion.div>

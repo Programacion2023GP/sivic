@@ -5,7 +5,7 @@ import * as Yup from "yup";
 import CompositePage from "../../components/compositecustoms/compositePage";
 import FormikForm from "../../formik/Formik";
 import { FormikAutocomplete, FormikImageInput, FormikInput, FormikNativeTimeInput, FormikRadio, FormikTextArea } from "../../formik/FormikInputs/FormikInput";
-import { CustomButton, CustomButtonMovil, FloatingActionButton } from "../../components/button/custombuttom";
+import { CustomButton } from "../../components/button/custombuttom";
 import { PenaltiesApi } from "../../../infrastructure/penalties/penalties.infra";
 import type { Penalties } from "../../../domain/models/penalties/penalties.model";
 import CustomTable from "../../components/table/customtable";
@@ -26,6 +26,9 @@ import PdfPreview from "../../components/pdfview/pdfview";
 import MultaPDF from "../courts/pdf/pdfpenalties";
 import { FiEdit, FiMoreVertical, FiTrash, FiTrash2 } from "react-icons/fi";
 import { ArrowDownToDotIcon } from "lucide-react";
+import CustomDataDisplay from "../../components/movil/view/customviewmovil";
+import { penaltyDisplayConfig } from "./model";
+import { FloatingActionButton } from "../../components/movil/button/custombuttommovil";
 // -----------------------------
 // Tipos y Constantes
 // -----------------------------
@@ -607,21 +610,7 @@ const PagePenalities = () => {
                         bottomSheet: {
                            height: 70,
                            showCloseButton: true,
-                           builder: (penalty, onClose) => (
-                              <div className="p-6">
-                                 <h2 className="text-xl font-bold mb-4">{penalty.name}</h2>
-                                 <p className="text-gray-600 mb-2">
-                                    <strong>Descripción:</strong> {penalty.description}
-                                 </p>
-                                 <p className="text-gray-600 mb-2">
-                                    <strong>Monto:</strong> ${penalty.amount}
-                                 </p>
-                                 <p className="text-gray-600 mb-2">
-                                    <strong>Fecha:</strong> {penalty.date}
-                                 </p>
-                                 {/* Agrega más campos según tu modelo de datos */}
-                              </div>
-                           )
+                           builder: (penalty, onClose) => <CustomDataDisplay data={penalty} config={penaltyDisplayConfig} />
                         }
                      }}
                      columns={[
