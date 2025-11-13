@@ -1,0 +1,194 @@
+# 🧾 Registro de Versiones
+
+> Documenta los cambios del sistema con detalle.
+
+---
+
+## 🔧 **v2.0.0.12** · *🧪 Beta*
+📅 **Fecha:** 11 de noviembre de 2025, 12:55 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v2.0.0.11** · *🧪 Beta*
+📅 **Fecha:** 11 de noviembre de 2025, 12:18 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v2.0.0.10** · *🧪 Beta*
+📅 **Fecha:** 11 de noviembre de 2025, 11:13 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v2.0.0.9** · *🧪 Beta*
+📅 **Fecha:** 11 de noviembre de 2025, 10:56 a.m.  
+👤 **Autor:** n  
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v2.0.0.8** · *🧪 Beta*
+📅 **Fecha:** 10 de noviembre de 2025, 12:35 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v2.0.0.7** · *🧪 Beta*
+📅 **Fecha:** 10 de noviembre de 2025, 12:22 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v2.0.0.6** · *🧪 Beta*
+📅 **Fecha:** 10 de noviembre de 2025, 11:32 a.m.  
+👤 **Autor:** Luis Gutierrez  
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v2.0.0.5** · *🧪 Beta*
+📅 **Fecha:** 10 de noviembre de 2025, 10:10 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v2.0.0.2** · *🧪 Beta*
+📅 **Fecha:** 8 de noviembre de 2025, 1:45 p.m.  
+👤 **Autor:** luis gutierres  
+🧭 **Tipo:** Build
+
+**🐞 Correcciones**
+- cambio env api
+
+
+
+---
+
+## 🚀 **v2.0.0.1** · *🧪 Beta*
+📅 **Fecha:** 8 de noviembre de 2025, 1:42 p.m.  
+👤 **Autor:** luis gutierrez  
+🧭 **Tipo:** Major
+
+**✨ Mejoras**
+- graficas
+
+
+
+---
+
+## 🔧 **v1.2.0.5** · *🧪 Beta*
+📅 **Fecha:** 7 de noviembre de 2025, 4:11 p.m.  
+👤 **Autor:** n  
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v1.2.0.4** · *🧪 Beta*
+📅 **Fecha:** 7 de noviembre de 2025, 4:09 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v1.2.0.3** · *🧪 Beta*
+📅 **Fecha:** 7 de noviembre de 2025, 4:04 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v1.2.0.2** · *🧪 Beta*
+📅 **Fecha:** 7 de noviembre de 2025, 3:07 p.m.  
+👤 **Autor:** luis gutierrez  
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## ✨ **v1.2.0.1** · *🧪 Beta*
+📅 **Fecha:** 7 de noviembre de 2025, 2:55 p.m.  
+👤 **Autor:** luis guti  
+🧭 **Tipo:** Minor
+
+**✨ Mejoras**
+- pwa
+
+
+
+---
+
+## ✨ **v1.1.0.1** · *🧪 Beta*
+📅 **Fecha:** 7 de noviembre de 2025, 10:54 a.m.  
+👤 **Autor:** Luis Gutierrez  
+🧭 **Tipo:** Minor
+
+**✨ Mejoras**
+- se agrego catalogo de dependencias
+   - post
+   - put
+   - delete
+   - get
+   - export
+- se agrego a usuarios dependencias
+
+
+
+---
+
+## 🧩 **v1.0.1.1** · *🧪 Beta*
+📅 **Fecha:** 6 de noviembre de 2025, 10:27 a.m.  
+👤 **Autor:** luis  
+🧭 **Tipo:** Patch
+
+**🐞 Correcciones**
+- se me olvido cambiar la ruta de api env
+
+
+
+---
+
+## 🚀 **v1.0.0.1** · *🧪 Beta*
+📅 **Fecha:** 6 de noviembre de 2025, 10:25 a.m.  
+👤 **Autor:** luis  
+🧭 **Tipo:** Major
+
+**✨ Mejoras**
+- comenzando el proyecto con usuarios permisos y multas con evidencias de 1
+
+**🐞 Correcciones**
+- ninguna
+
+
+
+---

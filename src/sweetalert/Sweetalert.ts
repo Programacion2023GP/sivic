@@ -1,7 +1,7 @@
 import Swal from 'sweetalert2';
 
  
-type ToastIcon = 'success' | 'error' | 'warning' | 'info' | 'question'; // Definir el tipo para icon
+ type ToastIcon = 'success' | 'error' | 'warning' | 'info' | 'question'; // Definir el tipo para icon
 
 // Función para mostrar un toast con un mensaje específico
 export const showToast = (message: string, icon: ToastIcon = 'success') => {

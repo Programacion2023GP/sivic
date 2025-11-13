@@ -143,76 +143,54 @@ const FTransferList = <T extends Record<string, any>>({
   );
 
   return (
-    <div className="flex flex-col w-full">
-      {label && (
-        <label className="mb-2 text-sm font-semibold text-gray-600">
-          {label}
-        </label>
-      )}
-      <div className="flex flex-col sm:flex-row w-full gap-6">
-        {/* Lista izquierda */}
-        {renderList(
-          "Departamentos disponibles",
-          disponibles,
-          leftChecked,
-          setLeftChecked,
-          searchLeft,
-          setSearchLeft
-        )}
+     <div className="flex flex-col w-full">
+        {label && <label className="mb-2 text-sm font-semibold text-gray-600">{label}</label>}
+        <div className="flex flex-col sm:flex-row w-full gap-6">
+           {/* Lista izquierda */}
+           {renderList(label || "", disponibles, leftChecked, setLeftChecked, searchLeft, setSearchLeft)}
 
-        {/* Botones */}
-        <div className="flex flex-row sm:flex-col items-center justify-center gap-3">
-          <button
-            type="button"
-            onClick={moveRight}
-            disabled={leftChecked.length === 0 || disabled}
-            className="p-2 rounded-full bg-cyan-500 text-white shadow-md hover:bg-cyan-600 transition disabled:opacity-40"
-          >
-            <HiOutlineArrowRight size={22} />
-          </button>
-          <button
-            type="button"
-            onClick={moveAllRight}
-            disabled={disponibles.length === 0 || disabled}
-            className="p-2 rounded-full bg-cyan-500 text-white shadow-md hover:bg-cyan-600 transition disabled:opacity-40"
-          >
-            <RiArrowRightWideLine size={22} />
-          </button>
-          <button
-            type="button"
-            onClick={moveLeft}
-            disabled={rightChecked.length === 0 || disabled}
-            className="p-2 rounded-full bg-cyan-500 text-white shadow-md hover:bg-cyan-600 transition disabled:opacity-40"
-          >
-            <HiOutlineArrowLeft size={22} />
-          </button>
-          <button
-            type="button"
-            onClick={moveAllLeft}
-            disabled={elegidos.length === 0 || disabled}
-            className="p-2 rounded-full bg-cyan-500 text-white shadow-md hover:bg-cyan-600 transition disabled:opacity-40"
-          >
-            <RiArrowLeftWideFill size={22} />
-          </button>
+           {/* Botones */}
+           <div className="flex flex-row sm:flex-col items-center justify-center gap-3">
+              <button
+                 type="button"
+                 onClick={moveRight}
+                 disabled={leftChecked.length === 0 || disabled}
+                 className="p-2 rounded-full bg-cyan-500 text-white shadow-md hover:bg-cyan-600 transition disabled:opacity-40"
+              >
+                 <HiOutlineArrowRight size={22} />
+              </button>
+              <button
+                 type="button"
+                 onClick={moveAllRight}
+                 disabled={disponibles.length === 0 || disabled}
+                 className="p-2 rounded-full bg-cyan-500 text-white shadow-md hover:bg-cyan-600 transition disabled:opacity-40"
+              >
+                 <RiArrowRightWideLine size={22} />
+              </button>
+              <button
+                 type="button"
+                 onClick={moveLeft}
+                 disabled={rightChecked.length === 0 || disabled}
+                 className="p-2 rounded-full bg-cyan-500 text-white shadow-md hover:bg-cyan-600 transition disabled:opacity-40"
+              >
+                 <HiOutlineArrowLeft size={22} />
+              </button>
+              <button
+                 type="button"
+                 onClick={moveAllLeft}
+                 disabled={elegidos.length === 0 || disabled}
+                 className="p-2 rounded-full bg-cyan-500 text-white shadow-md hover:bg-cyan-600 transition disabled:opacity-40"
+              >
+                 <RiArrowLeftWideFill size={22} />
+              </button>
+           </div>
+
+           {/* Lista derecha */}
+           {renderList(`${label} asignados`, elegidos, rightChecked, setRightChecked, searchRight, setSearchRight)}
         </div>
 
-        {/* Lista derecha */}
-        {renderList(
-          "Departamentos asignados",
-          elegidos,
-          rightChecked,
-          setRightChecked,
-          searchRight,
-          setSearchRight
-        )}
-      </div>
-
-      {meta.error && (meta.touched || formik.status) && (
-        <span className="text-sm font-semibold text-red-600 mt-2">
-          {meta.error as string}
-        </span>
-      )}
-    </div>
+        {meta.error && (meta.touched || formik.status) && <span className="text-sm font-semibold text-red-600 mt-2">{meta.error as string}</span>}
+     </div>
   );
 };
 

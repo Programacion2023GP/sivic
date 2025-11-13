@@ -1,4 +1,4 @@
-import React, { memo, useEffect } from "react";
+import React from "react";
 import './responsive.css'
 import type { ColProps, RowProps } from "./types";
 export const RowComponent: React.FC<RowProps> = ({ children }) => {

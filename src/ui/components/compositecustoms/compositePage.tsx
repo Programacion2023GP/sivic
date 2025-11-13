@@ -1,148 +1,125 @@
 import { useState, type ReactNode } from "react";
-
 import { AiOutlineClose, AiOutlineExpandAlt } from "react-icons/ai";
+
 type Direction = "izq" | "der" | "modal";
 
 interface PropsCompositePage {
-  table?: () => ReactNode;
-  form?: () => ReactNode;
-  tableDirection?: Direction;
-  formDirection?: Direction;
-  isOpen?: boolean;
-  onClose?: () => void;
-  modalTitle?: string;
+   table?: () => ReactNode;
+   form?: () => ReactNode;
+   tableDirection?: Direction;
+   formDirection?: Direction;
+   isOpen?: boolean;
+   onClose?: () => void;
+   modalTitle?: string;
 }
 
-const CompositePage: React.FC<PropsCompositePage> = ({
-  table,
-  form,
-  tableDirection = "izq",
-  formDirection = "der",
-  isOpen,
-  onClose,
-  modalTitle,
-}) => {
+const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirection = "izq", formDirection = "der", isOpen, onClose, modalTitle }) => {
+   const [isExpanded, setIsExpanded] = useState(false);
+   const [isClosing, setIsClosing] = useState(false);
 
-const renderModal = (content?: () => React.ReactNode) => {
-  const [isExpanded, setIsExpanded] = useState<boolean>(false);
-  const [isClosing, setIsClosing] = useState<boolean>(false);
+   const handleClose = () => {
+      setIsClosing(true);
+      setTimeout(() => {
+         onClose && onClose();
+         setIsClosing(false);
+         setIsExpanded(false);
+      }, 300);
+   };
 
-  const handleClose = () => {
-    setIsClosing(true);
-    setTimeout(() => {
-    onClose &&  onClose();
-      setIsClosing(false);
-    }, 300);
-  };
+   const toggleExpand = () => setIsExpanded(!isExpanded);
 
-  const toggleExpand = () => {
-    setIsExpanded(!isExpanded);
-  };
+   // Renderizar contenido del modal
+   const renderModalContent = (content?: () => ReactNode) => {
+      if (!isOpen || !content) return null;
 
-  if (!isOpen || !content) return null;
-
-  return (
-    <div
-      className={`fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300 ${
-        isClosing ? "opacity-0" : "opacity-100"
-      }`}
-      onClick={handleClose}
-    >
-      <div
-        className={`bg-white rounded-2xl shadow-2xl transform transition-all duration-300 ${
-          isExpanded 
-            ? "w-full h-full m-4 rounded-none" 
-            : "w-11/12 max-w-4xl max-h-[90vh]"
-        } ${isClosing ? "scale-95 opacity-0" : "scale-100 opacity-100"}`}
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Cabecera mejorada */}
-        <div className="flex justify-between items-center border-b border-gray-200 p-4 sticky top-0 bg-white z-10 rounded-t-2xl">
-          <h2 className="text-xl font-bold text-gray-800 truncate flex-1 mr-4">
-            {modalTitle || "Modal"}
-          </h2>
-          
-          <div className="flex items-center gap-2">
-            {/* Botón Expandir/Contraer */}
-            <button
-              onClick={toggleExpand}
-              className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 hover:scale-105"
-              title={isExpanded ? "Contraer" : "Expandir"}
+      return (
+         <div
+            className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300 ${
+               isClosing ? "opacity-0" : "opacity-100"
+            }`}
+            onClick={handleClose}
+         >
+            <div
+               className={`bg-white shadow-2xl transform transition-all duration-300 overflow-hidden ${
+                  isExpanded ? "w-full h-full rounded-none" : "w-[95vw] sm:w-11/12 max-w-6xl max-h-[95vh] sm:max-h-[90vh] rounded-2xl"
+               } ${isClosing ? "scale-95 opacity-0" : "scale-100 opacity-100"}`}
+               onClick={(e) => e.stopPropagation()}
             >
-              <AiOutlineExpandAlt 
-                size={20} 
-                className={isExpanded ? "rotate-180 transition-transform" : ""} 
-              />
-            </button>
+               {/* Header del modal */}
+               <div className="flex justify-between items-center border-b presidencia px-3 py-2.5 sm:px-4 sm:py-3 sticky top-0 z-10">
+                  <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 truncate flex-1 mr-2">{modalTitle || "Modal"}</h2>
+                  <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                     <button
+                        onClick={toggleExpand}
+                        className="hover:cursor-pointer p-1.5 sm:p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                        title={isExpanded ? "Contraer" : "Expandir"}
+                     >
+                        <AiOutlineExpandAlt size={18} className={`sm:w-5 sm:h-5 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+                     </button>
+                     <button
+                        onClick={handleClose}
+                        className=" hover:cursor-pointer p-1.5 sm:p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
+                        title="Cerrar"
+                     >
+                        <AiOutlineClose size={18} className="sm:w-5 sm:h-5" />
+                     </button>
+                  </div>
+               </div>
 
-            {/* Botón Cerrar */}
-            <button
-              onClick={handleClose}
-              className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200 hover:scale-105"
-              title="Cerrar"
-            >
-              <AiOutlineClose size={20} />
-            </button>
-          </div>
-        </div>
+               {/* Contenido del modal */}
+               <div className={`overflow-auto ${isExpanded ? "h-[calc(100vh-48px)] sm:h-[calc(100vh-56px)]" : "max-h-[calc(95vh-48px)] sm:max-h-[calc(90vh-56px)]"}`}>
+                  <div className="p-3 sm:p-4 md:p-6">{content()}</div>
+               </div>
+            </div>
+         </div>
+      );
+   };
 
-        {/* Contenido con scroll */}
-        <div 
-          className={`overflow-auto ${
-            isExpanded ? "h-[calc(100vh-80px)]" : "max-h-[calc(90vh-80px)]"
-          } custom-scrollbar`}
-        >
-          <div className="p-6">
-            {content()}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-  return (
-   <div className="flex flex-row w-full gap-1.5">
-  {/* IZQUIERDA */}
-  {(tableDirection === "izq" || formDirection === "izq") && (
-    <div
-      className={`${
-        (tableDirection === "izq" && formDirection === "der") ||
-        (formDirection === "izq" && tableDirection === "der")
-          ? tableDirection === "izq"
-            ? "w-3/4"
-            : "w-1/4"
-          : "w-full"
-      } transition-all duration-300`}
-    >
-      {tableDirection === "izq" && table && table()}
-      {formDirection === "izq" && form && form()}
-    </div>
-  )}
+   // Determinar si ambas secciones están visibles (no modales)
+   const bothVisible =
+      (tableDirection === "izq" || tableDirection === "der") && (formDirection === "izq" || formDirection === "der") && tableDirection !== formDirection;
 
-  {/* DERECHA */}
-  {(tableDirection === "der" || formDirection === "der") && (
-    <div
-      className={`${
-        (tableDirection === "izq" && formDirection === "der") ||
-        (formDirection === "izq" && tableDirection === "der")
-          ? tableDirection === "der"
-            ? "w-3/4"
-            : "w-1/4"
-          : "w-full"
-      } transition-all duration-300`}
-    >
-      {formDirection === "der" && form && form()}
-      {tableDirection === "der" && table && table()}
-    </div>
-  )}
+   // Determinar el ancho de cada sección
+   const getLeftWidth = () => {
+      if (!bothVisible) return "w-full";
+      return tableDirection === "izq" ? "w-full lg:w-3/4" : "w-full lg:w-1/4";
+   };
 
-  {/* MODALES */}
-  {tableDirection === "modal" && renderModal(table)}
-  {formDirection === "modal" && renderModal(form)}
-</div>
+   const getRightWidth = () => {
+      if (!bothVisible) return "w-full";
+      return tableDirection === "der" ? "w-full lg:w-3/4" : "w-full lg:w-1/4";
+   };
 
+   return (
+      <>
+         {/* Layout principal - Responsive */}
+         <div className={`flex flex-col ${bothVisible ? "lg:flex-row" : ""} gap-3 sm:gap-4 w-full`}>
+            {/* SECCIÓN IZQUIERDA */}
+            {(tableDirection === "izq" || formDirection === "izq") && (
+               <div className={`${getLeftWidth()} min-w-0 transition-all duration-300`}>
+                  <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                     {tableDirection === "izq" && table && table()}
+                     {formDirection === "izq" && form && form()}
+                  </div>
+               </div>
+            )}
 
-  );
+            {/* SECCIÓN DERECHA */}
+            {(tableDirection === "der" || formDirection === "der") && (
+               <div className={`${getRightWidth()} min-w-0 transition-all duration-300`}>
+                  <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                     {formDirection === "der" && form && form()}
+                     {tableDirection === "der" && table && table()}
+                  </div>
+               </div>
+            )}
+         </div>
+
+         {/* MODALES */}
+         {tableDirection === "modal" && renderModalContent(table)}
+         {formDirection === "modal" && renderModalContent(form)}
+      </>
+   );
 };
 
 export default CompositePage;

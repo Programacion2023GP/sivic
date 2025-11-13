@@ -1,6 +1,5 @@
 import { create } from "zustand";
-import type { Task } from "../../domain/models/task/task.domain";
-import type { TaskRepository } from "../../domain/repositories/task/task.repositories";
+
 import type { Dependence } from "../../domain/models/dependence/dependence";
 import type { DependenceRepository } from "../../domain/repositories/dependence/dependence.repositories";
 import { showToast } from "../../sweetalert/Sweetalert";
@@ -29,6 +28,7 @@ export const useDependenceStore = create<DependenceStore>((set, get) => ({
     initialValues: {
         id: 0,
         name: "",
+        color:"",
         active: true
     },
     dependence: [],

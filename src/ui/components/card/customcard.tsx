@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect, type ReactNode } from "react";
 import ReactDOM from "react-dom";
-import { FaUserCircle } from "react-icons/fa";
 import { MdMoreVert } from "react-icons/md";
 
 type UserCardProps = {
@@ -11,7 +10,7 @@ type UserCardProps = {
   actions?: () => ReactNode;
 };
 
-const CustomCard: React.FC<UserCardProps> = ({ avatar, title, subtitle, children, actions }) => {
+const CustomCard: React.FC<UserCardProps> = ({ title, subtitle, children, actions }) => {
   const [showActions, setShowActions] = useState(false);
   const actionsRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);

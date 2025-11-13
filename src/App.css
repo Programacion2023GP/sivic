@@ -100,3 +100,12 @@ background: linear-gradient(135deg, rgba(155,34,66,0.7) 50%, rgba(101,29,50,0.6)
 }
 
 /* Establecer la animación de movimiento de la bolita */
+@import "tailwindcss";
+
+@layer components {
+  .presidencia {
+    @apply bg-[#9B2242] border border-[#651D32] text-white ;
+  }
+  
+  
+}

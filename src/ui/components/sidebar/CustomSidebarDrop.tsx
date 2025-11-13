@@ -1,41 +1,68 @@
-import { useState, type ReactNode } from "react";
-import { FiChevronDown, FiChevronRight } from "react-icons/fi";
+import { useState, useRef, useEffect, type ReactNode } from "react";
+import { FiChevronRight } from "react-icons/fi";
 
 interface SidebarDropProps {
-  icon?: ReactNode;
-  id?:string;
-  label: string;
-  children: ReactNode;
+   icon?: ReactNode;
+   id?: string;
+   label: string;
+   children: ReactNode;
 }
 
-export const SidebarDrop = ({ icon, label, children,id }: SidebarDropProps) => {
-  const [open, setOpen] = useState(false);
+export const SidebarDrop = ({ icon, label, children, id }: SidebarDropProps) => {
+   const [open, setOpen] = useState(false);
+   const [maxHeight, setMaxHeight] = useState(0);
+   const contentRef = useRef<HTMLDivElement>(null);
 
-  return (
-    <div>
-      <button
-        id={id}
-        onClick={() => setOpen(!open)}
-        aria-expanded={open}
-        className="group w-full flex items-center justify-between px-4 py-2 text-sm font-medium text-gray-600 hover:bg-cyan-50 hover:text-cyan-600 transition-all duration-200 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-cyan-300"
-      >
-        <div className="flex items-center gap-3">
-          {icon && <span className="text-lg text-gray-400 group-hover:text-cyan-500">{icon}</span>}
-          <span>{label}</span>
-        </div>
-        <span
-          className={`transition-transform duration-300 ease-in-out ${open ? "rotate-90" : "rotate-0"}`}
-        >
-          <FiChevronRight size={16} />
-        </span>
-      </button>
+   // 🔥 RE-CALCULAR altura cada vez que children cambia
+   useEffect(() => {
+      if (contentRef.current) {
+         const height = contentRef.current.scrollHeight;
+         setMaxHeight(height);
+      }
+   }, [children, open]);
 
-      <div
-        className={`ml-6 border-l border-gray-200 overflow-hidden transition-all duration-300 ease-in-out
-        ${open ? "max-h-96 opacity-100 pl-2 py-1" : "max-h-0 opacity-0 pl-0 py-0"}`}
-      >
-        <div className="flex flex-col">{children}</div>
+   // 🔥 ADEMÁS: Observar cambios en el DOM con ResizeObserver
+   useEffect(() => {
+      if (!contentRef.current) return;
+
+      const resizeObserver = new ResizeObserver((entries) => {
+         for (const entry of entries) {
+            const height = entry.target.scrollHeight;
+            setMaxHeight(height);
+         }
+      });
+
+      resizeObserver.observe(contentRef.current);
+      return () => resizeObserver.disconnect();
+   }, []);
+
+   return (
+      <div className="mb-1">
+         <button
+            id={id}
+            onClick={() => setOpen(!open)}
+            aria-expanded={open}
+            className="group w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-white hover:bg-[#651D32] hover:text-white transition-all duration-200 rounded-md cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/50"
+         >
+            <div className="flex items-center gap-3">
+               {icon && <span className="text-lg text-white group-hover:text-white">{icon}</span>}
+               <span className="font-medium">{label}</span>
+            </div>
+            <span className={`transition-transform duration-300 ease-in-out ${open ? "rotate-90" : "rotate-0"}`}>
+               <FiChevronRight size={16} />
+            </span>
+         </button>
+
+         <div
+            className="overflow-hidden transition-all duration-300 ease-in-out"
+            style={{
+               maxHeight: open ? `${maxHeight}px` : "0px"
+            }}
+         >
+            <div ref={contentRef} className="ml-6 pl-3 border-l-2 border-[#651D32]/40 flex flex-col gap-1.5 py-2">
+               {children}
+            </div>
+         </div>
       </div>
-    </div>
-  );
+   );
 };

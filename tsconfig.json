@@ -1,15 +1,5 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ],
- "compilerOptions": {
-    "noUnusedLocals": false,
-    "noUnusedParameters": false, 
-    "noUnusedLocals": false,
-    "exactOptionalPropertyTypes": false,
-    "skipLibCheck": true,
-    "strict": false
-  }
+   "files": [],
+   "references": [{ "path": "./tsconfig.app.json" }, { "path": "./tsconfig.node.json" }],
+   
 }

@@ -1,20 +1,22 @@
 import React from "react";
-import { FaPlus } from "react-icons/fa";
 
 type ButtonProps = {
-  onClick?: () => void;
-  children?: React.ReactNode;
-  variant?: "primary" | "secondary" | "gradient" | "outline" | "icon";
-  color?: "cyan" | "purple" | "pink" | "green" | "red" | "blue" | "yellow";
-  size?: "sm" | "md" | "lg";
-  icon?: React.ReactNode;
-  iconPosition?: "left" | "right";
-  className?: string;
+   onClick?: () => void;
+   children?: React.ReactNode;
+   variant?: "primary" | "secondary" | "gradient" | "outline" | "icon";
+   color?: "cyan" | "purple" | "pink" | "green" | "red" | "blue" | "yellow";
+   size?: "sm" | "md" | "lg";
+   type?: "button" | "submit";
+
+   icon?: React.ReactNode;
+   iconPosition?: "left" | "right";
+   className?: string;
 };
 
 export const CustomButton: React.FC<ButtonProps> = ({
   onClick,
   children,
+  type ="submit",
   variant = "primary",
   color = "cyan",
   size = "md",
@@ -120,6 +122,7 @@ export const CustomButton: React.FC<ButtonProps> = ({
 
   return (
     <button
+    type={type}
       onClick={onClick}
       className={`mx-1 hover:cursor-pointer ${baseClasses} ${sizeClasses} ${variantClasses} ${className}`}
     >

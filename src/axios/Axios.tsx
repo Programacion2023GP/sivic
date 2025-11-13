@@ -52,50 +52,78 @@ export const GetAxios = async (url: string) => {
     console.error("Error en la solicitud:", error);
     if (error.response?.status === 401) {
       localStorage.clear();
-      window.location.href = "/";
+      // window.location.href = "/";
     }
   }
 };
 
 // 🧩 AxiosRequest mejorado: usa AxiosFiles si detecta archivos
-export const AxiosRequest = async (
-  url: string,
-  method: "POST" | "PUT" | "DELETE",
-  values?: Record<string, any> | FormData
-) => {
-  try {
-    // Detectar si es FormData
-    const isFormData =
-      values instanceof FormData ||
-      Object.values(values || {}).some((v) => v instanceof File || v instanceof Blob);
+export const AxiosRequest = async (url: string, method: "POST" | "PUT" | "DELETE", values?: Record<string, any>, forceFormData: boolean = false) => {
+   try {
+      let finalData: any = values;
+      const isAlreadyFormData = values instanceof FormData;
 
-    // Seleccionar la instancia correcta
-    const instance = isFormData ? AxiosFiles : axiosInstance;
+      // Solo convertir a FormData si se fuerza o si el valor ya es FormData
+      let useFormData = forceFormData || isAlreadyFormData;
 
-    let response;
+      if (useFormData && !isAlreadyFormData && values) {
+         const formData = new FormData();
 
-    switch (method) {
-      case "POST":
-        response = await instance.post(url, values);
-        break;
-      case "PUT":
-        response = await instance.put(url, values);
-        break;
-      case "DELETE":
-        response = await instance.delete(url, { data: values });
-        break;
-      default:
-        throw new Error("Método no soportado");
-    }
+         // Recursividad para manejar objetos y arrays
+         const appendToFormData = (data: any, prefix = "") => {
+            if (data instanceof File || data instanceof Blob) {
+               formData.append(prefix, data);
+            } else if (Array.isArray(data)) {
+               data.forEach((item, index) => {
+                  const key = prefix ? `${prefix}[${index}]` : `${index}`;
+                  appendToFormData(item, key);
+               });
+            } else if (typeof data === "object" && data !== null) {
+               Object.keys(data).forEach((key) => {
+                  const value = data[key];
+                  const newPrefix = prefix ? `${prefix}[${key}]` : key;
+                  appendToFormData(value, newPrefix);
+               });
+            } else if (data !== null && data !== undefined) {
+               formData.append(prefix, String(data));
+            }
+         };
 
-    return response.data;
-  } catch (error: any) {
-    if (error.response?.status === 401) {
-      localStorage.clear();
-      window.location.href = "/";
-    } else {
-      console.error("Error en AxiosRequest:", error);
-      return error.response?.data || { message: "Error desconocido" };
-    }
-  }
+         appendToFormData(values);
+         finalData = formData;
+      }
+
+      // Instancia según el tipo de contenido
+      const instance = useFormData ? AxiosFiles : axiosInstance;
+
+      // Configuración para JSON cuando no es FormData
+      const config = useFormData ? {} : { headers: { "Content-Type": "application/json" } };
+
+      let response;
+
+      switch (method) {
+         case "POST":
+            response = await instance.post(url, finalData, config);
+            break;
+         case "PUT":
+            response = await instance.put(url, finalData, config);
+            break;
+         case "DELETE":
+            response = await instance.delete(url, { data: finalData, ...config });
+            break;
+         default:
+            throw new Error("Método no soportado");
+      }
+
+      return response.data;
+   } catch (error: any) {
+      if (error.response?.status === 401) {
+         localStorage.clear();
+         // window.location.href = "/";
+      } else {
+         console.error("Error en AxiosRequest:", error);
+         return error.response?.data || { message: "Error desconocido" };
+      }
+   }
 };
+
