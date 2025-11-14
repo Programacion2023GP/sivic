@@ -30,6 +30,8 @@ import CustomDataDisplay from "../../components/movil/view/customviewmovil";
 import { penaltyDisplayConfig } from "./model";
 import { FloatingActionButton } from "../../components/movil/button/custombuttommovil";
 import { DateFormat, formatDatetime } from "../../../utils/formats";
+import { useWindowSize } from "../../../hooks/windossize";
+import LocationButton from "../../components/locationbutton/LocationButton";
 // -----------------------------
 // Tipos y Constantes
 // -----------------------------
@@ -167,6 +169,9 @@ const PagePenalities = () => {
    const { doctor, fetchDoctor, loading: doctorLoading } = useDoctorStore();
    const api = useMemo(() => new PenaltiesApi(), []);
    const apiDoc = useMemo(() => new DoctorApi(), []);
+
+   const { width: windowWidth } = useWindowSize();
+   const isMobile = windowWidth < 1024;
 
    const [activeStep, setActiveStep] = useState(0);
    const formikRef = useRef<FormikProps<FormikValues>>(null);
@@ -514,10 +519,11 @@ const PagePenalities = () => {
             );
          case 5:
             return (
-               <div className="flex justify-between ">
+               <div className={`flex justify-between ${isMobile ? "flex-col" : ""} `}>
                   <FormikImageInput name="image_penaltie" maxFiles={1} label="Multa" />
                   <FormikImageInput name="images_evidences" maxFiles={1} label="Evidencia del ciudadano" />
                   <FormikImageInput name="images_evidences_car" maxFiles={1} label="Evidencia del vehículo" />
+                  <LocationButton idNameLat="lat" idNameLng="lon" idNameUbi="ubication" />
                </div>
             );
          default:
