@@ -43,7 +43,7 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
 }) => {
    const [loading, setLoading] = useState(false);
    const [error, setError] = useState<string | null>(null);
-   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+   const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
 
    const formik: any = useFormikContext<any>();
    const isEditMode = Boolean(formik.values.id);
@@ -222,9 +222,9 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
    // Cargar ubicación inicial desde Formik (modo edición)
    useEffect(() => {
       const lat = parseFloat(formik.values[idNameLat]);
-      const lng = parseFloat(formik.values[idNameLng]);
-      if (!isNaN(lat) && !isNaN(lng)) {
-         setLocation({ lat, lng });
+      const lon = parseFloat(formik.values[idNameLng]);
+      if (!isNaN(lat) && !isNaN(lon)) {
+         setLocation({ lat, lon });
       }
    }, [formik.values[idNameLat], formik.values[idNameLng]]);
 
@@ -241,14 +241,14 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
          (position) => {
             const coords = {
                lat: position.coords.latitude,
-               lng: position.coords.longitude
+               lon: position.coords.longitude
             };
             setLocation(coords);
 
             // Guardar en Formik
             formik?.setFieldValue(idNameLat, coords.lat);
-            formik?.setFieldValue(idNameLng, coords.lng);
-            formik?.setFieldValue(idNameUbi, `https://www.google.com/maps?q=${coords.lat},${coords.lng}`);
+            formik?.setFieldValue(idNameLng, coords.lon);
+            formik?.setFieldValue(idNameUbi, `https://www.google.com/maps?q=${coords.lat},${coords.lon}`);
 
             setLoading(false);
          },
@@ -322,18 +322,18 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
                      <strong>Latitud:</strong> {location.lat.toFixed(6)}
                   </span>
                   <span className="flex-1">
-                     <strong>Longitud:</strong> {location.lng.toFixed(6)}
+                     <strong>Longitud:</strong> {location.lon.toFixed(6)}
                   </span>
                </div>
 
                {/* Mapa */}
                {/* <div className="w-full h-64 overflow-hidden border border-gray-300 rounded-lg">
-                  <MapContainer center={[location.lat, location.lng]} zoom={16} scrollWheelZoom={true} className="w-full h-full">
+                  <MapContainer center={[location.lat, location.lon]} zoom={16} scrollWheelZoom={true} className="w-full h-full">
                      <TileLayer
                         attribution='&copy; <a href="https://www.openstreetmap.org/">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                      />
-                     <Marker position={[location.lat, location.lng]} icon={markerIcon}>
+                     <Marker position={[location.lat, location.lon]} icon={markerIcon}>
                         <Popup>Ubicación actual</Popup>
                      </Marker>
                   </MapContainer>
@@ -356,7 +356,7 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
             `}
                >
                   <a
-                     href={`https://www.google.com/maps?q=${location.lat},${location.lng}`}
+                     href={`https://www.google.com/maps?q=${location.lat},${location.lon}`}
                      target="_blank"
                      rel="noopener noreferrer"
                      className="w-full text-center text-current no-underline"

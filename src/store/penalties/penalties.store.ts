@@ -102,7 +102,8 @@ export const usePenaltiesStore = create<PenaltiesStore>((set, get) => ({
             curp: null,
             image_penaltie: null,
             images_evidences: [],
-            images_evidences_car: []
+            lat: 0,
+            lon: 0
          }
       });
    },
@@ -148,7 +149,8 @@ export const usePenaltiesStore = create<PenaltiesStore>((set, get) => ({
       curp: null,
       image_penaltie: null,
       images_evidences: [],
-      images_evidences_car: []
+      lat: 0,
+      lon: 0
    },
 
    loading: false,

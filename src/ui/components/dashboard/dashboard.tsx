@@ -1104,14 +1104,14 @@ const AdvancedAnalyticsDashboard = ({ data = SAMPLE_DATA, fieldLabels = SAMPLE_L
    }
 
    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex">
+      <div className="min-h-screen bg-gradient-to-br  flex">
          {/* Panel Lateral - RESPONSIVE */}
          <div
-            className={`fixed lg:relative left-0 top-0 h-full bg-white shadow-2xl transition-all duration-300 z-40 ${
+            className={` fixed lg:relative left-0 top-0 h-full bg-white shadow-2xl  transition-all duration-300 z-40 ${
                showConfig ? "w-80 lg:w-96" : "w-0"
             } overflow-hidden`}
          >
-            <div className="h-full flex flex-col">
+            <div className="h-full flex flex-col ">
                <div className="bg-[#9B2242] border border-[#651D32] text-white p-4 lg:p-6 flex justify-between items-center">
                   <div>
                      <h2 className="text-lg lg:text-xl font-bold">{editingChart ? "Editar Gráfica" : "Nueva Gráfica"}</h2>

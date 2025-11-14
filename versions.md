@@ -4,6 +4,32 @@
 
 ---
 
+## 🔧 **v2.1.0.2** · *🧪 Beta*
+📅 **Fecha:** 14 de noviembre de 2025, 11:30 a.m.  
+👤 **Autor:** nes  
+🧭 **Tipo:** Build
+
+**🐞 Correcciones**
+- Se agrego la vista de jusgadoz
+
+
+
+---
+
+## ✨ **v2.1.0.1** · *🧪 Beta*
+📅 **Fecha:** 14 de noviembre de 2025, 11:22 a.m.  
+👤 **Autor:** luisao-nes  
+🧭 **Tipo:** Minor
+
+**✨ Mejoras**
+- si varias
+   - Mapa de reprotes
+   - se agrego el boton de ubicacion
+
+
+
+---
+
 ## 🔧 **v2.0.0.13** · *🧪 Beta*
 📅 **Fecha:** 13 de noviembre de 2025, 3:44 p.m.  
 👤 **Autor:** Nes  
