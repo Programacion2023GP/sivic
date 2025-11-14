@@ -13,13 +13,14 @@ import PageLogs from "./ui/pages/pagelogs/PageLogs";
 import { SidebarDrop } from "./ui/components/sidebar/CustomSidebarDrop";
 import { FaBuildingColumns } from "react-icons/fa6";
 import { Routes, Navigate, Outlet, Route, useLocation } from "react-router-dom";
-import PageReports from "./ui/pages/reports/reports";
+import PageReports from "./ui/pages/reports/dashboard/reports";
 import { usePermissionsStore } from "./store/menu/menu.store";
 import PageDoctor from "./ui/pages/catalogues/doctor/pagedoctor";
 import { FaUserDoctor } from "react-icons/fa6";
 import { FaStopCircle } from "react-icons/fa"; // Ícono de 'detención'
 import PageCauseOfDetention from "./ui/pages/catalogues/causeofdetention/pagecauseofdetention";
 import PageCourts from "./ui/pages/courts/pagecourts";
+import PageReportMap from "./ui/pages/reports/map/map";
 
 // Componente Layout para las rutas autenticadas
 const MainLayout = () => {
@@ -102,7 +103,10 @@ const MainLayout = () => {
          {
             prefix: "reports_",
             label: "Reportes",
-            children: [{ route: "/reportes/dashboard", prefix: "reports_", icon: <FaChartLine />, label: "Reporte Dinámico" }]
+            children: [
+               { route: "/reportes/dashboard", prefix: "reports_", icon: <FaChartLine />, label: "Reporte Dinámico" },
+               { route: "/reportes/mapa", prefix: "reports_", icon: <FaChartLine />, label: "Mapa" }
+            ]
          }
       ],
       []
@@ -118,7 +122,6 @@ const MainLayout = () => {
             )}
          </PermissionPrefixRoute>
       ));
-
 
    return (
       <div className="flex h-screen w-full overflow-hidden bg-[#f8f9fa]">
@@ -251,6 +254,7 @@ function App() {
             </Route>
             <Route path="reportes">
                <Route path="dashboard" element={<PageReports />} />
+               <Route path="mapa" element={<PageReportMap />} />
             </Route>
             <Route path="*" element={<PageUsersPanel />} />
          </Route>

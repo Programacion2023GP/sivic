@@ -12,6 +12,8 @@ export interface Penalties {
    group: number;
    detainee_released_to: string;
    doctor_id: number;
+   lat: number;
+   lng:number,
    // Step 2
    municipal_police: string;
    civil_protection: string;
