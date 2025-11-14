@@ -86,14 +86,12 @@ export function formatDatetime(
   long_format: boolean = true,
   format: DateFormat
 ): string {
-  console.log(typeof(the_date))
   if (!the_date) return "Sin Fecha";
 
   let date: Date;
 
   if (typeof the_date === "string" || typeof the_date === "number") {
     date = new Date(the_date);
-    console.log("🚀 ~ formatDatetime ~ date:", date)
   } else {
     date = the_date;
   }

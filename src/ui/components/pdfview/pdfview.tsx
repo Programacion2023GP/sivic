@@ -1,69 +1,61 @@
-// PdfPreview.tsx - VERSIÓN OPTIMIZADA
-import React, { useState, useEffect, ReactElement } from "react";
-import { PDFViewer, PDFDownloadLink } from "@react-pdf/renderer";
+import React, { useState, useEffect, ReactElement, useCallback, useRef } from "react";
+import { PDFViewer, PDFDownloadLink, BlobProvider } from "@react-pdf/renderer";
 import Spinner from "../loading/loading";
 
 interface PdfPreviewProps {
    name: string;
    children: ReactElement;
 }
-
 export default function PdfPreview({ name, children }: PdfPreviewProps) {
-   const [isLoading, setIsLoading] = useState(true);
-   const [showViewer, setShowViewer] = useState(false);
+   const [mounted, setMounted] = useState(false);
 
-   // Carga diferida del PDFViewer
    useEffect(() => {
-      const timer = setTimeout(() => {
-         setShowViewer(true);
-         setIsLoading(false);
-      }, 500); // Retraso de 500ms
-
-      return () => clearTimeout(timer);
+      setMounted(true);
    }, []);
+
+   if (!mounted) {
+      return <Spinner  />;
+   }
 
    return (
       <div style={{ width: "100%", height: "100vh" }}>
-         {/* Botón de descarga */}
-         <div style={{ marginBottom: "1rem" }}>
-            <PDFDownloadLink document={children} fileName={`${name || "sin-id"}.pdf`}>
-               {({ loading }) => (loading ? <Spinner /> : "📄 Descargar Acta de Infracción")}
-            </PDFDownloadLink>
-         </div>
+         <BlobProvider document={children}>
+            {({ blob, url, loading, error }) => {
+               if (loading) {
+                  return (
+                     <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%" }}>
+                        <Spinner />
+                     </div>
+                  );
+               }
 
-         {/* Loading mientras se prepara el PDF */}
-         {isLoading && (
-            <div
-               style={{
-                  width: "100%",
-                  height: "90%",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center"
-               }}
-            >
-               <Spinner />
-            </div>
-         )}
-         {!showViewer && (
-            <div
-               style={{
-                  width: "100%",
-                  height: "90%",
-                  display: "flex",
-                  justifyContent: "center",
-                  alignItems: "center"
-               }}
-            >
-               <Spinner />
-            </div>
-         )}
-         {/* PDFViewer solo cuando está listo */}
-         {showViewer && (
-            <PDFViewer width="100%" height="90%">
-               {children}
-            </PDFViewer>
-         )}
+               if (error) {
+                  return <div>Error al generar el PDF</div>;
+               }
+
+               return (
+                  <>
+                     <div style={{ marginBottom: "1rem", padding: "0.5rem" }}>
+                        <a
+                           href={url || ""}
+                           download={`${name || "sin-id"}.pdf`}
+                           style={{
+                              textDecoration: "none",
+                              padding: "0.5rem 1rem",
+                              backgroundColor: "#9B2242",
+                              color: "white",
+                              borderRadius: "4px",
+                              display: "inline-block"
+                           }}
+                        >
+                           📄 Descargar Acta de Infracción
+                        </a>
+                     </div>
+                     <iframe src={url || ""} style={{ width: "100%", height: "90%", border: "none" }} title="Vista previa del PDF" />
+                  </>
+               );
+            }}
+         </BlobProvider>
       </div>
    );
 }

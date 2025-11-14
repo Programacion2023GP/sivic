@@ -475,65 +475,73 @@ const CustomTable = <T extends object>({
    };
 
    // Bottom Sheet mejorado
-  const renderBottomSheet = () => {
+const renderBottomSheet = () => {
    if (!showBottomSheet || !selectedRowForSheet || !mobileConfig?.bottomSheet) return null;
 
    return (
       <AnimatePresence>
          <motion.div className="fixed inset-0 z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            {/* Backdrop más suave como Flutter */}
+            {/* Backdrop */}
             <motion.div
-               className="absolute inset-0 bg-black bg-opacity-40" // ← Menos opacidad
+               className="absolute inset-0 bg-black bg-opacity-40"
                onClick={closeBottomSheet}
                initial={{ opacity: 0 }}
                animate={{ opacity: 1 }}
                exit={{ opacity: 0 }}
             />
 
-            {/* Sheet con diseño más Flutter */}
+            {/* BottomSheet 100vh */}
             <motion.div
-               className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[90vh] overflow-hidden border border-gray-100" // ← Más redondeado + shadow + border
+               className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl overflow-hidden border border-gray-100"
                initial={{ y: "100%" }}
                animate={{ y: 0 }}
                exit={{ y: "100%" }}
                transition={{
                   type: "spring",
-                  damping: 30, // ← Más amortiguación
-                  stiffness: 300, // ← Más rigidez
-                  mass: 0.8 // ← Menos masa para más fluidez
+                  damping: 30,
+                  stiffness: 300,
+                  mass: 0.8
                }}
-               style={{ height: mobileConfig.bottomSheet.height ? `${mobileConfig.bottomSheet.height}vh` : "auto" }}
+               style={{
+                  height: "100vh",
+                  maxHeight: "100vh" // ← full fullscreen
+               }}
             >
-               {/* Handle más elegante */}
+               {/* Handle */}
                <div className="flex justify-center pt-3 pb-2">
                   <div className="w-16 h-1.5 bg-gray-300 rounded-full"></div>
                </div>
 
-               {/* Close Button más Flutter-like */}
+               {/* Close button Flutter-like */}
                {(mobileConfig.bottomSheet.showCloseButton ?? true) && (
                   <motion.button
-                     className="absolute top-3 right-3 z-10 w-7 h-7 hover:cursor-pointer text-red-400 hover:text-red-600 rounded-full flex items-center justify-center transition-colors shadow-md border " // ← Borde + shadow suave
+                     className="absolute top-2 right-3 z-10 w-8 h-8 hover:cursor-pointer text-red-400 hover:text-red-600 rounded-full flex items-center justify-center transition-colors shadow-md border bg-white"
                      onClick={closeBottomSheet}
-                     whileHover={{
-                        scale: 1.05,
-                        backgroundColor: "rgb(249, 250, 251)" // ← hover gris claro
-                     }}
+                     whileHover={{ scale: 1.05 }}
                      whileTap={{ scale: 0.95 }}
                      initial={{ opacity: 0, scale: 0.8 }}
                      animate={{ opacity: 1, scale: 1 }}
                      transition={{ delay: 0.1 }}
                   >
-                     <FiX className="text-red-400 hover:text-red-600 text-xl" />
+                     <FiX className="text-red-500 text-lg" />
                   </motion.button>
                )}
-                  <div className="mb-5"></div>
-               {/* Content con mejor espaciado */}
-               <div className="max-h-[82vh] overflow-y-auto pb-6 px-1">{mobileConfig.bottomSheet.builder(selectedRowForSheet, closeBottomSheet)}</div>
+
+               {/* Contenido scrollable */}
+               <div
+                  className="overflow-y-auto smooth-scroll px-3 pb-6"
+                  style={{
+                     height: "calc(100vh - 70px)" // header + handle + padding
+                  }}
+               >
+                  {mobileConfig.bottomSheet.builder(selectedRowForSheet, closeBottomSheet)}
+               </div>
             </motion.div>
          </motion.div>
       </AnimatePresence>
    );
 };
+
 
    // Resto del código igual...
    const renderLoading = () => (

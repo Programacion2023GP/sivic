@@ -1,9 +1,10 @@
 // MultaPDF.tsx
 import { Document, Page, Text, View, Image } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
-import Logo from "../../../../assets/logo.png";
-import LogoCom from "../../../../assets/logo-gpd.png";
-import Greca from "../../../../assets/greca.png";
+import { useMemo, memo } from "react";
+import Logo from "../../../../assets/logo-c.png";
+import LogoCom from "../../../../assets/TRANSITO.png";
+import Greca from "../../../../assets/greca-c.png";
 
 const tw = createTw({
    fontFamily: {
@@ -19,209 +20,253 @@ const tw = createTw({
    }
 });
 
+// Componentes memoizados optimizados
+const Section = memo(({ title, children }: { title: string; children: React.ReactNode }) => (
+   <View wrap={false} style={tw("mb-3")}>
+      <Text style={tw("text-xs font-bold text-guinda-secondary uppercase tracking-wide mb-1")}>{title}</Text>
+      {children}
+   </View>
+));
+
+const InfoField = memo(({ label, value, compact }: { label: string; value: any; compact?: boolean }) => (
+   <View style={tw(`mb-${compact ? "1" : "2"}`)}>
+      <Text style={tw("text-[8px] font-semibold text-gris uppercase tracking-wide")}>{label}</Text>
+      <Text style={tw("text-[10px] text-negro border-b border-gris-claro pb-0.5 leading-tight")}>{value || "No proporcionado"}</Text>
+   </View>
+));
+
+const Separator = memo(() => <View style={tw("border-b border-gris-claro my-2")} />);
+
+const TwoCols = memo(({ children }: { children: React.ReactNode }) => (
+   <View style={tw("flex flex-row justify-between gap-4")}>
+      {Array.isArray(children)
+         ? children.map((child, i) => (
+              <View key={i} style={tw("flex-1")}>
+                 {child}
+              </View>
+           ))
+         : children}
+   </View>
+));
+
+const ThreeCols = memo(({ children }: { children: React.ReactNode }) => (
+   <View style={tw("flex flex-row justify-between gap-3")}>
+      {Array.isArray(children)
+         ? children.map((child, i) => (
+              <View key={i} style={tw("flex-1")}>
+                 {child}
+              </View>
+           ))
+         : children}
+   </View>
+));
+
+const TwoColumnSection = memo(
+   ({ leftTitle, rightTitle, leftContent, rightContent }: { leftTitle: string; rightTitle: string; leftContent: React.ReactNode; rightContent: React.ReactNode }) => (
+      <View style={tw("flex flex-row justify-between gap-4 mb-3")}>
+         <View style={tw("flex-1")}>
+            <Text style={tw("text-xs font-bold text-guinda-secondary uppercase tracking-wide mb-1")}>{leftTitle}</Text>
+            {leftContent}
+         </View>
+
+         <View style={tw("flex-1")}>
+            <Text style={tw("text-xs font-bold text-guinda-secondary uppercase tracking-wide mb-1")}>{rightTitle}</Text>
+            {rightContent}
+         </View>
+      </View>
+   )
+);
+
+// Componente principal optimizado para una sola página
 export default function MultaPDF({ data }: { data: any }) {
+   // Estilos memoizados
+   const backgroundStyle = useMemo(
+      () => ({
+         position: "absolute" as const,
+         top: 0,
+         left: 0,
+         right: 0,
+         bottom: 0,
+         zIndex: -1,
+         opacity: 0.05,
+         display: "flex" as const,
+         justifyContent: "center" as const,
+         alignItems: "center" as const
+      }),
+      []
+   );
+
+   const footerStyle = useMemo(
+      () => ({
+         position: "absolute" as const,
+         bottom: 0,
+         left: 0,
+         right: 0,
+         borderTop: "1px solid #9B2242",
+         paddingTop: 4
+      }),
+      []
+   );
+
+   const logoStyle = useMemo(
+      () => ({
+         width: "50%",
+         height: "50%",
+         objectFit: "contain" as const
+      }),
+      []
+   );
+
+   const grecaStyle = useMemo(
+      () => ({
+         width: "100%",
+         height: 30,
+         objectFit: "cover" as const
+      }),
+      []
+   );
+
+   // Contenido memoizado optimizado
+   const headerContent = useMemo(
+      () => (
+         <View style={tw("flex flex-col items-start mb-3 pb-2 border-b border-gris-claro")}>
+            <View style={tw("w-full h-24  mb-8")}>
+               <Image source={LogoCom} style={[tw("w-full  h-full"), { objectFit: "contain" }]} />
+            </View>
+
+            <View style={tw("flex flex-col w-full ")}>
+               <Text style={tw("text-sm font-bold text-gris-cool")}>Acta de Detención</Text>
+               <Text style={tw("text-[10px] text-guinda-primary")}>Folio: {data.id}</Text>
+               <Text style={tw("text-[8px] text-gris")}>
+                  {data.date} — {data.time}
+               </Text>
+            </View>
+         </View>
+      ),
+      [data.id, data.date, data.time]
+   );
+
+   const twoColumnContent = useMemo(
+      () => (
+         <TwoColumnSection
+            leftTitle="Datos del detenido"
+            rightTitle="Resultados de la prueba"
+            leftContent={
+               <>
+                  <InfoField label="Nombre Completo" value={data.name} compact />
+                  <InfoField label="Edad" value={data.age} compact />
+                  <InfoField label="CURP" value={data.curp} compact />
+                  <InfoField label="Teléfono" value={data.detainee_phone_number} compact />
+                  <InfoField label="Persona que acudió" value={data.detainee_released_to} compact />
+               </>
+            }
+            rightContent={
+               <>
+                  <View style={tw("text-center mb-2")}>
+                     <Text style={tw("text-lg font-bold text-guinda-primary")}>{data.alcohol_concentration || "0"} mg/L</Text>
+                     <Text style={tw("text-[8px] text-gris uppercase tracking-wide")}>Concentración de Alcohol</Text>
+                  </View>
+                  <InfoField label="Cantidad consumida" value={data.amountAlcohol} compact />
+                  <InfoField label="Observaciones" value={data.observations} compact />
+               </>
+            }
+         />
+      ),
+      [data.name, data.age, data.curp, data.detainee_phone_number, data.detainee_released_to, data.alcohol_concentration, data.amountAlcohol, data.observations]
+   );
+
+   const vehicleInfo = useMemo(
+      () => (
+         <Section title="Información del vehículo">
+            <ThreeCols>
+               <InfoField label="Número de Placa" value={data.plate_number} compact />
+               <InfoField label="Tipo de Servicio" value={data.vehicle_service_type} compact />
+               <InfoField label="N° de Pasajeros" value={data.number_of_passengers} compact />
+            </ThreeCols>
+         </Section>
+      ),
+      [data.plate_number, data.vehicle_service_type, data.number_of_passengers]
+   );
+
+   const personalInfo = useMemo(
+      () => (
+         <Section title="Personal interviniente">
+            <TwoCols>
+               <InfoField label="Oficial" value={data.person_oficial} compact />
+               <InfoField label="Doctor" value={data.doctor} compact />
+            </TwoCols>
+            <TwoCols>
+               <InfoField label="Nómina Oficial" value={data.oficial_payroll} compact />
+               <InfoField label="Cédula" value={data.cedula} compact />
+            </TwoCols>
+            <TwoCols>
+               <InfoField label="Contraloría" value={data.person_contraloria} compact />
+               <InfoField label="Supervisor de Filtro" value={data.filter_supervisor} compact />
+            </TwoCols>
+         </Section>
+      ),
+      [data.person_oficial, data.doctor, data.oficial_payroll, data.cedula, data.person_contraloria, data.filter_supervisor]
+   );
+
+   const operationalData = useMemo(
+      () => (
+         <Section title="Datos operativos">
+            <ThreeCols>
+               <InfoField label="Grupo" value={data.group} compact />
+               <InfoField label="Ciudad" value={data.city} compact />
+               <InfoField label="Código Postal" value={data.cp} compact />
+            </ThreeCols>
+         </Section>
+      ),
+      [data.group, data.city, data.cp]
+   );
+
+   const resourcesData = useMemo(
+      () => (
+         <Section title="Recursos desplegados">
+            <TwoCols>
+               <InfoField label="Policía Municipal" value={data.municipal_police} compact />
+               <InfoField label="Protección Civil" value={data.civil_protection} compact />
+            </TwoCols>
+            <TwoCols>
+               <InfoField label="Vehículo Comando" value={data.command_vehicle} compact />
+               <InfoField label="Tropa Comando" value={data.command_troops} compact />
+            </TwoCols>
+         </Section>
+      ),
+      [data.municipal_police, data.civil_protection, data.command_vehicle, data.command_troops]
+   );
+
    return (
       <Document>
-         {/* Página 1 */}
-         <Page size="A4" style={tw("px-10 py-8 font-sans bg-white relative")}>
-            {/* === BACKGROUND LOGO EN TODA LA PÁGINA === */}
-            <View
-               style={{
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  zIndex: -1,
-                  opacity: 0.1,
-                  display: "flex",
-                  justifyContent: "center", // centra verticalmente
-                  alignItems: "center" // centra horizontalmente
-               }}
-            >
-               <Image
-                  src={Logo}
-                  style={{
-                     width: "60%",
-                     height: "60%",
-                     objectFit: "contain"
-                  }}
-               />
+         <Page size="A4" style={tw("px-6 py-4 font-sans bg-white relative")}>
+            {/* Background Logo más tenue */}
+            <View style={backgroundStyle}>
+               <Image src={Logo} style={logoStyle} />
             </View>
 
-            {/* === HEADER CON LOGO Y ENCABEZADO === */}
-            <View style={tw("flex flex-row items-start mb-6 pb-4 border-b border-gris-claro")}>
-               <Image src={LogoCom} style={tw("w-28 h-20 mr-4")} /> {/* Imagen más grande */}
-               <View style={tw("flex-1")}>
-                  <Text style={tw("text-lg font-bold text-guinda-primary leading-tight")}>Secretaría de{"\n"}Seguridad Ciudadana</Text>
-                  <Text style={tw("text-sm text-guinda-secondary mt-1")}>Dirección de Tránsito y Movilidad</Text>
-               </View>
-               <View style={tw("text-right")}>
-                  <Text style={tw("text-base font-bold text-gris-cool")}>Acta de Detención</Text>
-                  <Text style={tw("text-sm text-guinda-primary")}>Folio: {data.id}</Text>
-                  <Text style={tw("text-xs text-gris")}>
-                     {data.date} — {data.time}
-                  </Text>
-               </View>
-            </View>
+            {/* Header más compacto */}
+            {headerContent}
 
-            {/* === CONTENIDO PRINCIPAL === */}
-            <TwoColumnSection
-               leftTitle="Datos del detenido"
-               rightTitle="Resultados de la prueba"
-               leftContent={
-                  <>
-                     <InfoField label="Nombre Completo" value={data.name} />
-                     <InfoField label="Edad" value={data.age} />
-                     <InfoField label="CURP" value={data.curp} />
-                     <InfoField label="Teléfono" value={data.detainee_phone_number} />
-                     <InfoField label="Persona que acudió" value={data.detainee_released_to} />
-                  </>
-               }
-               rightContent={
-                  <>
-                     <View style={tw("text-center mb-3")}>
-                        <Text style={tw("text-2xl font-bold text-guinda-primary")}>{data.alcohol_concentration || "0"} mg/L</Text>
-                        <Text style={tw("text-xs text-gris uppercase tracking-wide")}>Concentración de Alcohol</Text>
-                     </View>
-                     <InfoField label="Cantidad consumida" value={data.amountAlcohol} />
-                     <InfoField label="Observaciones" value={data.observations} />
-                  </>
-               }
-            />
+            {/* Contenido Principal */}
+            {twoColumnContent}
 
             <Separator />
 
-            <Section title="Información del vehículo">
-               <ThreeCols>
-                  <InfoField label="Número de Placa" value={data.plate_number} />
-                  <InfoField label="Tipo de Servicio" value={data.vehicle_service_type} />
-                  <InfoField label="N° de Pasajeros" value={data.number_of_passengers} />
-               </ThreeCols>
-            </Section>
+            {/* Secciones compactas */}
+            {vehicleInfo}
+            {personalInfo}
+            {operationalData}
+            {resourcesData}
 
-            <Section title="Personal interviniente">
-               <TwoCols>
-                  <InfoField label="Oficial" value={data.person_oficial} />
-                  <InfoField label="Doctor" value={data.doctor} />
-               </TwoCols>
-               <TwoCols>
-                  <InfoField label="Nómina Oficial" value={data.oficial_payroll} />
-                  <InfoField label="Cédula" value={data.cedula} />
-               </TwoCols>
-               <TwoCols>
-                  <InfoField label="Contraloría" value={data.person_contraloria} />
-                  <InfoField label="Supervisor de Filtro" value={data.filter_supervisor} />
-               </TwoCols>
-            </Section>
-
-            <Section title="Datos operativos">
-               <ThreeCols>
-                  <InfoField label="Grupo" value={data.group} />
-                  <InfoField label="Ciudad" value={data.city} />
-                  <InfoField label="Código Postal" value={data.cp} />
-               </ThreeCols>
-            </Section>
-
-            <Section title="Recursos desplegados">
-               <TwoCols>
-                  <InfoField label="Policía Municipal" value={data.municipal_police} />
-                  <InfoField label="Protección Civil" value={data.civil_protection} />
-               </TwoCols>
-               <TwoCols>
-                  <InfoField label="Vehículo Comando" value={data.command_vehicle} />
-                  <InfoField label="Tropa Comando" value={data.command_troops} />
-               </TwoCols>
-            </Section>
-
-            {/* === FOOTER FIJO EN CADA PÁGINA === */}
-            <View
-               style={{
-                  position: "absolute",
-                  bottom: 0,
-                  left: 0, // Cambiado de 40 a 0
-                  right: 0, // Cambiado de 40 a 0
-                  borderTop: "2px solid #9B2242",
-                  paddingTop: 8
-               }}
-            >
-               <Image
-                  src={Greca}
-                  style={{
-                     width: "100%",
-                     height: 40,
-                     objectFit: "cover" // o "contain" según prefieras
-                  }}
-               />
+            {/* Footer más pequeño */}
+            <View style={footerStyle}>
+               <Image src={Greca} style={grecaStyle} />
             </View>
          </Page>
-
-         {/* Página 2 (ejemplo) - SE REPITE LA MISMA ESTRUCTURA */}
       </Document>
    );
 }
 
-/* === COMPONENTES AUXILIARES (sin cambios) === */
-const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-   <View wrap={false} style={tw("mb-6")}>
-      <Text style={tw("text-base font-bold text-guinda-secondary uppercase tracking-wide mb-2")}>{title}</Text>
-      {children}
-   </View>
-);
-
-const InfoField = ({ label, value }: { label: string; value: any }) => (
-   <View style={tw("mb-2")}>
-      <Text style={tw("text-[10px] font-semibold text-gris uppercase tracking-wide")}>{label}</Text>
-      <Text style={tw("text-sm text-negro border-b border-gris-claro pb-0.5 leading-tight")}>{value || "No proporcionado"}</Text>
-   </View>
-);
-
-const Separator = () => <View style={tw("border-b border-gris-claro my-6")} />;
-
-const TwoCols = ({ children }: { children: React.ReactNode }) => (
-   <View style={tw("flex flex-row justify-between gap-8")}>
-      {Array.isArray(children)
-         ? children.map((child, i) => (
-              <View key={i} style={tw("flex-1")}>
-                 {child}
-              </View>
-           ))
-         : children}
-   </View>
-);
-
-const ThreeCols = ({ children }: { children: React.ReactNode }) => (
-   <View style={tw("flex flex-row justify-between gap-6")}>
-      {Array.isArray(children)
-         ? children.map((child, i) => (
-              <View key={i} style={tw("flex-1")}>
-                 {child}
-              </View>
-           ))
-         : children}
-   </View>
-);
-
-const TwoColumnSection = ({
-   leftTitle,
-   rightTitle,
-   leftContent,
-   rightContent
-}: {
-   leftTitle: string;
-   rightTitle: string;
-   leftContent: React.ReactNode;
-   rightContent: React.ReactNode;
-}) => (
-   <View style={tw("flex flex-row justify-between gap-8 mb-6")}>
-      <View style={tw("flex-1")}>
-         <Text style={tw("text-base font-bold text-guinda-secondary uppercase tracking-wide mb-2")}>{leftTitle}</Text>
-         {leftContent}
-      </View>
-
-      <View style={tw("flex-1")}>
-         <Text style={tw("text-base font-bold text-guinda-secondary uppercase tracking-wide mb-2")}>{rightTitle}</Text>
-         {rightContent}
-      </View>
-   </View>
-);
+// Exportar componentes para reutilización
+export { Section, InfoField, Separator, TwoCols, ThreeCols, TwoColumnSection };

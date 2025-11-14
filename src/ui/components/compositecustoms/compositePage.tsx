@@ -1,6 +1,6 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { AiOutlineClose, AiOutlineExpandAlt } from "react-icons/ai";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValue, useTransform } from "framer-motion";
 import { useWindowSize } from "../../../hooks/windossize";
 
 type Direction = "izq" | "der" | "modal";
@@ -18,9 +18,33 @@ interface PropsCompositePage {
 const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirection = "izq", formDirection = "der", isOpen, onClose, modalTitle }) => {
    const [isExpanded, setIsExpanded] = useState(false);
    const [isClosing, setIsClosing] = useState(false);
-   const { width: windowWidth } = useWindowSize(); // ✅ Movido aquí
+   const { width: windowWidth, height: windowHeight } = useWindowSize();
 
+   // Estados para el modal móvil
+   const [sheetHeight, setSheetHeight] = useState("100vh");
+   const [isDragging, setIsDragging] = useState(false);
+   const [currentDragY, setCurrentDragY] = useState(0);
+
+   // Motion values para el arrastre suave
+   const dragY = useMotionValue(0);
+   const heightTransform = useTransform(dragY, [0, -300], [85, 95]);
+
+   // Determinar tipo de dispositivo
+   const isSmallMobile = windowWidth < 400;
+   const isMediumMobile = windowWidth >= 400 && windowWidth < 768;
+   const isTablet = windowWidth >= 768 && windowWidth < 1024;
+   const isDesktop = windowWidth >= 1024;
    const isMobile = windowWidth < 1024;
+
+   useEffect(() => {
+      if (isSmallMobile) {
+         setSheetHeight("100vh");
+      } else if (isMediumMobile) {
+         setSheetHeight("100vh");
+      } else if (isTablet) {
+         setSheetHeight("100vh");
+      }
+   }, [isSmallMobile, isMediumMobile, isTablet]);
 
    const handleClose = () => {
       setIsClosing(true);
@@ -28,32 +52,44 @@ const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirecti
          onClose && onClose();
          setIsClosing(false);
          setIsExpanded(false);
+         setSheetHeight("100vh"); // Resetear altura al cerrar
       }, 300);
    };
 
    const toggleExpand = () => setIsExpanded(!isExpanded);
 
+   // Función para calcular altura durante el arrastre
+   const calculateDragHeight = (dragOffset: number) => {
+      const baseHeight = isSmallMobile ? 90 : isMediumMobile ? 85 : 80;
+      const maxDrag = -200; // Máximo arrastre hacia arriba
+      const dragPercentage = Math.min(Math.max(dragOffset / maxDrag, 0), 1);
+      const additionalHeight = 15 * dragPercentage; // Hasta 15% adicional
+
+      return baseHeight + additionalHeight;
+   };
+
    // Renderizar contenido del modal
    const renderModalContent = (content?: () => ReactNode) => {
       if (!isOpen || !content) return null;
 
-      // Versión Mobile - Bottom Sheet
+      // Versión Mobile - Bottom Sheet mejorado
+      // Versión Mobile / Tablet - 100vh fijo
       if (isMobile) {
          return (
             <AnimatePresence>
                <motion.div className="fixed inset-0 z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                   {/* Backdrop */}
                   <motion.div
-                     className="absolute inset-0 bg-black bg-opacity-40" // ✅ Agregado bg-opacity
+                     className="absolute inset-0 bg-black bg-opacity-40"
                      onClick={handleClose}
                      initial={{ opacity: 0 }}
                      animate={{ opacity: 1 }}
                      exit={{ opacity: 0 }}
                   />
 
-                  {/* Sheet */}
+                  {/* Modal FULLSCREEN */}
                   <motion.div
-                     className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl max-h-[90vh] overflow-hidden border border-gray-100" // ✅ Corregido rounded-t
+                     className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl overflow-hidden border border-gray-100 touch-pan-y"
                      initial={{ y: "100%" }}
                      animate={{ y: 0 }}
                      exit={{ y: "100%" }}
@@ -63,45 +99,56 @@ const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirecti
                         stiffness: 300,
                         mass: 0.8
                      }}
+                     style={{
+                        height: "100vh",
+                        maxHeight: "100vh"
+                     }}
+                     drag="y"
+                     dragConstraints={{ top: 0, bottom: 0 }}
+                     dragElastic={0.15}
+                     onDragEnd={(event, info) => {
+                        if (info.offset.y > 120 || info.velocity.y > 800) {
+                           handleClose();
+                        }
+                     }}
                   >
                      {/* Handle */}
-                     <div className="flex justify-center pt-3 pb-2">
-                        <div className="w-16 h-1.5 bg-gray-300 rounded-full"></div>
+                     <div className="flex justify-center pt-3 pb-3">
+                        <div className="w-20 h-2 bg-gray-300 rounded-full" />
                      </div>
 
-                     {/* Close Button */}
-                     <motion.button
-                        className="absolute top-3 right-3 z-10 w-7 h-7 hover:cursor-pointer text-red-400 hover:text-red-600 rounded-full flex items-center justify-center transition-colors shadow-md border"
+                     {/* Close button */}
+                     <button
                         onClick={handleClose}
-                        whileHover={{
-                           scale: 1.05,
-                           backgroundColor: "rgb(249, 250, 251)"
-                        }}
-                        whileTap={{ scale: 0.95 }}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.1 }}
+                        className="absolute top-4 right-4 w-10 h-10 bg-white text-gray-600 hover:text-gray-800 rounded-full flex items-center justify-center shadow-lg border border-gray-200"
                      >
-                        <AiOutlineClose className="text-red-400 hover:text-red-600 text-xl" />
-                     </motion.button>
+                        <AiOutlineClose className="text-xl" />
+                     </button>
 
-                     <div className="mb-5"></div>
-
-                     {/* Content */}
-                     <div className="max-h-[82vh] overflow-y-auto pb-6 px-4">
-                        {/* Header móvil */}
-                        <div className="flex justify-between items-center border-b pb-3 mb-4">
-                           <h2 className="text-lg font-bold text-gray-800">{modalTitle || "Modal"}</h2>
-                        </div>
-                        {content()}
+                     {/* Header */}
+                     <div className="px-4 pb-3 border-b border-gray-200">
+                        <h2 className="text-xl font-bold text-gray-800 text-center pt-2">{modalTitle || "Modal"}</h2>
                      </div>
+
+                     {/* Contenido scrollable */}
+                     <div
+                        className="overflow-y-auto smooth-scroll"
+                        style={{
+                           height: "calc(100vh - 140px)"
+                        }}
+                     >
+                        <div className="p-4 pb-10">{content()}</div>
+                     </div>
+
+                     {/* Safe area */}
+                     <div className="h-6 bg-transparent" />
                   </motion.div>
                </motion.div>
             </AnimatePresence>
          );
       }
 
-      // Versión Desktop - Modal tradicional
+      // Versión Desktop - Modal tradicional (sin cambios)
       return (
          <div
             className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300 ${
@@ -145,6 +192,7 @@ const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirecti
       );
    };
 
+   // El resto del componente sin cambios...
    // Determinar si ambas secciones están visibles (no modales)
    const bothVisible =
       (tableDirection === "izq" || tableDirection === "der") && (formDirection === "izq" || formDirection === "der") && tableDirection !== formDirection;

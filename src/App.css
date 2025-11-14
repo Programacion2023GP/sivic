@@ -109,3 +109,39 @@ background: linear-gradient(135deg, rgba(155,34,66,0.7) 50%, rgba(101,29,50,0.6)
   
   
 }
+/* Mejoras para el scroll suave */
+.smooth-scroll {
+   -webkit-overflow-scrolling: touch;
+   scroll-behavior: smooth;
+}
+
+/* Mejoras para el arrastre táctil */
+.touch-pan-y {
+   touch-action: pan-y;
+}
+
+/* Safe areas mejorados para diferentes dispositivos */
+.safe-area-bottom {
+   padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Optimizaciones de rendimiento para animaciones */
+.optimize-performance {
+   transform: translateZ(0);
+   backface-visibility: hidden;
+   perspective: 1000px;
+}
+
+/* Mejoras visuales para el indicador de arrastre */
+.drag-indicator {
+   background: linear-gradient(135deg, #3B82F6, #1D4ED8);
+   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Estados de feedback táctil mejorados */
+@media (max-width: 768px) {
+   .mobile-tap-feedback:active {
+      transform: scale(0.98);
+      transition: transform 0.1s ease;
+   }
+}

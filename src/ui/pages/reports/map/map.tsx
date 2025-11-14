@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { PenaltiesApi } from "../../../../infrastructure/penalties/penalties.infra";
 import { usePenaltiesStore } from "../../../../store/penalties/penalties.store";
 import CustomMap from "../../../components/map/custommap";
@@ -14,6 +14,7 @@ const PageReportMap = () => {
       open: false,
       data: {}
    });
+
    useEffect(() => {
       const loadData = async () => {
          setIsLoading(true);
@@ -23,36 +24,41 @@ const PageReportMap = () => {
       loadData();
    }, []);
 
-   // 10 datos simulados en Gómez Palacio
-   const defaultLat = 25.6596;
-   const defaultLng = -103.4586;
+   // Memoizar el procesamiento de datos
+   const limitedPenalties = useMemo(() => {
+      const defaultLat = 25.6596;
+      const defaultLng = -103.4586;
 
-   // Procesar los datos para asegurar que tengan coordenadas válidas
-   const limitedPenalties = penalties.map((penalty, index) => {
-      // Convertir lat y lon a números, y si no son válidos, usar los valores por defecto
-      const lat = penalty.lat ? Number(penalty.lat) : defaultLat;
-      const lon = penalty.lon ? Number(penalty.lon) : defaultLng;
+      return penalties.map((penalty, index) => {
+         const lat = penalty.lat ? Number(penalty.lat) : defaultLat;
+         const lon = penalty.lon ? Number(penalty.lon) : defaultLng;
 
-      // Asegurarse de que son números válidos, si no, usar por defecto
-      const validLat = isNaN(lat) ? defaultLat : lat;
-      const validLng = isNaN(lon) ? defaultLng : lon;
+         const validLat = isNaN(lat) ? defaultLat : lat;
+         const validLng = isNaN(lon) ? defaultLng : lon;
 
-      return {
-         ...penalty,
-         lat: validLat,
-         lon: validLng,
-         cp: String(penalty.cp || "35000"),
-         id: penalty.id.toString()
-      };
-   });
+         return {
+            ...penalty,
+            lat: validLat,
+            lon: validLng,
+            cp: String(penalty.cp || "35000"),
+            id: penalty.id.toString()
+         };
+      });
+   }, [penalties]);
+
+   // Memoizar el PDF para evitar re-renderizados innecesarios
+   const pdfDocument = useMemo(() => {
+      if (!openPdf.data) return null;
+      return <MultaPDF data={openPdf.data} />;
+   }, [openPdf.data]);
 
    return (
       <>
          <div className="bg-gray-100 p-6">
             {isLoading ? (
-               <div className="flex justify-center items-center h-[400px] text-gray-500">Cargando datos...</div>
+               <div className="flex justify-center items-center h-screen text-gray-500">Cargando datos...</div>
             ) : (
-               <div className="rounded-lg overflow-hidden shadow-md" style={{ height: "600px" }}>
+               <div className="rounded-lg overflow-hidden shadow-md" style={{ height: "screen" }}>
                   <CustomMap
                      penaltiesData={limitedPenalties}
                      onCaseSelect={(row) => {
@@ -65,8 +71,10 @@ const PageReportMap = () => {
                </div>
             )}
          </div>
+
          <CustomModal
             title="Multa"
+            
             isOpen={openPdf.open}
             onClose={() => {
                setOpenpdf({
@@ -75,7 +83,7 @@ const PageReportMap = () => {
                });
             }}
          >
-            <PdfPreview children={<MultaPDF data={openPdf.data} />} name="OTRO" />
+            {pdfDocument && <PdfPreview children={pdfDocument} name={`multa-`} />}
          </CustomModal>
       </>
    );
