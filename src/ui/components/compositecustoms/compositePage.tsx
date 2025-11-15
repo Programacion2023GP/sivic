@@ -13,10 +13,20 @@ interface PropsCompositePage {
    isOpen?: boolean;
    onClose?: () => void;
    modalTitle?: string;
+   fullModal?: boolean;
 }
 
-const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirection = "izq", formDirection = "der", isOpen, onClose, modalTitle }) => {
-   const [isExpanded, setIsExpanded] = useState(false);
+const CompositePage: React.FC<PropsCompositePage> = ({
+   table,
+   form,
+   tableDirection = "izq",
+   formDirection = "der",
+   isOpen,
+   onClose,
+   modalTitle,
+   fullModal = false
+}) => {
+   const [isExpanded, setIsExpanded] = useState(fullModal);
    const [isClosing, setIsClosing] = useState(false);
    const { width: windowWidth } = useWindowSize(); // ✅ Movido aquí
 
@@ -71,7 +81,7 @@ const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirecti
 
                      {/* Close Button */}
                      <motion.button
-                        className="absolute top-3 right-3 z-10 w-7 h-7 hover:cursor-pointer text-red-400 hover:text-red-600 rounded-full flex items-center justify-center transition-colors shadow-md border"
+                        className="absolute z-10 flex items-center justify-center text-red-400 transition-colors border rounded-full shadow-md top-3 right-3 w-7 h-7 hover:cursor-pointer hover:text-red-600"
                         onClick={handleClose}
                         whileHover={{
                            scale: 1.05,
@@ -82,7 +92,7 @@ const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirecti
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.1 }}
                      >
-                        <AiOutlineClose className="text-red-400 hover:text-red-600 text-xl" />
+                        <AiOutlineClose className="text-xl text-red-400 hover:text-red-600" />
                      </motion.button>
 
                      <div className="mb-5"></div>
@@ -90,7 +100,7 @@ const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirecti
                      {/* Content */}
                      <div className="max-h-[82vh] overflow-y-auto pb-6 px-4">
                         {/* Header móvil */}
-                        <div className="flex justify-between items-center border-b pb-3 mb-4">
+                        <div className="flex items-center justify-between pb-3 mb-4 border-b">
                            <h2 className="text-lg font-bold text-gray-800">{modalTitle || "Modal"}</h2>
                         </div>
                         {content()}
@@ -117,8 +127,8 @@ const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirecti
             >
                {/* Header del modal */}
                <div className="flex justify-between items-center border-b presidencia px-3 py-2.5 sm:px-4 sm:py-3 sticky top-0 z-10">
-                  <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 truncate flex-1 mr-2">{modalTitle || "Modal"}</h2>
-                  <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                  <h2 className="flex-1 mr-2 text-base font-bold text-gray-800 truncate sm:text-lg md:text-xl">{modalTitle || "Modal"}</h2>
+                  <div className="flex items-center flex-shrink-0 gap-1 sm:gap-2">
                      <button
                         onClick={toggleExpand}
                         className="hover:cursor-pointer p-1.5 sm:p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
@@ -167,7 +177,7 @@ const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirecti
             {/* SECCIÓN IZQUIERDA */}
             {(tableDirection === "izq" || formDirection === "izq") && (
                <div className={`${getLeftWidth()} min-w-0 transition-all duration-300`}>
-                  <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                  <div className="overflow-hidden bg-white rounded-lg shadow-sm">
                      {tableDirection === "izq" && table && table()}
                      {formDirection === "izq" && form && form()}
                   </div>
@@ -177,7 +187,7 @@ const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirecti
             {/* SECCIÓN DERECHA */}
             {(tableDirection === "der" || formDirection === "der") && (
                <div className={`${getRightWidth()} min-w-0 transition-all duration-300`}>
-                  <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                  <div className="overflow-hidden bg-white rounded-lg shadow-sm">
                      {formDirection === "der" && form && form()}
                      {tableDirection === "der" && table && table()}
                   </div>

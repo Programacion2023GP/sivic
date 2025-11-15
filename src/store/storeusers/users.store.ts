@@ -28,10 +28,10 @@ export const useUsersState = create<UsersState>((set, get) => ({
    modalPermission: false,
 
    initialValues: {
-      role:"usuario",
+      role: "usuario",
       fullName: "",
       id: 0,
-dependence_id:null,
+      dependence_id: null,
       maternalSurname: "",
       firstName: "",
       password: "",
@@ -132,6 +132,7 @@ dependence_id:null,
             localStorage.setItem("token", token);
             localStorage.setItem("permisos", JSON.stringify((data.data as any).permisos));
             localStorage.setItem("name", (data.data as any).user.fullName);
+            localStorage.setItem("auth_id", (data.data as any).user.id);
 
             window.location.href = "/#/multa";
          } else {

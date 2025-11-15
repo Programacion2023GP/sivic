@@ -25,13 +25,17 @@ import { DoctorApi } from "../../../infrastructure/doctor/doctor.infra";
 import PdfPreview from "../../components/pdfview/pdfview";
 import MultaPDF from "../courts/pdf/pdfpenalties";
 import { FiEdit, FiMoreVertical, FiTrash, FiTrash2 } from "react-icons/fi";
-import { ArrowDownToDotIcon } from "lucide-react";
+import { ArrowDownToDotIcon, FormInput } from "lucide-react";
 import CustomDataDisplay from "../../components/movil/view/customviewmovil";
 import { penaltyDisplayConfig } from "./model";
 import { FloatingActionButton } from "../../components/movil/button/custombuttommovil";
 import { DateFormat, formatDatetime } from "../../../utils/formats";
 import { useWindowSize } from "../../../hooks/windossize";
 import LocationButton from "../../components/locationbutton/LocationButton";
+import { usePenaltyPreloadDataStore } from "../../../store/penaltypreloaddata/penaltypreloaddata.store";
+import { PenaltyPreloadDataApi } from "../../../infrastructure/penaltypreloaddata/penaltypreloaddata.infra";
+import Typography from "../../components/typografy/Typografy";
+import dayjs from "dayjs";
 // -----------------------------
 // Tipos y Constantes
 // -----------------------------
@@ -81,7 +85,7 @@ const Stepper = ({ steps, activeStep, setActiveStep }: StepperProps) => {
    );
 
    return (
-      <div className="w-full p-6 mb-8 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl">
+      <div className="w-full p-4 mb-6 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl">
          <div className="flex items-center justify-between w-full max-w-5xl mx-auto">
             {steps.map((step, i) => {
                const isActive = activeStep === i;
@@ -149,6 +153,8 @@ const Stepper = ({ steps, activeStep, setActiveStep }: StepperProps) => {
 // -----------------------------
 // Componente principal
 // -----------------------------
+
+const auth_id = Number(localStorage.getItem("auth_id") || 0);
 const PagePenalities = () => {
    const {
       initialValues,
@@ -166,9 +172,11 @@ const PagePenalities = () => {
       openHistory,
       setOpenHistory
    } = usePenaltiesStore();
+   const { initialValues: initialValuesPenaltyPreloadData, penaltypreloaddata, postPenaltyPreloadData } = usePenaltyPreloadDataStore();
    const { doctor, fetchDoctor, loading: doctorLoading } = useDoctorStore();
    const api = useMemo(() => new PenaltiesApi(), []);
    const apiDoc = useMemo(() => new DoctorApi(), []);
+   const apiPenaltyPreloadData = useMemo(() => new PenaltyPreloadDataApi(), []);
 
    const { width: windowWidth } = useWindowSize();
    const isMobile = windowWidth < 1024;
@@ -179,7 +187,7 @@ const PagePenalities = () => {
       open: false,
       data: {}
    });
-   const steps = useMemo(() => ["Fecha", "Información del personal", "Personal operativo", "Mando Único", "Datos del detenido", "Evidencias"], []);
+   const steps = useMemo(() => ["Configuración Inicial", "Datos de detención", "Evidencias"], []);
 
    // Estados para datos externos
    const [citys, setCity] = useState({ loading: false, citys: [] });
@@ -339,18 +347,66 @@ const PagePenalities = () => {
       },
       [oficiales.employes]
    );
-   const handleProteccionCivilChange = useCallback(
-      (field: string, value: any) => {
-         if (formikRef.current) {
-            const proteccionCivilSeleccionado = proteccionCivil.employes.find((proteccionCivil) => proteccionCivil.value == value);
-            if (proteccionCivilSeleccionado) {
-               formikRef.current.setFieldValue("proteccionCivil_payroll", proteccionCivilSeleccionado.codigoEmpleado);
-               formikRef.current.setFieldValue("person_oficial", value);
-            }
-         }
-      },
-      [proteccionCivil.employes]
-   );
+
+   const handleInitForm = () => {
+      const today = dayjs();
+      const now = new Date(); // asegurarte de que `now` exista
+
+      const configTurn = penalties.find((p) => {
+         return p.auth_id === auth_id && today.isBetween(dayjs(p.init_date), dayjs(p.final_date), null, "[]");
+      }); // "[]" incluye fechas iguales a los límites
+      // console.log("🚀 ~ handleInitForm ~ configTurn:", configTurn);
+
+      if (!configTurn) return;
+      const penaltyPreloadData: Penalties = {
+         id: 0,
+         time: now.toLocaleTimeString("en-US", {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false // ← Cambiar a false
+         }),
+         date: new Date().toISOString().split("T")[0], // "2024-01-15"
+         person_contraloria: configTurn.person_contraloria,
+         person_oficial: "",
+         vehicle_service_type: "",
+         alcohol_concentration: 0,
+         group: configTurn.group,
+         detainee_released_to: "",
+         doctor_id: configTurn.doctor_id,
+         lat: 0,
+         lon: 0,
+         municipal_police: "",
+         civil_protection: configTurn.civil_protection,
+         command_vehicle: configTurn.command_details,
+         command_troops: configTurn.command_troops,
+         command_details: configTurn.command_details,
+         filter_supervisor: configTurn.filter_supervisor,
+         name: "",
+         cp: "",
+         city: "",
+         age: 0,
+         amountAlcohol: 0,
+         curp: "",
+         active: false,
+         init_date: configTurn.init_date,
+         final_date: configTurn.final_date,
+         auth_id: configTurn.auth_id,
+         penalty_preload_data_id: configTurn.penalty_preload_data_id
+      };
+      handleChangePenaltie(penaltyPreloadData);
+   };
+   // const handleProteccionCivilChange = useCallback(
+   //    (field: string, value: any) => {
+   //       if (formikRef.current) {
+   //          const proteccionCivilSeleccionado = proteccionCivil.employes.find((proteccionCivil) => proteccionCivil.value == value);
+   //          if (proteccionCivilSeleccionado) {
+   //             formikRef.current.setFieldValue("proteccionCivil_payroll", proteccionCivilSeleccionado.codigoEmpleado);
+   //             formikRef.current.setFieldValue("person_oficial", value);
+   //          }
+   //       }
+   //    },
+   //    [proteccionCivil.employes]
+   // );
 
    const handleStepNavigation = useCallback((direction: "next" | "prev") => {
       setActiveStep((prev) => (direction === "next" ? prev + 1 : prev - 1));
@@ -404,14 +460,11 @@ const PagePenalities = () => {
       switch (activeStep) {
          case 0:
             return (
-               <div className="space-y-4">
-                  <FormikNativeTimeInput name="time" label="Hora" responsive={RESPONSIVE_CONFIG} />
-                  <FormikInput type="date" name="date" label="Fecha de Operativo" responsive={RESPONSIVE_CONFIG} />
-               </div>
-            );
-         case 1:
-            return (
-               <div className="space-y-4">
+               <div className="space-y-6">
+                  <FormikInput type="text" name="penalty_preload_data_id" label="ID preload" hidden responsive={RESPONSIVE_CONFIG} />
+
+                  <FormikNativeTimeInput label={"Inicio del turno"} name={"init_date"} type="datetime-local" responsive={RESPONSIVE_CONFIG} />
+                  <FormikNativeTimeInput label={"Final del turno"} name={"final_date"} type="datetime-local" responsive={RESPONSIVE_CONFIG} />
                   <FormikAutocomplete
                      label="Persona de contraloría a cargo"
                      name="person_contraloria"
@@ -423,33 +476,10 @@ const PagePenalities = () => {
                      disabled
                   />
                   <FormikAutocomplete
-                     label="Oficial"
-                     name="person_oficial"
-                     options={oficiales.employes}
-                     loading={oficiales.loading}
-                     responsive={RESPONSIVE_CONFIG}
-                     idKey="value"
-                     labelKey="text"
-                     handleModified={handleOficialChange}
-                  />
-                  <FormikAutocomplete
                      label="Doctor"
                      name="doctor_id"
                      options={doctor}
-                     loading={doctorLoading}
-                     responsive={RESPONSIVE_CONFIG}
-                     idKey="id"
-                     labelKey="name"
-                  />
-                  <FormikInput responsive={RESPONSIVE_CONFIG} name="alcohol_concentration" label="Grado de alcohol" type="number" />
-                  <FormikRadio
-                     name="vehicle_service_type"
-                     label="Tipo de servicio"
-                     options={[
-                        { id: "Servicio público", name: "Servicio público" },
-                        { id: "Carga", name: "Carga" },
-                        { id: "Particular", name: "Particular" }
-                     ]}
+                     // loading={doctorLoading}
                      responsive={RESPONSIVE_CONFIG}
                      idKey="id"
                      labelKey="name"
@@ -465,12 +495,6 @@ const PagePenalities = () => {
                      idKey="id"
                      labelKey="name"
                   />
-               </div>
-            );
-         case 2:
-            return (
-               <div className="space-y-4">
-                  <FormikInput name="municipal_police" label="Policía Municipal" responsive={RESPONSIVE_CONFIG} />
                   <FormikAutocomplete
                      label="Protección Civil"
                      name="civil_protection"
@@ -481,20 +505,51 @@ const PagePenalities = () => {
                      labelKey="text"
                      // handleModified={handleProteccionCivilChange}
                   />
-               </div>
-            );
-         case 3:
-            return (
-               <div className="space-y-4">
                   <FormikInput name="command_vehicle" label="Vehículo" responsive={RESPONSIVE_CONFIG} />
                   <FormikInput name="command_troops" label="Tropas" responsive={RESPONSIVE_CONFIG} />
                   <FormikInput name="command_details" label="Datos de Mando Único" responsive={RESPONSIVE_CONFIG} />
                   <FormikInput name="filter_supervisor" label="Datos del Encargado del Filtro" responsive={RESPONSIVE_CONFIG} />
                </div>
             );
-         case 4:
+         case 1:
             return (
-               <div className="space-y-4">
+               <div className="space-y-2">
+                  <FormikNativeTimeInput name="time" label="Hora" responsive={RESPONSIVE_CONFIG} />
+                  <FormikInput type="date" name="date" label="Fecha de Operativo" responsive={RESPONSIVE_CONFIG} />
+                  <FormikAutocomplete
+                     label="Oficial"
+                     name="person_oficial"
+                     options={oficiales.employes}
+                     loading={oficiales.loading}
+                     responsive={RESPONSIVE_CONFIG}
+                     idKey="value"
+                     labelKey="text"
+                     handleModified={handleOficialChange}
+                  />
+                  <FormikInput name="municipal_police" label="Policía Municipal" responsive={RESPONSIVE_CONFIG} />
+
+                  <div className="my-6">
+                     <Typography variant="h2" className="mb-4 text-center">
+                        DATOS DEL DETENIDO
+                     </Typography>
+
+                     <div className="lg:flex">
+                        <FormikInput responsive={RESPONSIVE_CONFIG} name="alcohol_concentration" label="Grado de alcohol" type="number" />
+                        <FormikInput type="number" name="amountAlcohol" label="Cantidad de alcohol" responsive={RESPONSIVE_CONFIG} />
+                        <FormikRadio
+                           name="vehicle_service_type"
+                           label="Tipo de servicio"
+                           options={[
+                              { id: "Servicio público", name: "Servicio público" },
+                              { id: "Carga", name: "Carga" },
+                              { id: "Particular", name: "Particular" }
+                           ]}
+                           responsive={RESPONSIVE_CONFIG}
+                           idKey="id"
+                           labelKey="name"
+                        />
+                     </div>
+                  </div>
                   <FormikInput name="name" label="Nombre" responsive={RESPONSIVE_CONFIG} />
                   <FormikInput name="cp" handleModified={handleCp} label="Código postal" responsive={RESPONSIVE_CONFIG} />
                   <FormikAutocomplete
@@ -507,7 +562,6 @@ const PagePenalities = () => {
                      labelKey="Colonia"
                   />
                   <FormikInput type="number" name="age" label="Edad" responsive={RESPONSIVE_CONFIG} />
-                  <FormikInput type="number" name="amountAlcohol" label="Cantidad de alcohol" responsive={RESPONSIVE_CONFIG} />
                   <FormikInput type="number" name="number_of_passengers" label="Número de pasajeros" responsive={RESPONSIVE_CONFIG} />
                   <FormikInput name="plate_number" label="Número de placa" responsive={RESPONSIVE_CONFIG} />
 
@@ -517,13 +571,13 @@ const PagePenalities = () => {
                   <FormikTextArea name="observations" label="Observaciones" />
                </div>
             );
-         case 5:
+         case 2:
             return (
                <div className={`flex justify-between ${isMobile ? "flex-col" : ""} `}>
                   <FormikImageInput name="image_penaltie" maxFiles={1} label="Multa" />
                   <FormikImageInput name="images_evidences" maxFiles={1} label="Evidencia del ciudadano" />
                   <FormikImageInput name="images_evidences_car" maxFiles={1} label="Evidencia del vehículo" />
-                  <LocationButton idNameLat="lat" idNameLng="lon" idNameUbi="ubication" />
+                  <LocationButton idNameLat="lat" idNameLng="lon" idNameUbi="ubication" label="Datos de ubicación" className="" />
                </div>
             );
          default:
@@ -538,9 +592,10 @@ const PagePenalities = () => {
             formDirection="modal"
             isOpen={open}
             modalTitle="Multa"
+            fullModal={true}
             onClose={setOpen}
             form={() => (
-               <div className="relative w-full mt-1 mb-6">
+               <div className="relative w-full mt-1 mb-1">
                   <FormikForm
                      ref={formikRef}
                      validationSchema={validationSchema}
@@ -550,12 +605,12 @@ const PagePenalities = () => {
                      }}
                   >
                      {() => (
-                        <div className="w-full space-y-6">
+                        <div className="w-full space-y-2">
                            {/* Stepper */}
                            <Stepper steps={steps} activeStep={activeStep} setActiveStep={setActiveStep} />
 
                            {/* Contenedor del contenido con animación */}
-                           <div className="bg-white rounded-xl p-6 shadow-sm min-h-[400px] w-full">{renderStepContent()}</div>
+                           <div className="bg-white rounded-xl p-2 shadow-sm min-h-[400px] w-full">{renderStepContent()}</div>
 
                            {/* Botones de navegación */}
                            <div className="flex items-center justify-between pt-4 border-t border-gray-200">
@@ -607,6 +662,7 @@ const PagePenalities = () => {
                                        resetInitialValues();
                                        setActiveStep(0);
                                        setOpen();
+                                       handleInitForm();
                                     }}
                                  >
                                     <VscDiffAdded />
@@ -719,7 +775,14 @@ const PagePenalities = () => {
                            </PermissionRoute>
                            <PermissionRoute requiredPermission={"multas_actualizar"}>
                               <Tooltip content="Editar multa">
-                                 <CustomButton size="sm" color="yellow" onClick={() => handleChangePenaltie(row)}>
+                                 <CustomButton
+                                    size="sm"
+                                    color="yellow"
+                                    onClick={() => {
+                                       setActiveStep(0);
+                                       handleChangePenaltie(row);
+                                    }}
+                                 >
                                     <CiEdit />
                                  </CustomButton>
                               </Tooltip>
