@@ -226,6 +226,7 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
       if (!isNaN(lat) && !isNaN(lon)) {
          setLocation({ lat, lon });
       }
+      handleGetLocation();
    }, [formik.values[idNameLat], formik.values[idNameLng]]);
 
    const handleGetLocation = () => {
@@ -281,10 +282,11 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
    return (
       <div className={`${fullWidth ? "w-full" : "w-auto"} ${className}`}>
          {/* Label */}
-         {label && <label className={`block text-sm font-medium mb-2 ${isError || error ? "text-red-600" : c.text}`}>{label}</label>}
+         {label && <label className={`block font-medium mb-2 ${isError || error ? "text-red-600" : c.text}`}>{label}</label>}
 
          {/* Botón principal */}
          <button
+            hidden={true}
             onClick={handleGetLocation}
             disabled={disabled || loading}
             className={`
@@ -317,7 +319,7 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
          {location && showMap && (
             <div className="w-full mt-4 space-y-3 text-sm">
                {/* Coordenadas */}
-               <div className="flex justify-between gap-4 text-xs">
+               <div className="flex justify-between gap-4 ">
                   <span className="flex-1">
                      <strong>Latitud:</strong> {location.lat.toFixed(6)}
                   </span>
@@ -341,6 +343,7 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
 
                {/* Botón para abrir en Google Maps */}
                <button
+                  hidden
                   className={`
               ${baseClasses}
               ${sizeClasses}

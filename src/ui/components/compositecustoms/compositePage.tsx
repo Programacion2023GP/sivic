@@ -13,10 +13,20 @@ interface PropsCompositePage {
    isOpen?: boolean;
    onClose?: () => void;
    modalTitle?: string;
+   fullModal?: boolean;
 }
 
-const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirection = "izq", formDirection = "der", isOpen, onClose, modalTitle }) => {
-   const [isExpanded, setIsExpanded] = useState(false);
+const CompositePage: React.FC<PropsCompositePage> = ({
+   table,
+   form,
+   tableDirection = "izq",
+   formDirection = "der",
+   isOpen,
+   onClose,
+   modalTitle,
+   fullModal = false
+}) => {
+   const [isExpanded, setIsExpanded] = useState(fullModal);
    const [isClosing, setIsClosing] = useState(false);
    const { width: windowWidth, height: windowHeight } = useWindowSize();
 
@@ -89,7 +99,7 @@ const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirecti
 
                   {/* Modal FULLSCREEN */}
                   <motion.div
-                     className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl overflow-hidden border border-gray-100 touch-pan-y"
+                     className="absolute bottom-0 left-0 right-0 overflow-hidden bg-white border border-gray-100 shadow-2xl rounded-t-3xl touch-pan-y"
                      initial={{ y: "100%" }}
                      animate={{ y: 0 }}
                      exit={{ y: "100%" }}
@@ -117,17 +127,24 @@ const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirecti
                         <div className="w-20 h-2 bg-gray-300 rounded-full" />
                      </div>
 
-                     {/* Close button */}
-                     <button
+                     {/* Close Button */}
+                     <motion.button
+                        className="absolute z-10 flex items-center justify-center text-red-400 transition-colors border rounded-full shadow-md top-3 right-3 w-7 h-7 hover:cursor-pointer hover:text-red-600"
                         onClick={handleClose}
-                        className="absolute top-4 right-4 w-10 h-10 bg-white text-gray-600 hover:text-gray-800 rounded-full flex items-center justify-center shadow-lg border border-gray-200"
+                        // className="absolute flex items-center justify-center w-10 h-10 text-gray-600 bg-white border border-gray-200 rounded-full shadow-lg top-4 right-4 hover:text-gray-800"
                      >
-                        <AiOutlineClose className="text-xl" />
-                     </button>
+                        <AiOutlineClose className="text-xl text-red-400 hover:text-red-600" />
+                     </motion.button>
 
-                     {/* Header */}
-                     <div className="px-4 pb-3 border-b border-gray-200">
-                        <h2 className="text-xl font-bold text-gray-800 text-center pt-2">{modalTitle || "Modal"}</h2>
+                     <div className="mb-5"></div>
+
+                     {/* Content */}
+                     <div className="max-h-[82vh] overflow-y-auto pb-6 px-4">
+                        {/* Header móvil */}
+                        <div className="flex items-center justify-between pb-3 mb-4 border-b">
+                           <h2 className="text-lg font-bold text-gray-800">{modalTitle || "Modal"}</h2>
+                        </div>
+                        {content()}
                      </div>
 
                      {/* Contenido scrollable */}
@@ -164,8 +181,8 @@ const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirecti
             >
                {/* Header del modal */}
                <div className="flex justify-between items-center border-b presidencia px-3 py-2.5 sm:px-4 sm:py-3 sticky top-0 z-10">
-                  <h2 className="text-base sm:text-lg md:text-xl font-bold text-gray-800 truncate flex-1 mr-2">{modalTitle || "Modal"}</h2>
-                  <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+                  <h2 className="flex-1 mr-2 text-base font-bold text-gray-800 truncate sm:text-lg md:text-xl">{modalTitle || "Modal"}</h2>
+                  <div className="flex items-center flex-shrink-0 gap-1 sm:gap-2">
                      <button
                         onClick={toggleExpand}
                         className="hover:cursor-pointer p-1.5 sm:p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
@@ -215,7 +232,7 @@ const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirecti
             {/* SECCIÓN IZQUIERDA */}
             {(tableDirection === "izq" || formDirection === "izq") && (
                <div className={`${getLeftWidth()} min-w-0 transition-all duration-300`}>
-                  <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                  <div className="overflow-hidden bg-white rounded-lg shadow-sm">
                      {tableDirection === "izq" && table && table()}
                      {formDirection === "izq" && form && form()}
                   </div>
@@ -225,7 +242,7 @@ const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirecti
             {/* SECCIÓN DERECHA */}
             {(tableDirection === "der" || formDirection === "der") && (
                <div className={`${getRightWidth()} min-w-0 transition-all duration-300`}>
-                  <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                  <div className="overflow-hidden bg-white rounded-lg shadow-sm">
                      {formDirection === "der" && form && form()}
                      {tableDirection === "der" && table && table()}
                   </div>

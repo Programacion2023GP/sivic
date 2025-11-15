@@ -40,5 +40,10 @@ export interface Penalties {
    image_penaltie?: string;
    images_evidences?: Array<string>;
    images_evidences_car?: Array<string>;
+
+   init_date: Date;
+   final_date: Date;
+   auth_id: number;
+   penalty_preload_data_id: number;
    [key: string]: any;
 }

@@ -4,6 +4,25 @@
 
 ---
 
+## ✨ **v2.2.0.1** · *🧪 Beta*
+📅 **Fecha:** 14 de noviembre de 2025, 7:35 p.m.  
+👤 **Autor:** Luisao-Nestor  
+🧭 **Tipo:** Minor
+
+**✨ Mejoras**
+- Formulario de multas
+   - Con Autorrellenado, solo es necesario 1 por turno y contralor
+   - Se agregaron campos necesarios para ello.
+   - Accion de obtener ubicacion (lat,lon)
+- Rediseño del movil
+
+**⚙️ Optimizaciones**
+- En el PDF, ya es más rapida la carga
+
+
+
+---
+
 ## 🔧 **v2.1.0.2** · *🧪 Beta*
 📅 **Fecha:** 14 de noviembre de 2025, 11:30 a.m.  
 👤 **Autor:** nes  

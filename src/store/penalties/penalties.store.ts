@@ -103,7 +103,11 @@ export const usePenaltiesStore = create<PenaltiesStore>((set, get) => ({
             image_penaltie: null,
             images_evidences: [],
             lat: 0,
-            lon: 0
+            lon: 0,
+            init_date: undefined,
+            final_date: undefined,
+            auth_id: 0,
+            penalty_preload_data_id: 0
          }
       });
    },
@@ -150,7 +154,11 @@ export const usePenaltiesStore = create<PenaltiesStore>((set, get) => ({
       image_penaltie: null,
       images_evidences: [],
       lat: 0,
-      lon: 0
+      lon: 0,
+      init_date: undefined,
+      final_date: undefined,
+      auth_id: 0,
+      penalty_preload_data_id: 0
    },
 
    loading: false,
@@ -238,6 +246,7 @@ export const usePenaltiesStore = create<PenaltiesStore>((set, get) => ({
          showToast(message, "error");
          set({ error: message });
       } finally {
+         
          set({
             loading: false,
             initialValues: { ...get().initialValues, id: 0 }

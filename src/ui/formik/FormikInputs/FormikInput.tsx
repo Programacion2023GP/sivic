@@ -23,6 +23,7 @@ type InputWithLabelProps = {
    disabled?: boolean;
    padding?: boolean;
    value?: any;
+   hidden?: boolean;
 
    handleModified?: (values: Record<string, any>, setFieldValue: (name: string, value: any, shouldValidate?: boolean) => void) => void;
 };
@@ -76,7 +77,6 @@ export const FormikTextArea: React.FC<InputWithLabelProps> = ({
    );
 };
 
-
 export const FormikInput: React.FC<InputWithLabelProps> = ({
    label,
    value,
@@ -86,6 +86,7 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
    disabled = false,
    handleModified,
    padding = true,
+   hidden = false
 }) => {
    const formik = useFormikContext();
 
@@ -105,8 +106,7 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
                   let newValue = e.target.value;
 
                   // 🔥 TRANSFORMAR A MAYÚSCULAS
-                     newValue = newValue.toUpperCase();
-                  
+                  newValue = newValue.toUpperCase();
 
                   setFieldValue(name, newValue);
 
@@ -137,6 +137,7 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
                            onChange={handleChange}
                            onBlur={handleBlur}
                            className={`peer pt-4 pb-2 block w-full bg-transparent border-0 border-b-2 focus:outline-none focus:ring-0 `}
+                           hidden={hidden}
                         />
                      )}
 
@@ -152,7 +153,7 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
                      </label>
 
                      {error && (
-                        <div className="mt-1 flex items-center gap-1">
+                        <div className="flex items-center gap-1 mt-1">
                            <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                               <path
                                  fillRule="evenodd"
@@ -179,7 +180,8 @@ export const FormikNativeTimeInput: React.FC<InputWithLabelProps> = ({
    responsive = { sm: 12, md: 12, lg: 12, xl: 12, "2xl": 12 },
    disabled = false,
    handleModified,
-   padding = true
+   padding = true,
+   type = "time"
 }) => {
    const formik = useFormikContext();
 
@@ -207,7 +209,7 @@ export const FormikNativeTimeInput: React.FC<InputWithLabelProps> = ({
                         <input
                            {...field}
                            id={name}
-                           type="time"
+                           type={type}
                            placeholder=" "
                            autoComplete="off"
                            value={values?.[name] ?? ""}
@@ -229,7 +231,7 @@ export const FormikNativeTimeInput: React.FC<InputWithLabelProps> = ({
                      </label>
 
                      {error && (
-                        <div className="mt-1 flex items-center gap-1">
+                        <div className="flex items-center gap-1 mt-1">
                            <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                               <path
                                  fillRule="evenodd"
@@ -252,7 +254,7 @@ export const FormikNativeTimeInput: React.FC<InputWithLabelProps> = ({
 interface ColorPickerProps {
    label: string;
    name: string;
-   colorPalette: Array<string>,
+   colorPalette: Array<string>;
    value?: string;
    disabled?: boolean;
    responsive?: any;
@@ -270,14 +272,12 @@ export const FormikColorPicker: React.FC<ColorPickerProps> = ({
 }) => {
    const formik = useFormikContext<any>();
    const [isOpen, setIsOpen] = useState(false);
-   const [currentColor, setCurrentColor] = useState<string>(value );
+   const [currentColor, setCurrentColor] = useState<string>(value);
    const pickerRef = useRef<HTMLDivElement>(null);
-
-
 
    // 🔁 Mantener sincronizado con Formik y valor inicial
    useEffect(() => {
-      const val = formik.values[name] || value ;
+      const val = formik.values[name] || value;
       setCurrentColor(val);
    }, [formik.values[name], value]);
 
@@ -301,7 +301,7 @@ export const FormikColorPicker: React.FC<ColorPickerProps> = ({
 
    return (
       <ColComponent responsive={responsive} autoPadding={padding}>
-         <div className="w-full relative mb-5" ref={pickerRef}>
+         <div className="relative w-full mb-5" ref={pickerRef}>
             {/* Botón principal mejorado */}
             <button
                type="button"
@@ -319,7 +319,7 @@ export const FormikColorPicker: React.FC<ColorPickerProps> = ({
                   {/* Indicador de color con efecto de brillo */}
                   <div className="relative">
                      <div
-                        className="w-12 h-12 rounded-xl border-3 shadow-lg transition-transform duration-300 group-hover:scale-105 group-hover:shadow-xl"
+                        className="w-12 h-12 transition-transform duration-300 shadow-lg rounded-xl border-3 group-hover:scale-105 group-hover:shadow-xl"
                         style={{
                            backgroundColor: currentColor,
                            borderColor: isOpen ? "#8B5CF6" : "#E5E7EB"
@@ -327,7 +327,7 @@ export const FormikColorPicker: React.FC<ColorPickerProps> = ({
                      />
                      {/* Efecto de brillo */}
                      <div
-                        className="absolute inset-0 rounded-xl opacity-20 transition-opacity duration-300 group-hover:opacity-30"
+                        className="absolute inset-0 transition-opacity duration-300 rounded-xl opacity-20 group-hover:opacity-30"
                         style={{
                            backgroundColor: "white",
                            background: "linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 50%)"
@@ -337,8 +337,8 @@ export const FormikColorPicker: React.FC<ColorPickerProps> = ({
 
                   {/* Texto con mejor tipografía */}
                   <div className="flex flex-col items-start text-left">
-                     <span className="text-base font-semibold text-gray-800 group-hover:text-gray-900 transition-colors">{label}</span>
-                     <span className="text-sm font-mono text-gray-500 group-hover:text-gray-600 transition-colors mt-1">{currentColor}</span>
+                     <span className="text-base font-semibold text-gray-800 transition-colors group-hover:text-gray-900">{label}</span>
+                     <span className="mt-1 font-mono text-sm text-gray-500 transition-colors group-hover:text-gray-600">{currentColor}</span>
                   </div>
                </div>
 
@@ -357,26 +357,26 @@ export const FormikColorPicker: React.FC<ColorPickerProps> = ({
 
             {/* Dropdown de colores mejorado */}
             {isOpen && (
-               <div className="absolute top-full left-0 right-0 mt-3 bg-white border border-gray-200 rounded-2xl shadow-2xl z-50 overflow-hidden animate-in fade-in-50 slide-in-from-top-2 duration-200">
+               <div className="absolute left-0 right-0 z-50 mt-3 overflow-hidden duration-200 bg-white border border-gray-200 shadow-2xl top-full rounded-2xl animate-in fade-in-50 slide-in-from-top-2">
                   {/* Header del dropdown */}
-                  <div className="p-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-100">
+                  <div className="p-4 border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white">
                      <div className="flex items-center justify-between mb-3">
                         <h3 className="text-lg font-semibold text-gray-800">Seleccionar color</h3>
-                        <span className="text-sm text-gray-500 bg-white px-2 py-1 rounded-full border">{colorPalette.length} colores</span>
+                        <span className="px-2 py-1 text-sm text-gray-500 bg-white border rounded-full">{colorPalette.length} colores</span>
                      </div>
 
                      {/* Color actual destacado */}
-                     <div className="flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 shadow-sm">
-                        <div className="w-8 h-8 rounded-lg border-2 border-gray-300 shadow-sm" style={{ backgroundColor: currentColor }} />
+                     <div className="flex items-center gap-3 p-3 bg-white border border-gray-200 rounded-lg shadow-sm">
+                        <div className="w-8 h-8 border-2 border-gray-300 rounded-lg shadow-sm" style={{ backgroundColor: currentColor }} />
                         <div className="flex-1">
                            <span className="text-sm font-medium text-gray-700">Color actual</span>
-                           <span className="block text-xs font-mono text-gray-500">{currentColor}</span>
+                           <span className="block font-mono text-xs text-gray-500">{currentColor}</span>
                         </div>
                      </div>
                   </div>
 
                   {/* Grid de colores con scroll suave */}
-                  <div className="p-4 max-h-64 overflow-y-auto custom-scrollbar">
+                  <div className="p-4 overflow-y-auto max-h-64 custom-scrollbar">
                      <div className="grid grid-cols-10 gap-3">
                         {colorPalette.map((color) => (
                            <button
@@ -407,11 +407,11 @@ export const FormikColorPicker: React.FC<ColorPickerProps> = ({
                   </div>
 
                   {/* Footer del dropdown */}
-                  <div className="p-3 bg-gray-50 border-t border-gray-200">
+                  <div className="p-3 border-t border-gray-200 bg-gray-50">
                      <button
                         type="button"
                         onClick={() => setIsOpen(false)}
-                        className="w-full py-2 px-4 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors duration-200"
+                        className="w-full px-4 py-2 text-sm font-medium text-gray-700 transition-colors duration-200 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
                      >
                         Cerrar
                      </button>
@@ -424,7 +424,7 @@ export const FormikColorPicker: React.FC<ColorPickerProps> = ({
                {({ form: { touched, errors } }: any) => {
                   const error = touched?.[name] && typeof errors?.[name] === "string" ? errors[name] : null;
                   return error ? (
-                     <div className="mt-2 flex items-center gap-2 text-sm font-semibold text-red-600 bg-red-50 px-3 py-2 rounded-lg border border-red-200">
+                     <div className="flex items-center gap-2 px-3 py-2 mt-2 text-sm font-semibold text-red-600 border border-red-200 rounded-lg bg-red-50">
                         <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                            <path
                               fillRule="evenodd"
@@ -440,7 +440,6 @@ export const FormikColorPicker: React.FC<ColorPickerProps> = ({
          </div>
 
          {/* Estilos para scrollbar personalizado */}
-      
       </ColComponent>
    );
 };
@@ -584,7 +583,7 @@ export const FormikImageInput: React.FC<FormikImageInputProps> = ({
 
       // Limpiar input
       if (fileInputRef.current) {
-         fileInputRef.current.value = '';
+         fileInputRef.current.value = "";
       }
    };
 
@@ -619,7 +618,7 @@ export const FormikImageInput: React.FC<FormikImageInputProps> = ({
 
          {/* Switch para móviles */}
          {isMobile && (
-            <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="p-3 mb-4 border border-blue-200 rounded-lg bg-blue-50">
                <div className="flex items-center justify-between">
                   <span className="text-sm font-medium text-gray-700">Modo de entrada:</span>
                   <div className="flex items-center space-x-3">
@@ -627,9 +626,7 @@ export const FormikImageInput: React.FC<FormikImageInputProps> = ({
                         type="button"
                         onClick={() => setUseCamera(true)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                           useCamera 
-                              ? 'bg-blue-600 text-white shadow-md' 
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                           useCamera ? "bg-blue-600 text-white shadow-md" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                         }`}
                      >
                         📷 Tomar Foto
@@ -638,20 +635,15 @@ export const FormikImageInput: React.FC<FormikImageInputProps> = ({
                         type="button"
                         onClick={() => setUseCamera(false)}
                         className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                           !useCamera 
-                              ? 'bg-blue-600 text-white shadow-md' 
-                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                           !useCamera ? "bg-blue-600 text-white shadow-md" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
                         }`}
                      >
                         📁 Subir Imagen
                      </button>
                   </div>
                </div>
-               <p className="text-xs text-blue-600 mt-2">
-                  {useCamera 
-                     ? "Se abrirá la cámara para tomar una foto directamente" 
-                     : "Se abrirá la galería para seleccionar una imagen existente"
-                  }
+               <p className="mt-2 text-xs text-blue-600">
+                  {useCamera ? "Se abrirá la cámara para tomar una foto directamente" : "Se abrirá la galería para seleccionar una imagen existente"}
                </p>
             </div>
          )}
@@ -665,34 +657,28 @@ export const FormikImageInput: React.FC<FormikImageInputProps> = ({
                      animate={{ opacity: 1, scale: 1 }}
                      exit={{ opacity: 0, scale: 0.9 }}
                      transition={{ duration: 0.2 }}
-                     className="relative w-32 h-32 rounded-lg overflow-hidden shadow-lg border border-gray-200"
+                     className="relative w-32 h-32 overflow-hidden border border-gray-200 rounded-lg shadow-lg"
                   >
                      <img
                         src={upload.preview}
                         alt={`Preview ${index}`}
-                        className="object-cover w-full h-full cursor-pointer transition-transform duration-300 hover:scale-105"
+                        className="object-cover w-full h-full transition-transform duration-300 cursor-pointer hover:scale-105"
                         onClick={() => setPreviewModal(upload.preview)}
                      />
 
                      {upload.progress < 100 && (
-                        <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center text-white font-semibold">
-                           {upload.progress}%
-                        </div>
+                        <div className="absolute inset-0 flex items-center justify-center font-semibold text-white bg-black bg-opacity-30">{upload.progress}%</div>
                      )}
 
                      {/* Botones de acciones */}
-                     <div className="absolute top-1 right-1 flex space-x-1">
-                        <button 
-                           type="button" 
-                           onClick={() => handleRemove(index)} 
-                           className="bg-red-500 rounded-full p-1 text-white hover:bg-red-600 shadow-md"
-                        >
+                     <div className="absolute flex space-x-1 top-1 right-1">
+                        <button type="button" onClick={() => handleRemove(index)} className="p-1 text-white bg-red-500 rounded-full shadow-md hover:bg-red-600">
                            <AiOutlineClose size={16} />
                         </button>
                         <button
                            type="button"
                            onClick={() => setPreviewModal(upload.preview)}
-                           className="bg-blue-500 rounded-full p-1 text-white hover:bg-blue-600 shadow-md"
+                           className="p-1 text-white bg-blue-500 rounded-full shadow-md hover:bg-blue-600"
                         >
                            <AiOutlineEye size={16} />
                         </button>
@@ -702,35 +688,27 @@ export const FormikImageInput: React.FC<FormikImageInputProps> = ({
             </AnimatePresence>
 
             {!disabled && uploads.length < maxFiles && (
-               <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className="relative"
-               >
+               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative">
                   <div
-                     className="w-32 h-32 flex flex-col items-center justify-center border-4 border-dashed border-gray-300 rounded-lg cursor-pointer transition-colors duration-300 hover:bg-gray-100"
+                     className="flex flex-col items-center justify-center w-32 h-32 transition-colors duration-300 border-4 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-100"
                      onClick={handleImageClick}
                   >
                      {isMobile ? (
                         <>
-                           <div className="text-2xl mb-2">
-                              {useCamera ? "📷" : "📁"}
-                           </div>
-                           <span className="text-xs text-gray-600 text-center px-2">
-                              {useCamera ? "Tomar Foto" : "Subir Imagen"}
-                           </span>
+                           <div className="mb-2 text-2xl">{useCamera ? "📷" : "📁"}</div>
+                           <span className="px-2 text-xs text-center text-gray-600">{useCamera ? "Tomar Foto" : "Subir Imagen"}</span>
                         </>
                      ) : (
                         <>
-                           <AiOutlineCamera className="text-3xl text-gray-500 mb-2" />
+                           <AiOutlineCamera className="mb-2 text-3xl text-gray-500" />
                            <span className="text-xs text-gray-600">Subir Imagen</span>
                         </>
                      )}
                   </div>
-                  
+
                   {/* Indicador del modo actual para móviles */}
                   {isMobile && (
-                     <div className="absolute -top-2 -right-2 bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                     <div className="absolute flex items-center justify-center w-6 h-6 text-xs text-white bg-blue-500 rounded-full -top-2 -right-2">
                         {useCamera ? "📷" : "📁"}
                      </div>
                   )}
@@ -747,7 +725,7 @@ export const FormikImageInput: React.FC<FormikImageInputProps> = ({
             onChange={handleChange}
             className="hidden"
             disabled={disabled}
-            capture={getCaptureAttribute()} 
+            capture={getCaptureAttribute()}
          />
 
          {touched && errors && (touched as Record<string, any>)[name] && (errors as Record<string, any>)[name] && (
@@ -755,27 +733,20 @@ export const FormikImageInput: React.FC<FormikImageInputProps> = ({
          )}
 
          <div className="mt-2 space-y-1">
-            <span className="text-xs text-gray-500 block">
-               {`Formatos aceptados: ${acceptedFileTypes.replace("image/", "").split(',').join(', ')}`}
-            </span>
+            <span className="block text-xs text-gray-500">{`Formatos aceptados: ${acceptedFileTypes.replace("image/", "").split(",").join(", ")}`}</span>
             {multiple && maxFiles && (
-               <span className="text-xs text-gray-500 block">
-                  {`Máximo de imágenes: ${maxFiles} (${uploads.length}/${maxFiles} utilizadas)`}
-               </span>
+               <span className="block text-xs text-gray-500">{`Máximo de imágenes: ${maxFiles} (${uploads.length}/${maxFiles} utilizadas)`}</span>
             )}
             {isMobile && (
-               <span className="text-xs text-blue-600 block">
-                 {useCamera 
-                    ? "✅ Modo cámara: Toma fotos directamente" 
-                    : "✅ Modo galería: Selecciona imágenes existentes"
-                 }
+               <span className="block text-xs text-blue-600">
+                  {useCamera ? "✅ Modo cámara: Toma fotos directamente" : "✅ Modo galería: Selecciona imágenes existentes"}
                </span>
             )}
          </div>
 
          {/* Modal de previsualización */}
          {previewModal && (
-            <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50" onClick={() => setPreviewModal(null)}>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70" onClick={() => setPreviewModal(null)}>
                <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -783,14 +754,10 @@ export const FormikImageInput: React.FC<FormikImageInputProps> = ({
                   className="relative max-w-4xl max-h-full p-4"
                   onClick={(e) => e.stopPropagation()}
                >
-                  <img 
-                     src={previewModal} 
-                     alt="Preview large" 
-                     className="max-w-full max-h-full rounded-lg shadow-2xl object-contain" 
-                  />
+                  <img src={previewModal} alt="Preview large" className="object-contain max-w-full max-h-full rounded-lg shadow-2xl" />
                   <button
                      onClick={() => setPreviewModal(null)}
-                     className="absolute top-4 right-4 text-white bg-gray-800 bg-opacity-50 rounded-full p-2 hover:bg-opacity-80 transition"
+                     className="absolute p-2 text-white transition bg-gray-800 bg-opacity-50 rounded-full top-4 right-4 hover:bg-opacity-80"
                   >
                      ✕
                   </button>
@@ -1242,7 +1209,7 @@ export const FormikAutocomplete = <T extends Record<string, any>>({
 
             {/* Mostrar error de Formik */}
             {error && (
-               <div className="mt-1 flex items-center gap-1">
+               <div className="flex items-center gap-1 mt-1">
                   <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                      <path
                         fillRule="evenodd"
@@ -1298,8 +1265,8 @@ export const FormikRadio = <T extends Record<string, any>>({
 
    return (
       <ColComponent responsive={responsive} autoPadding={padding}>
-         <label className="block text-gray-700 font-semibold mb-2">{label}</label>
-         <div className="w-full  mb-4 pb-2 flex flex-wrap gap-3">
+         <label className="block mb-2 font-semibold text-gray-700">{label}</label>
+         <div className="flex flex-wrap w-full gap-3 pb-2 mb-4">
             {options.map((option) => (
                <label
                   key={String(option[idKey])}
