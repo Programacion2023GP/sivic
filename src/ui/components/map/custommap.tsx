@@ -198,7 +198,7 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
    };
 
    return (
-      <div className="w-full h-full flex flex-col bg-gray-900 text-white rounded-lg overflow-hidden shadow-2xl">
+      <>
          {/* Header Mejorado */}
          <div className="p-4 border-b border-gray-700 bg-gradient-to-r from-blue-800 via-blue-700 to-indigo-700 flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -552,7 +552,7 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
                </div>
             </div>
          )}
-      </div>
+      </>
    );
 };
 

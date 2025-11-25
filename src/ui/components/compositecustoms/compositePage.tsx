@@ -148,17 +148,8 @@ const CompositePage: React.FC<PropsCompositePage> = ({
                      </div>
 
                      {/* Contenido scrollable */}
-                     <div
-                        className="overflow-y-auto smooth-scroll"
-                        style={{
-                           height: "calc(100vh - 140px)"
-                        }}
-                     >
-                        <div className="p-4 pb-10">{content()}</div>
-                     </div>
-
+                    
                      {/* Safe area */}
-                     <div className="h-6 bg-transparent" />
                   </motion.div>
                </motion.div>
             </AnimatePresence>

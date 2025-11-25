@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { motion, AnimatePresence } from "framer-motion";
-import { FiSearch, FiChevronUp, FiChevronDown, FiX, FiAlertCircle, FiInbox, FiMoreVertical, FiTrash2, FiEdit } from "react-icons/fi";
+import { FiSearch, FiChevronUp, FiChevronDown, FiX, FiAlertCircle, FiInbox, FiMoreVertical, FiTrash2, FiEdit, FiGrid, FiList, FiEye } from "react-icons/fi";
 import { RiFileExcelFill } from "react-icons/ri";
 import { MdOutlineKeyboardArrowRight, MdOutlineKeyboardArrowLeft } from "react-icons/md";
 import { PermissionRoute } from "../../../App";
@@ -11,10 +11,10 @@ interface Column<T extends object> {
    headerName: string;
    renderField?: <K extends keyof T>(value: T[K]) => React.ReactNode;
    getFilterValue?: <K extends keyof T>(value: T[K]) => string;
+   visibility?: "always" | "desktop" | "expanded" | "mobile";
    priority?: number;
 }
 
-// Configuración estilo Flutter mejorada
 interface MobileConfig<T extends object> {
    listTile?: {
       leading?: (row: T) => React.ReactNode;
@@ -58,6 +58,8 @@ interface PropsTable<T extends object> {
    cardTitleField?: keyof T;
    conditionExcel?: string | Array<string>;
    mobileConfig?: MobileConfig<T>;
+   defaultView?: "table" | "cards";
+   enableViewToggle?: boolean;
 }
 
 const CustomTable = <T extends object>({
@@ -72,7 +74,9 @@ const CustomTable = <T extends object>({
    hoverable = true,
    cardTitleField,
    conditionExcel,
-   mobileConfig
+   mobileConfig,
+   defaultView = "table",
+   enableViewToggle = true
 }: PropsTable<T>) => {
    const [currentPage, setCurrentPage] = useState(1);
    const [rowsPerPage, setRowsPerPage] = useState(paginate[0]);
@@ -83,8 +87,20 @@ const CustomTable = <T extends object>({
    const [isMobile, setIsMobile] = useState(false);
    const [showBottomSheet, setShowBottomSheet] = useState<boolean>(false);
    const [selectedRowForSheet, setSelectedRowForSheet] = useState<T | null>(null);
-   const [swipeOffset, setSwipeOffset] = useState<number>(0);
-   const [swipingIndex, setSwipingIndex] = useState<number | null>(null);
+   const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+   const [viewMode, setViewMode] = useState<"table" | "cards">(defaultView);
+
+   const [swipeData, setSwipeData] = useState<{
+      index: number | null;
+      offset: number;
+      isSwiping: boolean;
+      actionBackground: string | null;
+   }>({
+      index: null,
+      offset: 0,
+      isSwiping: false,
+      actionBackground: null
+   });
 
    // Detectar viewport
    useEffect(() => {
@@ -174,8 +190,26 @@ const CustomTable = <T extends object>({
       });
    };
 
+   const toggleRowExpansion = (index: number) => {
+      setExpandedRows((prev) => {
+         const newSet = new Set(prev);
+         if (newSet.has(index)) {
+            newSet.delete(index);
+         } else {
+            newSet.add(index);
+         }
+         return newSet;
+      });
+   };
+
    // Handlers para móvil mejorados
-   const handleTileTap = (row: T) => {
+   const handleTileTap = (row: T, event?: React.MouseEvent) => {
+      if (swipeData.isSwiping) {
+         event?.stopPropagation();
+         event?.preventDefault();
+         return;
+      }
+
       if (mobileConfig?.onTileTap) {
          mobileConfig.onTileTap(row);
       } else if (mobileConfig?.bottomSheet) {
@@ -189,39 +223,68 @@ const CustomTable = <T extends object>({
       setSelectedRowForSheet(null);
    };
 
-   const handleSwipeAction = (action: (row: T) => void, row: T) => {
-      action(row);
-      setSwipeOffset(0);
-      setSwipingIndex(null);
-   };
-
+   // HANDLERS MEJORADOS PARA SWIPE - Más suaves
    const handleSwipeStart = (idx: number) => {
-      setSwipingIndex(idx);
+      setSwipeData({
+         index: idx,
+         offset: 0,
+         isSwiping: true,
+         actionBackground: null
+      });
    };
 
-   const handleSwipeMove = (deltaX: number) => {
-      if (swipingIndex !== null) {
-         setSwipeOffset(deltaX);
+   const handleSwipeMove = (deltaX: number, idx: number) => {
+      if (swipeData.index === idx) {
+         const maxOffset = 120;
+         const smoothOffset = deltaX * 0.7;
+         const clampedOffset = Math.max(-maxOffset, Math.min(maxOffset, smoothOffset));
+
+         setSwipeData((prev) => ({
+            ...prev,
+            offset: clampedOffset
+         }));
       }
    };
 
    const handleSwipeEnd = (row: T, idx: number) => {
-      if (swipingIndex === idx) {
-         const threshold = 80;
-         const hasLeftActions = mobileConfig?.swipeActions?.left && mobileConfig.swipeActions.left.length > 0;
-         const hasRightActions = mobileConfig?.swipeActions?.right && mobileConfig.swipeActions.right.length > 0;
+      if (swipeData.index === idx) {
+         const threshold = 60;
+         const leftAction = mobileConfig?.swipeActions?.left?.[0];
+         const rightAction = mobileConfig?.swipeActions?.right?.[0];
 
-         if (swipeOffset > threshold && hasLeftActions) {
-            // Swipe right to left - trigger first left action
-            handleSwipeAction(mobileConfig.swipeActions.left[0].action, row);
-         } else if (swipeOffset < -threshold && hasRightActions) {
-            // Swipe left to right - trigger first right action
-            handleSwipeAction(mobileConfig.swipeActions.right[0].action, row);
+         if (swipeData.offset > threshold && leftAction) {
+            setSwipeData((prev) => ({ ...prev, offset: 120 }));
+            setTimeout(() => {
+               leftAction.action(row);
+               setSwipeData({
+                  index: null,
+                  offset: 0,
+                  isSwiping: false,
+                  actionBackground: null
+               });
+            }, 300);
+         } else if (swipeData.offset < -threshold && rightAction) {
+            setSwipeData((prev) => ({ ...prev, offset: -120 }));
+            setTimeout(() => {
+               rightAction.action(row);
+               setSwipeData({
+                  index: null,
+                  offset: 0,
+                  isSwiping: false,
+                  actionBackground: null
+               });
+            }, 300);
          } else {
-            // Reset if not enough swipe
-            setSwipeOffset(0);
+            setSwipeData((prev) => ({ ...prev, offset: 0 }));
+            setTimeout(() => {
+               setSwipeData({
+                  index: null,
+                  offset: 0,
+                  isSwiping: false,
+                  actionBackground: null
+               });
+            }, 200);
          }
-         setSwipingIndex(null);
       }
    };
 
@@ -232,14 +295,41 @@ const CustomTable = <T extends object>({
       return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
    };
 
+   // En la función exportToExcel, reemplaza esta parte:
    const exportToExcel = () => {
       const exportData = sortedData.map((row) => {
          const obj: Record<string, any> = {};
          columns.forEach((col) => {
             try {
                if (col.renderField) {
+                  // Para campos renderizados, necesitamos obtener el valor textual
                   const renderedValue = col.renderField(row[col.field]);
-                  obj[String(col.headerName)] = typeof renderedValue === "string" ? renderedValue : String(renderedValue ?? "");
+
+                  // Convertir el React Node a string
+                  let stringValue = "";
+
+                  if (typeof renderedValue === "string") {
+                     stringValue = renderedValue;
+                  } else if (typeof renderedValue === "number" || typeof renderedValue === "boolean") {
+                     stringValue = String(renderedValue);
+                  } else if (React.isValidElement(renderedValue)) {
+                     // Para elementos React, intentamos extraer el texto
+                     const tempDiv = document.createElement("div");
+                     // const root = ReactDOM.createRoot(tempDiv);
+                     // root.render(renderedValue);
+
+                     // Esperar un momento para que se renderice y luego obtener el texto
+                     setTimeout(() => {
+                        stringValue = tempDiv.textContent || tempDiv.innerText || "";
+                     }, 100);
+
+                     // Fallback: usar el valor original si no podemos extraer el texto
+                     stringValue = String(row[col.field] ?? "");
+                  } else {
+                     stringValue = String(renderedValue ?? row[col.field] ?? "");
+                  }
+
+                  obj[String(col.headerName)] = stringValue;
                } else {
                   obj[String(col.headerName)] = col.getFilterValue ? col.getFilterValue(row[col.field]) : row[col.field];
                }
@@ -276,189 +366,384 @@ const CustomTable = <T extends object>({
       );
    };
 
-   // VISTA DE TABLA (Desktop)
-   const renderTableView = () => (
-      <div className="overflow-x-auto">
-         <table className="w-full min-w-max divide-y divide-gray-200 bg-white">
-            <thead className="bg-gray-50">
-               <tr>
-                  {columns.map((col) => (
-                     <th
-                        key={String(col.field)}
-                        className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide select-none whitespace-nowrap"
-                     >
-                        <div className="flex flex-col space-y-1">
-                           <span
-                              className="flex items-center gap-1 cursor-pointer hover:text-gray-800 transition-colors whitespace-nowrap"
-                              onClick={() => handleSort(col.field)}
-                           >
-                              {col.headerName}
-                              {sortConfig.field === col.field &&
-                                 (sortConfig.direction === "asc" ? <FiChevronUp className="flex-shrink-0" /> : <FiChevronDown className="flex-shrink-0" />)}
-                           </span>
+   // CORREGIDO: Filtrar columnas por visibilidad - "always" siempre se muestra
+   const getVisibleColumns = (mode: "compact" | "expanded" = "expanded") => {
+      if (mode === "expanded") {
+         return columns;
+      }
 
-                           <div className="flex items-center gap-1">
-                              <FiSearch className="text-gray-400 text-xs flex-shrink-0" />
-                              <input
-                                 type="text"
-                                 placeholder="Filtrar..."
-                                 value={columnFilters[String(col.field)] || ""}
-                                 onChange={(e) => handleColumnFilterChange(String(col.field), e.target.value)}
-                                 className="border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 w-full min-w-[100px] max-w-[140px]"
-                              />
-                              {columnFilters[String(col.field)] && (
-                                 <FiX
-                                    className="text-gray-400 cursor-pointer hover:text-gray-600 flex-shrink-0"
-                                    onClick={() => clearColumnFilter(String(col.field))}
+      // Modo compacto
+      const alwaysColumns = columns.filter((col) => col.visibility === "always");
+
+      const otherColumns = columns.filter(
+         (col) => col.visibility !== "always" && (col.visibility === "desktop" || col.visibility === undefined || (col.priority && col.priority <= 3))
+      );
+
+      return [...alwaysColumns, ...otherColumns];
+   };
+
+   // NUEVO: Obtener columnas que NO están visibles en modo compacto
+   const getHiddenColumns = () => {
+      const visibleColumns = getVisibleColumns("compact");
+      return columns.filter((col) => !visibleColumns.includes(col));
+   };
+
+   // NUEVO: Verificar si hay columnas ocultas que justifiquen la expansión
+   const shouldShowExpansion = () => {
+      return getHiddenColumns().length > 0;
+   };
+
+   // VISTA DE TABLA EXPANDIBLE (Desktop)
+   const renderTableView = () => {
+      const visibleColumns = getVisibleColumns("compact");
+      const hiddenColumns = getHiddenColumns();
+      const showExpansion = shouldShowExpansion();
+
+      return (
+         <div className="overflow-x-auto">
+            <table className="w-full min-w-max divide-y divide-gray-200 bg-white">
+               <thead className="bg-gray-50">
+                  <tr>
+                     {/* Columna de expansión - SOLO si hay columnas ocultas */}
+                     {showExpansion && <th className="w-12 px-2 py-3"></th>}
+
+                     {visibleColumns.map((col) => (
+                        <th
+                           key={String(col.field)}
+                           className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide select-none whitespace-nowrap"
+                        >
+                           <div className="flex flex-col space-y-1">
+                              <span
+                                 className="flex items-center gap-1 cursor-pointer hover:text-gray-800 transition-colors whitespace-nowrap"
+                                 onClick={() => handleSort(col.field)}
+                              >
+                                 {col.headerName}
+                                 {sortConfig.field === col.field &&
+                                    (sortConfig.direction === "asc" ? <FiChevronUp className="flex-shrink-0" /> : <FiChevronDown className="flex-shrink-0" />)}
+                              </span>
+
+                              <div className="flex items-center gap-1">
+                                 <FiSearch className="text-gray-400 text-xs flex-shrink-0" />
+                                 <input
+                                    type="text"
+                                    placeholder="Filtrar..."
+                                    value={columnFilters[String(col.field)] || ""}
+                                    onChange={(e) => handleColumnFilterChange(String(col.field), e.target.value)}
+                                    className="border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-cyan-300 w-full min-w-[100px] max-w-[140px]"
                                  />
-                              )}
+                                 {columnFilters[String(col.field)] && (
+                                    <FiX
+                                       className="text-gray-400 cursor-pointer hover:text-gray-600 flex-shrink-0"
+                                       onClick={() => clearColumnFilter(String(col.field))}
+                                    />
+                                 )}
+                              </div>
                            </div>
-                        </div>
-                     </th>
-                  ))}
-                  {actions && <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap">Acciones</th>}
-               </tr>
-            </thead>
-
-            <tbody className={`divide-y divide-gray-100 ${striped ? "[&>tr:nth-child(even)]:bg-gray-50" : ""}`}>
-               {currentRows.map((row, idx) => (
-                  <tr
-                     key={idx}
-                     className={`
-                       transition-colors duration-150
-                       ${selectedRows.has(idx) ? "bg-cyan-50 border-l-4 border-l-cyan-500" : ""}
-                       ${hoverable ? "hover:bg-gray-50" : ""}
-                    `}
-                  >
-                     {columns.map((col) => (
-                        <td key={String(col.field)} className="px-3 py-3 text-sm text-gray-800 whitespace-nowrap">
-                           {col.renderField ? col.renderField(row[col.field]) : highlight(String(row[col.field] ?? ""))}
-                        </td>
+                        </th>
                      ))}
-                     {actions && (
-                        <td className="px-3 py-3 text-sm whitespace-nowrap">
-                           <div className="flex flex-wrap gap-1">{actions(row)}</div>
-                        </td>
-                     )}
+                     {actions && <th className="px-3 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap">Acciones</th>}
                   </tr>
-               ))}
-            </tbody>
-         </table>
-      </div>
-   );
+               </thead>
 
-   // VISTA MÓVIL - Mejorada sin acciones visibles y swipe animado
-   const renderMobileListView = () => (
-      <motion.div className="space-y-2 p-2" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}>
-         {currentRows.map((row, idx) => {
-            const isSwiping = swipingIndex === idx;
-            const hasSwipeActions = mobileConfig?.swipeActions && (mobileConfig.swipeActions.left?.length || mobileConfig.swipeActions.right?.length);
+               <tbody className={`divide-y divide-gray-100 ${striped ? "[&>tr:nth-child(even)]:bg-gray-50" : ""}`}>
+                  {currentRows.map((row, idx) => {
+                     const isExpanded = expandedRows.has(idx);
+                     return (
+                        <React.Fragment key={idx}>
+                           {/* Fila principal */}
+                           <tr
+                              className={`
+                                transition-all duration-200
+                                ${selectedRows.has(idx) ? "bg-cyan-50 border-l-4 border-l-cyan-500" : ""}
+                                ${hoverable ? "hover:bg-gray-50" : ""}
+                                ${isExpanded ? "bg-blue-50" : ""}
+                                ${showExpansion ? "cursor-pointer" : ""}
+                             `}
+                              onClick={() => showExpansion && toggleRowExpansion(idx)}
+                           >
+                              {/* Ícono de expansión - SOLO si hay columnas ocultas */}
+                              {showExpansion && (
+                                 <td className="px-2 py-3">
+                                    <motion.div
+                                       animate={{ rotate: isExpanded ? 180 : 0 }}
+                                       transition={{ duration: 0.2 }}
+                                       className="text-gray-400 hover:text-gray-600"
+                                    >
+                                       <FiChevronDown />
+                                    </motion.div>
+                                 </td>
+                              )}
 
-            // Calcular opacidad y escala basado en el swipe
-            const swipeProgress = Math.min(Math.abs(swipeOffset) / 100, 1);
-            const itemScale = 1 - swipeProgress * 0.1;
-            const actionOpacity = swipeProgress;
+                              {/* Columnas principales */}
+                              {visibleColumns.map((col) => (
+                                 <td key={String(col.field)} className="px-3 py-3 text-sm text-gray-800 whitespace-nowrap" title={String(row[col.field] ?? "")}>
+                                    <div className="truncate max-w-[200px]">
+                                       {col.renderField ? col.renderField(row[col.field]) : highlight(String(row[col.field] ?? ""))}
+                                    </div>
+                                 </td>
+                              ))}
 
-            return (
+                              {actions && (
+                                 <td className="px-3 py-3 text-sm whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex flex-wrap gap-1">{actions(row)}</div>
+                                 </td>
+                              )}
+                           </tr>
+
+                           {/* Fila expandida - SOLO si hay columnas ocultas y está expandida */}
+                           {isExpanded && showExpansion && (
+                              <motion.tr
+                                 initial={{ opacity: 0, height: 0 }}
+                                 animate={{ opacity: 1, height: "auto" }}
+                                 exit={{ opacity: 0, height: 0 }}
+                                 className="bg-blue-50 border-b border-blue-100"
+                              >
+                                 <td colSpan={visibleColumns.length + (showExpansion ? 1 : 0) + (actions ? 1 : 0)} className="px-4 py-4">
+                                    <div className="mb-2 text-sm font-semibold text-gray-700">Información adicional:</div>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                                       {hiddenColumns.map((col, colIndex) => (
+                                          <div key={String(col.field)} className="space-y-1">
+                                             <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{col.headerName}</div>
+                                             <div className="text-sm text-gray-900 break-words">
+                                                {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] ?? "-")}
+                                             </div>
+                                          </div>
+                                       ))}
+                                    </div>
+                                 </td>
+                              </motion.tr>
+                           )}
+                        </React.Fragment>
+                     );
+                  })}
+               </tbody>
+            </table>
+         </div>
+      );
+   };
+
+   // VISTA DE TARJETAS (Desktop)
+   const renderCardsView = () => {
+      const visibleColumns = getVisibleColumns("compact");
+      const hiddenColumns = getHiddenColumns();
+      const showExpansion = shouldShowExpansion();
+
+      return (
+         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 p-4">
+            {currentRows.map((row, idx) => (
                <motion.div
                   key={idx}
-                  className="relative overflow-hidden rounded-lg"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: idx * 0.05 }}
+                  className="bg-white rounded-lg border border-gray-200 shadow-xs hover:shadow-md transition-all duration-200"
+                  whileHover={{ y: -2 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
                >
-                  {/* Swipe Actions - Solo visibles durante swipe */}
-                  {hasSwipeActions && (
-                     <>
-                        {/* Left Actions */}
-                        {mobileConfig!.swipeActions.left && swipeOffset > 0 && (
-                           <motion.div
-                              className="absolute left-0 top-0 h-full flex items-center justify-end pr-4"
-                              style={{
-                                 opacity: actionOpacity,
-                                 width: `${Math.min(swipeOffset, 120)}px`
-                              }}
-                           >
-                              {mobileConfig!.swipeActions.left.map((action, actionIdx) => (
-                                 <motion.button
-                                    key={actionIdx}
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center ${action.color} text-white shadow-lg`}
-                                    style={{ scale: actionOpacity }}
-                                    onClick={() => handleSwipeAction(action.action, row)}
-                                 >
-                                    {action.icon}
-                                 </motion.button>
-                              ))}
-                           </motion.div>
-                        )}
-
-                        {/* Right Actions */}
-                        {mobileConfig!.swipeActions.right && swipeOffset < 0 && (
-                           <motion.div
-                              className="absolute right-0 top-0 h-full flex items-center justify-start pl-4"
-                              style={{
-                                 opacity: actionOpacity,
-                                 width: `${Math.min(Math.abs(swipeOffset), 120)}px`
-                              }}
-                           >
-                              {mobileConfig!.swipeActions.right.map((action, actionIdx) => (
-                                 <motion.button
-                                    key={actionIdx}
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center ${action.color} text-white shadow-lg`}
-                                    style={{ scale: actionOpacity }}
-                                    onClick={() => handleSwipeAction(action.action, row)}
-                                 >
-                                    {action.icon}
-                                 </motion.button>
-                              ))}
-                           </motion.div>
-                        )}
-                     </>
-                  )}
-
-                  {/* ListTile Principal */}
-                  <motion.div
-                     className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
-                     style={{
-                        x: isSwiping ? swipeOffset : 0,
-                        scale: isSwiping ? itemScale : 1
-                     }}
-                     whileTap={{ scale: 0.98 }}
-                     drag="x"
-                     dragConstraints={{ left: 0, right: 0 }}
-                     dragElastic={0.2}
-                     onDragStart={() => handleSwipeStart(idx)}
-                     onDrag={(_, info) => handleSwipeMove(info.offset.x)}
-                     onDragEnd={() => handleSwipeEnd(row, idx)}
-                  >
-                     <div
-                        className={`p-4 ${mobileConfig?.onTileTap || mobileConfig?.bottomSheet ? "cursor-pointer active:bg-gray-50" : ""}`}
-                        onClick={() => handleTileTap(row)}
-                     >
-                        <div className="flex items-center space-x-3">
-                           {/* Leading */}
-                           {mobileConfig?.listTile?.leading && <div className="flex-shrink-0">{mobileConfig.listTile.leading(row)}</div>}
-
-                           {/* Content - SOLO título y subtítulo */}
-                           <div className="flex-1 min-w-0">
-                              <div className="flex items-center justify-between">
-                                 <div className="text-base font-semibold text-gray-900 truncate">
-                                    {mobileConfig?.listTile?.title ? mobileConfig.listTile.title(row) : getDefaultTitle(row)}
-                                 </div>
-                                 {mobileConfig?.listTile?.trailing && <div className="flex-shrink-0 ml-2">{mobileConfig.listTile.trailing(row)}</div>}
-                              </div>
-
-                              {/* Subtitle */}
-                              {mobileConfig?.listTile?.subtitle && <div className="text-sm text-gray-600 mt-1 truncate">{mobileConfig.listTile.subtitle(row)}</div>}
-                           </div>
+                  <div className="p-4">
+                     {/* Header de la tarjeta */}
+                     <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                           <h3 className="text-lg font-semibold text-gray-900 truncate">{getDefaultTitle(row)}</h3>
+                           {getDefaultSubtitle(row) && <p className="text-sm text-gray-600 mt-1">{getDefaultSubtitle(row)}</p>}
                         </div>
+
+                        {actions && (
+                           <div className="flex gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
+                              {actions(row)}
+                           </div>
+                        )}
                      </div>
 
-                     {/* NO mostrar acciones normales en móvil */}
-                  </motion.div>
+                     {/* Campos principales */}
+                     <div className="space-y-2 mb-3">
+                        {visibleColumns
+                           .filter((col) => col.visibility === "always" || !col.visibility)
+                           .slice(0, 4)
+                           .map((col) => (
+                              <div key={String(col.field)} className="flex justify-between">
+                                 <span className="text-sm text-gray-500">{col.headerName}:</span>
+                                 <span className="text-sm text-gray-900 font-medium text-right max-w-[150px] truncate">
+                                    {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] ?? "-")}
+                                 </span>
+                              </div>
+                           ))}
+                     </div>
+
+                     {/* Botón para ver más detalles - SOLO si hay columnas ocultas */}
+                     {showExpansion && (
+                        <button
+                           onClick={() => toggleRowExpansion(idx)}
+                           className="w-full py-2 text-sm text-cyan-600 hover:text-cyan-700 font-medium border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                        >
+                           <FiEye size={14} />
+                           {expandedRows.has(idx) ? "Ver menos" : `Ver ${hiddenColumns.length} campos más`}
+                        </button>
+                     )}
+
+                     {/* Detalles expandidos - SOLO columnas ocultas */}
+                     {expandedRows.has(idx) && showExpansion && (
+                        <motion.div
+                           initial={{ opacity: 0, height: 0 }}
+                           animate={{ opacity: 1, height: "auto" }}
+                           exit={{ opacity: 0, height: 0 }}
+                           className="mt-3 pt-3 border-t border-gray-200"
+                        >
+                           <div className="mb-2 text-sm font-semibold text-gray-700">Información adicional:</div>
+                           <div className="grid grid-cols-2 gap-2 text-sm">
+                              {hiddenColumns.map((col) => (
+                                 <div key={String(col.field)} className="space-y-1">
+                                    <div className="text-xs font-semibold text-gray-500 uppercase">{col.headerName}</div>
+                                    <div className="text-gray-900 break-words">
+                                       {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] ?? "-")}
+                                    </div>
+                                 </div>
+                              ))}
+                           </div>
+                        </motion.div>
+                     )}
+                  </div>
                </motion.div>
-            );
-         })}
+            ))}
+         </div>
+      );
+   };
+
+   // ... (el resto del código permanece igual: renderMobileListView, getDefaultTitle, getDefaultSubtitle, renderBottomSheet, etc.)
+
+   // VISTA MÓVIL MEJORADA
+   const renderMobileListView = () => (
+      <motion.div className="space-y-2 p-3 bg-gray-50 min-h-fit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+         <AnimatePresence>
+            {currentRows.map((row, idx) => {
+               const isBeingSwiped = swipeData.index === idx;
+               const swipeProgress = Math.min(Math.abs(swipeData.offset) / 80, 1);
+
+               const leftAction = mobileConfig?.swipeActions?.left?.[0];
+               const rightAction = mobileConfig?.swipeActions?.right?.[0];
+
+               let actionColor = null;
+               let actionIcon = null;
+
+               if (swipeData.offset > 40 && leftAction) {
+                  actionColor = leftAction.color;
+                  actionIcon = leftAction.icon;
+               } else if (swipeData.offset < -40 && rightAction) {
+                  actionColor = rightAction.color;
+                  actionIcon = rightAction.icon;
+               }
+
+               return (
+                  <motion.div
+                     key={idx}
+                     className="relative"
+                     layout
+                     initial={{ opacity: 0, y: 10 }}
+                     animate={{
+                        opacity: 1,
+                        y: 0
+                     }}
+                     exit={{ opacity: 0, y: -10 }}
+                     transition={{
+                        type: "spring",
+                        damping: 30,
+                        stiffness: 400,
+                        delay: idx * 0.02
+                     }}
+                  >
+                     {/* FONDO DE ACCIÓN SUAVE */}
+                     {actionColor && (
+                        <motion.div
+                           className={`absolute inset-0 rounded-xl ${actionColor} flex items-center ${
+                              swipeData.offset > 0 ? "justify-start pl-4" : "justify-end pr-4"
+                           }`}
+                           initial={{ opacity: 0, scale: 0.98 }}
+                           animate={{
+                              opacity: swipeProgress * 0.8,
+                              scale: 1
+                           }}
+                           transition={{
+                              type: "spring",
+                              damping: 35,
+                              stiffness: 500
+                           }}
+                        >
+                           <motion.div
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{
+                                 scale: swipeProgress,
+                                 opacity: swipeProgress
+                              }}
+                              transition={{
+                                 type: "spring",
+                                 damping: 25,
+                                 stiffness: 400
+                              }}
+                              className="text-white text-lg"
+                           >
+                              {actionIcon}
+                           </motion.div>
+                        </motion.div>
+                     )}
+
+                     {/* ITEM PRINCIPAL CON MOVIMIENTO SUAVE */}
+                     <motion.div
+                        className="relative bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden"
+                        drag="x"
+                        dragConstraints={{ left: 0, right: 0 }}
+                        dragElastic={0.1}
+                        onDragStart={() => handleSwipeStart(idx)}
+                        onDrag={(_, info) => handleSwipeMove(info.offset.x, idx)}
+                        onDragEnd={() => handleSwipeEnd(row, idx)}
+                        style={{
+                           x: isBeingSwiped ? swipeData.offset : 0
+                        }}
+                        whileHover={{
+                           y: -1,
+                           transition: { duration: 0.15 }
+                        }}
+                        whileTap={{
+                           scale: 0.995,
+                           transition: { duration: 0.1 }
+                        }}
+                     >
+                        <div className="p-3 active:bg-gray-50 transition-colors duration-150" onClick={(e) => handleTileTap(row, e)}>
+                           <div className="flex items-center space-x-3">
+                              {/* Leading */}
+                              {mobileConfig?.listTile?.leading && <div className="flex-shrink-0">{mobileConfig.listTile.leading(row)}</div>}
+
+                              {/* Content */}
+                              <div className="flex-1 min-w-0">
+                                 <div className="flex items-center justify-between">
+                                    <div className="text-base font-medium text-gray-900 truncate">
+                                       {mobileConfig?.listTile?.title ? mobileConfig.listTile.title(row) : getDefaultTitle(row)}
+                                    </div>
+                                    {mobileConfig?.listTile?.trailing && <div className="flex-shrink-0 ml-2">{mobileConfig.listTile.trailing(row)}</div>}
+                                 </div>
+
+                                 {/* Subtitle */}
+                                 {mobileConfig?.listTile?.subtitle && (
+                                    <div className="text-sm text-gray-600 mt-0.5 truncate">{mobileConfig.listTile.subtitle(row)}</div>
+                                 )}
+                              </div>
+                           </div>
+                        </div>
+
+                        {/* INDICADOR VISUAL SUTIL */}
+                        {isBeingSwiped && Math.abs(swipeData.offset) > 20 && (
+                           <motion.div
+                              className={`absolute top-1/2 transform -translate-y-1/2 w-1 h-8 rounded-full ${swipeData.offset > 0 ? " left-2" : " right-2"}`}
+                              initial={{ scale: 0, opacity: 0 }}
+                              animate={{
+                                 scale: 1,
+                                 opacity: Math.min(Math.abs(swipeData.offset) / 60, 0.7)
+                              }}
+                              transition={{ type: "spring", stiffness: 600 }}
+                           />
+                        )}
+                     </motion.div>
+                  </motion.div>
+               );
+            })}
+         </AnimatePresence>
       </motion.div>
    );
 
@@ -474,76 +759,82 @@ const CustomTable = <T extends object>({
       return titleField ? String(row[titleField.field] || "Sin título") : "Item";
    };
 
+   const getDefaultSubtitle = (row: T): React.ReactNode => {
+      const subtitleField = columns.find(
+         (col) => col.priority === 2 || col.headerName.toLowerCase().includes("descripcion") || col.headerName.toLowerCase().includes("subtitulo")
+      );
+
+      return subtitleField ? String(row[subtitleField.field] || "") : "";
+   };
+
    // Bottom Sheet mejorado
-const renderBottomSheet = () => {
-   if (!showBottomSheet || !selectedRowForSheet || !mobileConfig?.bottomSheet) return null;
+   const renderBottomSheet = () => {
+      if (!showBottomSheet || !selectedRowForSheet || !mobileConfig?.bottomSheet) return null;
 
-   return (
-      <AnimatePresence>
-         <motion.div className="fixed inset-0 z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            {/* Backdrop */}
-            <motion.div
-               className="absolute inset-0 bg-black bg-opacity-40"
-               onClick={closeBottomSheet}
-               initial={{ opacity: 0 }}
-               animate={{ opacity: 1 }}
-               exit={{ opacity: 0 }}
-            />
+      return (
+         <AnimatePresence>
+            <motion.div className="fixed inset-0 z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+               {/* Backdrop */}
+               <motion.div
+                  className="absolute inset-0 bg-black bg-opacity-40"
+                  onClick={closeBottomSheet}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+               />
 
-            {/* BottomSheet 100vh */}
-            <motion.div
-               className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl overflow-hidden border border-gray-100"
-               initial={{ y: "100%" }}
-               animate={{ y: 0 }}
-               exit={{ y: "100%" }}
-               transition={{
-                  type: "spring",
-                  damping: 30,
-                  stiffness: 300,
-                  mass: 0.8
-               }}
-               style={{
-                  height: "100vh",
-                  maxHeight: "100vh" // ← full fullscreen
-               }}
-            >
-               {/* Handle */}
-               <div className="flex justify-center pt-3 pb-2">
-                  <div className="w-16 h-1.5 bg-gray-300 rounded-full"></div>
-               </div>
-
-               {/* Close button Flutter-like */}
-               {(mobileConfig.bottomSheet.showCloseButton ?? true) && (
-                  <motion.button
-                     className="absolute top-2 right-3 z-10 w-8 h-8 hover:cursor-pointer text-red-400 hover:text-red-600 rounded-full flex items-center justify-center transition-colors shadow-md border bg-white"
-                     onClick={closeBottomSheet}
-                     whileHover={{ scale: 1.05 }}
-                     whileTap={{ scale: 0.95 }}
-                     initial={{ opacity: 0, scale: 0.8 }}
-                     animate={{ opacity: 1, scale: 1 }}
-                     transition={{ delay: 0.1 }}
-                  >
-                     <FiX className="text-red-500 text-lg" />
-                  </motion.button>
-               )}
-
-               {/* Contenido scrollable */}
-               <div
-                  className="overflow-y-auto smooth-scroll px-3 pb-6"
+               {/* BottomSheet 100vh */}
+               <motion.div
+                  className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl overflow-hidden border border-gray-100"
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "100%" }}
+                  transition={{
+                     type: "spring",
+                     damping: 30,
+                     stiffness: 300,
+                     mass: 0.8
+                  }}
                   style={{
-                     height: "calc(100vh - 70px)" // header + handle + padding
+                     height: "100vh",
+                     maxHeight: "100vh"
                   }}
                >
-                  {mobileConfig.bottomSheet.builder(selectedRowForSheet, closeBottomSheet)}
-               </div>
+                  {/* Handle */}
+                  <div className="flex justify-center pt-3 pb-2">
+                     <div className="w-16 h-1.5 bg-gray-300 rounded-full"></div>
+                  </div>
+
+                  {/* Close button Flutter-like */}
+                  {(mobileConfig.bottomSheet.showCloseButton ?? true) && (
+                     <motion.button
+                        className="absolute top-2 right-3 z-10 w-8 h-8 hover:cursor-pointer text-red-400 hover:text-red-600 rounded-full flex items-center justify-center transition-colors shadow-md border bg-white"
+                        onClick={closeBottomSheet}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        initial={{ opacity: 0, scale: 0.8 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.1 }}
+                     >
+                        <FiX className="text-red-500 text-lg" />
+                     </motion.button>
+                  )}
+
+                  {/* Contenido scrollable */}
+                  <div
+                     className="overflow-y-auto smooth-scroll px-3 pb-6"
+                     style={{
+                        height: "calc(100vh - 70px)"
+                     }}
+                  >
+                     {mobileConfig.bottomSheet.builder(selectedRowForSheet, closeBottomSheet)}
+                  </div>
+               </motion.div>
             </motion.div>
-         </motion.div>
-      </AnimatePresence>
-   );
-};
+         </AnimatePresence>
+      );
+   };
 
-
-   // Resto del código igual...
    const renderLoading = () => (
       <div className="text-center py-12">
          <motion.div className="flex justify-center items-center gap-3 text-gray-500" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -585,55 +876,28 @@ const renderBottomSheet = () => {
 
    return (
       <div className="w-full bg-white rounded-lg">
-         {/* Header MÓVIL - Diseño realista */}
+         {/* Header MÓVIL */}
          {isMobile ? (
-            // HEADER MÓVIL
-            <div className="flex flex-col gap-3 mb-4 p-3 bg-white border-b border-gray-200">
-               {/* Solo búsqueda en móvil - diseño nativo */}
-               <div className="flex bg-gray-100 items-center rounded-2xl px-4 py-3">
-                  <FiSearch className="text-gray-500 mr-3 flex-shrink-0" />
+            <motion.div className="flex flex-col gap-4 p-4 bg-white border-b border-gray-200" initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+               {/* Búsqueda móvil */}
+               <div className="flex bg-gray-100 items-center rounded-2xl px-4 py-3 shadow-inner">
+                  <FiSearch className="text-gray-500 mr-3 flex-shrink-0 text-lg" />
                   <input
                      type="text"
-                     placeholder="Buscar..."
+                     placeholder="Buscar en la lista..."
                      value={globalFilter}
                      onChange={(e) => setGlobalFilter(e.target.value)}
-                     className="w-full min-w-0 outline-none text-base bg-transparent placeholder-gray-500"
+                     className="w-full min-w-0 outline-none text-base bg-transparent placeholder-gray-500 font-medium"
                   />
-                  {globalFilter && <FiX className="text-gray-500 cursor-pointer hover:text-gray-700 flex-shrink-0 ml-2" onClick={() => setGlobalFilter("")} />}
+                  {globalFilter && (
+                     <motion.button onClick={() => setGlobalFilter("")} className="text-gray-500 hover:text-gray-700 flex-shrink-0 ml-2" whileTap={{ scale: 0.9 }}>
+                        <FiX className="text-lg" />
+                     </motion.button>
+                  )}
                </div>
-
-               {/* Filtros rápidos móvil */}
-               <div className="flex gap-2 overflow-x-auto pb-1">
-                  <button
-                     onClick={clearAllFilters}
-                     className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
-                        globalFilter || Object.values(columnFilters).some(Boolean) ? "bg-red-500 text-white" : "bg-gray-200 text-gray-700"
-                     }`}
-                  >
-                     Limpiar
-                  </button>
-
-                  {/* Filtros por columnas móvil */}
-                  <select
-                     onChange={(e) => {
-                        if (e.target.value) {
-                           const [field, value] = e.target.value.split("|");
-                           handleColumnFilterChange(field, value);
-                        }
-                     }}
-                     className="px-3 py-2 bg-gray-200 rounded-full text-sm text-gray-700"
-                  >
-                     <option value="">Filtrar por...</option>
-                     {columns.slice(0, 3).map((col) => (
-                        <option key={String(col.field)} value={`${String(col.field)}|${col.headerName}`}>
-                           {col.headerName}
-                        </option>
-                     ))}
-                  </select>
-               </div>
-            </div>
+            </motion.div>
          ) : (
-            // HEADER DESKTOP (el original)
+            // HEADER DESKTOP
             <div className="flex flex-col gap-3 mb-4 p-4 bg-gray-50 rounded-lg">
                {headerActions && <div className="flex flex-wrap gap-2 w-full">{headerActions()}</div>}
 
@@ -653,6 +917,24 @@ const renderBottomSheet = () => {
 
                   {/* Botones de acción Desktop */}
                   <div className="flex gap-2 flex-shrink-0">
+                     {/* Selector de vista */}
+                     {enableViewToggle && !isMobile && (
+                        <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+                           <button
+                              onClick={() => setViewMode("table")}
+                              className={`px-3 py-2 transition-colors ${viewMode === "table" ? "bg-cyan-500 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                           >
+                              <FiList size={16} />
+                           </button>
+                           <button
+                              onClick={() => setViewMode("cards")}
+                              className={`px-3 py-2 transition-colors ${viewMode === "cards" ? "bg-cyan-500 text-white" : "bg-white text-gray-600 hover:bg-gray-50"}`}
+                           >
+                              <FiGrid size={16} />
+                           </button>
+                        </div>
+                     )}
+
                      {conditionExcel ? (
                         <PermissionRoute requiredPermission={conditionExcel}>
                            <button
@@ -687,7 +969,7 @@ const renderBottomSheet = () => {
             </div>
          )}
 
-         {/* Vista principal (igual que antes) */}
+         {/* Vista principal */}
          <div className="border border-gray-200 rounded-lg overflow-hidden">
             {loading ? (
                renderLoading()
@@ -696,78 +978,91 @@ const renderBottomSheet = () => {
             ) : currentRows.length === 0 ? (
                renderEmpty()
             ) : isMobile ? (
-               <div className="overflow-y-auto max-h-[75vh]">
+               <div className="overflow-y-auto">
                   {renderMobileListView()}
                   {renderBottomSheet()}
                </div>
+            ) : viewMode === "cards" ? (
+               <div className="overflow-auto max-h-[75vh]">{renderCardsView()}</div>
             ) : (
                <div className="overflow-auto max-h-[75vh]">{renderTableView()}</div>
             )}
          </div>
 
-         {/* PAGINACIÓN MÓVIL - Diseño realista */}
+         {/* PAGINACIÓN */}
          {currentRows.length > 0 && (
-            <div className={`${isMobile ? "px-3 py-4 bg-white border-t border-gray-200" : "px-4 py-3 bg-gray-50 border-t border-gray-200 mt-2 rounded-b-lg"}`}>
+            <div className={`${isMobile ? "px-4 py-6 bg-white border-t border-gray-200 mt-4" : "px-4 py-3 bg-gray-50 border-t border-gray-200 mt-2 rounded-b-lg"}`}>
                {isMobile ? (
                   // PAGINACIÓN MÓVIL
-                  <div className="flex flex-col gap-4">
-                     {/* Info simple */}
-                     <div className="text-center text-gray-600 text-sm">
-                        {startIndex + 1}-{Math.min(startIndex + rowsPerPage, sortedData.length)} de {sortedData.length}
+                  <motion.div className="flex flex-col gap-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                     {/* Info */}
+                     <div className="text-center text-gray-600 text-sm font-medium">
+                        {startIndex + 1}-{Math.min(startIndex + rowsPerPage, sortedData.length)} de {sortedData.length} elementos
                      </div>
 
-                     {/* Controles móvil - tipo app nativa */}
+                     {/* Controles principales */}
                      <div className="flex items-center justify-between">
-                        {/* Botón anterior */}
-                        <button
+                        <motion.button
                            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
                            disabled={currentPage === 1}
-                           className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-medium transition-colors ${
-                              currentPage === 1 ? "bg-gray-100 text-gray-400" : "bg-blue-500 text-white shadow-sm"
+                           className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-semibold transition-all ${
+                              currentPage === 1 ? "bg-gray-100 text-gray-400" : "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
                            }`}
+                           whileTap={{ scale: 0.95 }}
+                           whileHover={currentPage !== 1 ? { scale: 1.05 } : {}}
                         >
                            <MdOutlineKeyboardArrowLeft className="text-lg" />
                            Anterior
-                        </button>
+                        </motion.button>
 
                         {/* Indicador de página */}
-                        <div className="flex items-center gap-1">
-                           <span className="text-sm text-gray-700">Página</span>
-                           <span className="px-3 py-1 bg-blue-500 text-white rounded-full text-sm font-medium">{currentPage}</span>
-                           <span className="text-sm text-gray-700">de {totalPages}</span>
+                        <div className="flex items-center gap-3">
+                           <span className="text-sm text-gray-600 font-medium">Página</span>
+                           <motion.span
+                              className="px-4 py-2 bg-blue-500 text-white rounded-full text-sm font-bold shadow-md"
+                              key={currentPage}
+                              initial={{ scale: 0.8, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ type: "spring", stiffness: 500 }}
+                           >
+                              {currentPage}
+                           </motion.span>
+                           <span className="text-sm text-gray-600 font-medium">de {totalPages}</span>
                         </div>
 
-                        {/* Botón siguiente */}
-                        <button
+                        <motion.button
                            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
                            disabled={currentPage === totalPages}
-                           className={`flex items-center gap-2 px-4 py-3 rounded-2xl text-sm font-medium transition-colors ${
-                              currentPage === totalPages ? "bg-gray-100 text-gray-400" : "bg-blue-500 text-white shadow-sm"
+                           className={`flex items-center gap-2 px-5 py-3 rounded-2xl text-sm font-semibold transition-all ${
+                              currentPage === totalPages ? "bg-gray-100 text-gray-400" : "bg-blue-500 text-white shadow-lg shadow-blue-500/30"
                            }`}
+                           whileTap={{ scale: 0.95 }}
+                           whileHover={currentPage !== totalPages ? { scale: 1.05 } : {}}
                         >
                            Siguiente
                            <MdOutlineKeyboardArrowRight className="text-lg" />
-                        </button>
+                        </motion.button>
                      </div>
 
-                     {/* Selector de filas móvil */}
-                     <div className="flex items-center justify-center gap-2">
-                        <span className="text-sm text-gray-600">Mostrar:</span>
-                        <select value={rowsPerPage} onChange={handleRowsPerPageChange} className="bg-gray-100 border-0 rounded-2xl px-3 py-2 text-sm cursor-pointer">
-                           {paginate.slice(0, 4).map(
-                              (
-                                 num // Solo primeros 4 en móvil
-                              ) => (
-                                 <option key={num} value={num}>
-                                    {num} filas
-                                 </option>
-                              )
-                           )}
-                        </select>
+                     {/* Selector de filas */}
+                     <div className="flex items-center justify-center gap-3">
+                        <span className="text-sm text-gray-600 font-medium">Mostrar:</span>
+                        <motion.select
+                           value={rowsPerPage}
+                           onChange={handleRowsPerPageChange}
+                           className="bg-white border border-gray-300 rounded-2xl px-4 py-2 text-sm cursor-pointer shadow-sm"
+                           whileTap={{ scale: 0.95 }}
+                        >
+                           {paginate.slice(0, 3).map((num) => (
+                              <option key={num} value={num}>
+                                 {num} filas
+                              </option>
+                           ))}
+                        </motion.select>
                      </div>
-                  </div>
+                  </motion.div>
                ) : (
-                  // PAGINACIÓN DESKTOP (original)
+                  // PAGINACIÓN DESKTOP
                   <div className="flex flex-col sm:flex-row justify-between items-center gap-3">
                      <div className="text-gray-600 text-sm text-center sm:text-left order-2 sm:order-1">
                         Mostrando {startIndex + 1} - {Math.min(startIndex + rowsPerPage, sortedData.length)} de {sortedData.length}

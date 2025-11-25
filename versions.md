@@ -4,6 +4,18 @@
 
 ---
 
+## 🔧 **v2.2.0.2** · *🧪 Beta*
+📅 **Fecha:** 21 de noviembre de 2025, 2:42 p.m.  
+👤 **Autor:** luis  
+🧭 **Tipo:** Build
+
+**✨ Mejoras**
+- filtros en mapa
+
+
+
+---
+
 ## ✨ **v2.2.0.1** · *🧪 Beta*
 📅 **Fecha:** 14 de noviembre de 2025, 7:35 p.m.  
 👤 **Autor:** Luisao-Nestor  

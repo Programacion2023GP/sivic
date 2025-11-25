@@ -14,6 +14,9 @@ import { PermissionRoute } from "../../../../App";
 import { useDoctorStore } from "../../../../store/doctor/doctor.store";
 import { DoctorApi } from "../../../../infrastructure/doctor/doctor.infra";
 import { Doctor } from "../../../../domain/models/doctor/dependence";
+import { FiEdit, FiTrash2 } from "react-icons/fi";
+import CustomDataDisplay from "../../../components/movil/view/customviewmovil";
+import { doctorMovilView } from "./infomovildoctor";
 
 const PageDoctor = () => {
    const {doctor,fetchDoctor,handleChangeDoctor,initialValues,loading,open,setOpen,postDoctor,removeDoctor } = useDoctorStore();
@@ -96,6 +99,48 @@ const PageDoctor = () => {
                         headerName: "Cedula"
                      }
                   ]}
+                  mobileConfig={{
+                     listTile: {
+                        leading: (user) => (
+                           <div className="flex items-center justify-center w-10 h-10 font-bold text-white bg-red-500 rounded-full">{user.name?.charAt(0) || "P"}</div>
+                        ),
+                        title: (user) => <span className="font-semibold">{user.name || "Sin nombre"}</span>
+                        // subtitle: (penalty) => <span className="text-gray-600">{penalty.description || "Sin descripción"}</span>
+                     },
+
+                     swipeActions: {
+                        left: [
+                           {
+                              icon: <FiTrash2 size={18} />,
+                              color: "bg-red-500",
+                              action: (dependence) => {
+                                 showConfirmationAlert(`Eliminar`, { text: "Se eliminará el doctor" }).then((isConfirmed) => {
+                                    if (isConfirmed) {
+                                       removeDoctor(dependence, api);
+                                    } else {
+                                       showToast("La acción fue cancelada.", "error");
+                                    }
+                                 });
+                              }
+                           }
+                        ],
+                        right: [
+                           {
+                              icon: <FiEdit size={18} />,
+                              color: "bg-blue-500",
+                              action: (row) => {
+                                 handleChangeDoctor(row);
+                                 setOpen();
+                              }
+                           }
+                        ]
+                     },
+                     bottomSheet: {
+                        height: 100,
+                        showCloseButton: true,
+                        builder: (doctor, onClose) => <CustomDataDisplay data={doctor} config={doctorMovilView} />
+                     }
+                  }}
                   actions={(row) => (
                      <>
                         <PermissionRoute requiredPermission={"catalogo_doctor_actualizar"}>

@@ -6,15 +6,27 @@ import CustomModal from "../../../components/modal/modal";
 import PdfPreview from "../../../components/pdfview/pdfview";
 import MultaPDF from "../../courts/pdf/pdfpenalties";
 
+// 👌 Corrección: tipo para selectedDate
+type DateFilter = Date | "ALL" | null;
+
 const PageReportMap = () => {
    const { penalties, fetchPenalties } = usePenaltiesStore();
    const api = new PenaltiesApi();
+
    const [isLoading, setIsLoading] = useState(true);
+
+   // 👉 HOY POR DEFECTO
+   const today = new Date();
+   const [selectedDate, setSelectedDate] = useState<DateFilter>(today);
+
+   const [filteredPenalties, setFilteredPenalties] = useState([]);
+
    const [openPdf, setOpenpdf] = useState({
       open: false,
       data: {}
    });
 
+   /* --------- CARGA INICIAL --------- */
    useEffect(() => {
       const loadData = async () => {
          setIsLoading(true);
@@ -24,29 +36,49 @@ const PageReportMap = () => {
       loadData();
    }, []);
 
-   // Memoizar el procesamiento de datos
+   /* --------- Normalización --------- */
    const limitedPenalties = useMemo(() => {
       const defaultLat = 25.6596;
       const defaultLng = -103.4586;
 
-      return penalties.map((penalty, index) => {
-         const lat = penalty.lat ? Number(penalty.lat) : defaultLat;
-         const lon = penalty.lon ? Number(penalty.lon) : defaultLng;
-
-         const validLat = isNaN(lat) ? defaultLat : lat;
-         const validLng = isNaN(lon) ? defaultLng : lon;
+      return penalties.map((penalty) => {
+         const lat = Number(penalty.lat) || defaultLat;
+         const lon = Number(penalty.lon) || defaultLng;
 
          return {
             ...penalty,
-            lat: validLat,
-            lon: validLng,
+            lat: isNaN(lat) ? defaultLat : lat,
+            lon: isNaN(lon) ? defaultLng : lon,
             cp: String(penalty.cp || "35000"),
             id: penalty.id.toString()
          };
       });
    }, [penalties]);
 
-   // Memoizar el PDF para evitar re-renderizados innecesarios
+   /* ---------- FILTRAR LOCALMENTE POR FECHA ----------- */
+   useEffect(() => {
+      if (selectedDate === "ALL") {
+         setFilteredPenalties(limitedPenalties);
+         return;
+      }
+
+      if (!selectedDate) {
+         setFilteredPenalties(limitedPenalties);
+         return;
+      }
+
+      // Fecha seleccionada YYYY-MM-DD
+      const iso = selectedDate.toISOString().split("T")[0];
+
+      const filtered = limitedPenalties.filter((p) => {
+         const dateStr = String(p.date ?? "").split("T")[0];
+         return dateStr === iso;
+      });
+
+      setFilteredPenalties(filtered);
+   }, [selectedDate, limitedPenalties]);
+
+   /* -------- PDF Memo -------- */
    const pdfDocument = useMemo(() => {
       if (!openPdf.data) return null;
       return <MultaPDF data={openPdf.data} />;
@@ -54,34 +86,73 @@ const PageReportMap = () => {
 
    return (
       <>
-         <div className="bg-gray-100 p-6">
-            {isLoading ? (
-               <div className="flex justify-center items-center h-screen text-gray-500">Cargando datos...</div>
-            ) : (
-               <div className="rounded-lg overflow-hidden shadow-md" style={{ height: "screen" }}>
-                  <CustomMap
-                     penaltiesData={limitedPenalties}
-                     onCaseSelect={(row) => {
-                        setOpenpdf({
-                           open: true,
-                           data: row
-                        });
-                     }}
-                  />
-               </div>
-            )}
+         {/* ================= FILTRO DE FECHA ================= */}
+         <div className="w-full flex justify-center gap-4 py-4 bg-gray-50 border-b">
+            {/* INPUT */}
+            <div className="flex flex-col">
+               <label className="text-sm text-gray-500 mb-1 font-medium">Filtrar por fecha:</label>
+
+               <input
+                  type="date"
+                  disabled={selectedDate === "ALL"}
+                  className={`px-3 py-2 rounded-xl border shadow-sm text-gray-700 
+                     focus:ring-2 focus:ring-cyan-500 focus:outline-none
+                     ${selectedDate === "ALL" ? "bg-gray-200 cursor-not-allowed" : ""}`}
+                  value={selectedDate && selectedDate !== "ALL" ? selectedDate.toISOString().split("T")[0] : ""}
+                  onChange={(e) => {
+                     if (!e.target.value) {
+                        setSelectedDate(null);
+                        return;
+                     }
+                     setSelectedDate(new Date(e.target.value));
+                  }}
+               />
+            </div>
+
+            {/* ========== BOTÓN HOY ========== */}
+            <button
+               className="px-4 h-10 mt-6 rounded-xl shadow bg-cyan-600 hover:bg-cyan-700 
+                          text-white font-medium"
+               onClick={() => setSelectedDate(today)}
+            >
+               Hoy
+            </button>
+
+            {/* ========== BOTÓN TODOS ========== */}
+            <button
+               className="px-4 h-10 mt-6 rounded-xl shadow bg-gray-700 hover:bg-gray-800 
+                          text-white font-medium"
+               onClick={() => setSelectedDate("ALL")}
+            >
+               Todos
+            </button>
          </div>
 
+         {/* ================= MAPA ================= */}
+         {isLoading ? (
+            <div className="flex justify-center items-center h-screen text-gray-500">Cargando datos...</div>
+         ) : (
+            <CustomMap
+               penaltiesData={filteredPenalties}
+               onCaseSelect={(row) => {
+                  setOpenpdf({
+                     open: true,
+                     data: row
+                  });
+               }}
+            />
+         )}
+
+         {/* ================= PDF ================= */}
          <CustomModal
             title="Multa"
-            
             isOpen={openPdf.open}
-            onClose={() => {
+            onClose={() =>
                setOpenpdf({
                   data: {},
                   open: false
-               });
-            }}
+               })
+            }
          >
             {pdfDocument && <PdfPreview children={pdfDocument} name={`multa-`} />}
          </CustomModal>

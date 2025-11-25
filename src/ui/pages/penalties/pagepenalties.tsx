@@ -13,7 +13,7 @@ import { VscDiffAdded } from "react-icons/vsc";
 import { LuRefreshCcw } from "react-icons/lu";
 import { CiEdit } from "react-icons/ci";
 import { showConfirmationAlert, showToast } from "../../../sweetalert/Sweetalert";
-import { FaPlus, FaRegFilePdf, FaTrash } from "react-icons/fa";
+import { FaPlus, FaRegFilePdf, FaSync, FaTrash } from "react-icons/fa";
 import { PermissionRoute } from "../../../App";
 import PhotoZoom from "../../components/images/images";
 import Spinner from "../../components/loading/loading";
@@ -36,6 +36,7 @@ import { usePenaltyPreloadDataStore } from "../../../store/penaltypreloaddata/pe
 import { PenaltyPreloadDataApi } from "../../../infrastructure/penaltypreloaddata/penaltypreloaddata.infra";
 import Typography from "../../components/typografy/Typografy";
 import dayjs from "dayjs";
+import useEmployesData from "../../../hooks/employesdata";
 // -----------------------------
 // Tipos y Constantes
 // -----------------------------
@@ -180,7 +181,7 @@ const PagePenalities = () => {
 
    const { width: windowWidth } = useWindowSize();
    const isMobile = windowWidth < 1024;
-
+   const {contraloria,oficiales,proteccionCivil} = useEmployesData()
    const [activeStep, setActiveStep] = useState(0);
    const formikRef = useRef<FormikProps<FormikValues>>(null);
    const [pdfPenalties, setPdfPenalties] = useState({
@@ -191,9 +192,7 @@ const PagePenalities = () => {
 
    // Estados para datos externos
    const [citys, setCity] = useState({ loading: false, citys: [] });
-   const [contraloria, setContraloria] = useState({ loading: false, employes: [] as any[], error: null as string | null });
-   const [oficiales, setOficiales] = useState({ loading: false, employes: [] as any[], error: null as string | null });
-   const [proteccionCivil, setProteccionCivil] = useState({ loading: false, employes: [] as any[], error: null as string | null });
+  
 
    // -----------------------------
    // Validación Schema
@@ -246,53 +245,14 @@ const PagePenalities = () => {
    // -----------------------------
    // Fetch data logic (Optimizado)
    // -----------------------------
-   const fetchData = useCallback(async (url: string) => {
-      try {
-         const res = await window.fetch(`${import.meta.env.VITE_API_EMPLOYES}/${url}`);
-         if (!res.ok) throw new Error("Error al obtener datos");
-         const data = await res.json();
-         return data;
-      } catch (error: any) {
-         throw new Error(error.message || "Error desconocido");
-      }
-   }, []);
 
-   const initContraloria = useCallback(async () => {
-      setContraloria({ loading: true, employes: [], error: null });
-      try {
-         const data = await fetchData("controlaloria");
-         setContraloria({ loading: false, employes: data?.data?.result || [], error: null });
-      } catch (error: any) {
-         setContraloria({ loading: false, employes: [], error: error.message });
-      }
-   }, [fetchData]);
-
-   const initOficiales = useCallback(async () => {
-      setOficiales({ loading: true, employes: [], error: null });
-      try {
-         const data = await fetchData("transitovialidad");
-         setOficiales({ loading: false, employes: data?.data?.result || [], error: null });
-      } catch (error: any) {
-         setOficiales({ loading: false, employes: [], error: error.message });
-      }
-   }, [fetchData]);
-
-   const initProteccionCivil = useCallback(async () => {
-      setProteccionCivil({ loading: true, employes: [], error: null });
-      try {
-         const data = await fetchData("proteccioncivil");
-         setProteccionCivil({ loading: false, employes: data?.data?.result || [], error: null });
-      } catch (error: any) {
-         setProteccionCivil({ loading: false, employes: [], error: error.message });
-      }
-   }, [fetchData]);
 
    useEffect(() => {
       fetchPenalties(api);
       fetchDoctor(apiDoc);
-      initContraloria();
-      initOficiales();
-      initProteccionCivil();
+      contraloria.refetch()
+      oficiales.refetch()
+      proteccionCivil.refetch()
    }, []);
 
    // -----------------------------
@@ -395,18 +355,18 @@ const PagePenalities = () => {
       };
       handleChangePenaltie(penaltyPreloadData);
    };
-   // const handleProteccionCivilChange = useCallback(
-   //    (field: string, value: any) => {
-   //       if (formikRef.current) {
-   //          const proteccionCivilSeleccionado = proteccionCivil.employes.find((proteccionCivil) => proteccionCivil.value == value);
-   //          if (proteccionCivilSeleccionado) {
-   //             formikRef.current.setFieldValue("proteccionCivil_payroll", proteccionCivilSeleccionado.codigoEmpleado);
-   //             formikRef.current.setFieldValue("person_oficial", value);
-   //          }
-   //       }
-   //    },
-   //    [proteccionCivil.employes]
-   // );
+   const handleProteccionCivilChange = useCallback(
+      (field: string, value: any) => {
+         if (formikRef.current) {
+            const proteccionCivilSeleccionado = proteccionCivil.employes.find((proteccionCivil) => proteccionCivil.value == value);
+            if (proteccionCivilSeleccionado) {
+               formikRef.current.setFieldValue("proteccionCivil_payroll", proteccionCivilSeleccionado.codigoEmpleado);
+               formikRef.current.setFieldValue("person_oficial", value);
+            }
+         }
+      },
+      [proteccionCivil.employes]
+   );
 
    const handleStepNavigation = useCallback((direction: "next" | "prev") => {
       setActiveStep((prev) => (direction === "next" ? prev + 1 : prev - 1));
@@ -437,6 +397,19 @@ const PagePenalities = () => {
    const handleDelete = useCallback(
       (row: any) => {
          showConfirmationAlert(`Eliminar`, { text: "Se eliminará la multa" }).then((isConfirmed) => {
+            if (isConfirmed) {
+               removePenaltie(row, api);
+            } else {
+               showToast("La acción fue cancelada.", "error");
+            }
+         });
+      },
+      [removePenaltie, api]
+   );
+
+   const handleReactive = useCallback(
+      (row: any) => {
+         showConfirmationAlert(`Activar`, { text: "Se reactivara la multa" }).then((isConfirmed) => {
             if (isConfirmed) {
                removePenaltie(row, api);
             } else {
@@ -501,7 +474,7 @@ const PagePenalities = () => {
                      responsive={RESPONSIVE_CONFIG}
                      idKey="value"
                      labelKey="text"
-                     // handleModified={handleProteccionCivilChange}
+                     handleModified={handleProteccionCivilChange}
                   />
                   <FormikInput name="command_vehicle" label="Vehículo" responsive={RESPONSIVE_CONFIG} />
                   <FormikInput name="command_troops" label="Tropas" responsive={RESPONSIVE_CONFIG} />
@@ -693,7 +666,15 @@ const PagePenalities = () => {
                               {
                                  icon: <FiTrash2 size={18} />,
                                  color: "bg-red-500",
-                                 action: (penalty) => removePenaltie(penalty, api)
+                                 action: (penalty) => {
+                                    showConfirmationAlert(`Eliminar`, { text: "Se eliminará la multa" }).then((isConfirmed) => {
+                                       if (isConfirmed) {
+                                          removePenaltie(penalty, api);
+                                       } else {
+                                          showToast("La acción fue cancelada.", "error");
+                                       }
+                                    });
+                                 }
                               }
                            ],
                            right: [
@@ -711,40 +692,66 @@ const PagePenalities = () => {
                         }
                      }}
                      columns={[
-                        { field: "id", headerName: "Folio" },
-                        { field: "name", headerName: "Nombre" },
-                        { field: "detainee_released_to", headerName: "Persona que acudio" },
+                        { field: "id", headerName: "Folio", visibility: "always" },
+                        { field: "name", headerName: "Nombre", visibility: "always" },
+                        { field: "detainee_released_to", headerName: "Persona que acudio", visibility: "always" },
 
-                        { field: "image_penaltie", headerName: "Foto Multa", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
-                        { field: "images_evidences", headerName: "Foto evidencia del ciudadano", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
-                        { field: "images_evidences_car", headerName: "Foto evidencia del vehículo", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
-                        { field: "doctor", headerName: "Doctor" },
-                        { field: "cedula", headerName: "Cedula del doctor" },
+                        { field: "image_penaltie", visibility: "expanded", headerName: "Foto Multa", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
+                        {
+                           field: "images_evidences",
+                           headerName: "Foto evidencia del ciudadano",
+                           visibility: "expanded",
+                           renderField: (value) => <PhotoZoom src={value} alt={value} />
+                        },
+                        { field: "doctor", headerName: "Doctor", visibility: "expanded" },
+                        { field: "cedula", headerName: "Cedula del doctor", visibility: "expanded" },
 
-                        { field: "time", headerName: "Hora", renderField: (v) => <>{formatDatetime(`2025-01-01 ${v}`, true, DateFormat.H_MM_SS_A)}</> },
-                        { field: "date", headerName: "Fecha", renderField: (v) => <>{formatDatetime(v, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)}</> },
-                        { field: "person_contraloria", headerName: "Contraloría" },
-                        { field: "oficial_payroll", headerName: "Nómina Oficial" },
-                        { field: "person_oficial", headerName: "Oficial" },
-                        { field: "vehicle_service_type", headerName: "Tipo de Servicio Vehicular" },
-                        { field: "alcohol_concentration", headerName: "Concentración Alcohol" },
-                        { field: "group", headerName: "Grupo" },
-                        { field: "municipal_police", headerName: "Policía Municipal" },
-                        { field: "civil_protection", headerName: "Protección Civil" },
-                        { field: "command_vehicle", headerName: "Vehículo Comando" },
-                        { field: "command_troops", headerName: "Tropa Comando" },
-                        { field: "command_details", headerName: "Detalles Comando" },
-                        { field: "filter_supervisor", headerName: "Supervisor Filtro" },
-                        { field: "cp", headerName: "Código Postal" },
-                        { field: "city", headerName: "Ciudad" },
-                        { field: "age", headerName: "Edad" },
-                        { field: "amountAlcohol", headerName: "Cantidad Alcohol" },
-                        { field: "number_of_passengers", headerName: "Número de Pasajeros" },
-                        { field: "plate_number", headerName: "Número de Placa" },
-                        { field: "detainee_phone_number", headerName: "Teléfono del Detenido" },
-                        { field: "curp", headerName: "CURP" },
-                        { field: "observations", headerName: "Observaciones" },
-                        { field: "created_by_name", headerName: "Creado Por" }
+                        {
+                           field: "time",
+                           headerName: "Hora",
+                           visibility: "always",
+                           renderField: (v) => <>{formatDatetime(`2025-01-01 ${v}`, true, DateFormat.H_MM_SS_A)}</>,
+                           getFilterValue: (v) => formatDatetime(`2025-01-01 ${v}`, true, DateFormat.H_MM_SS_A)
+                        },
+                        {
+                           field: "date",
+                           headerName: "Fecha",
+                           visibility: "always",
+
+                           renderField: (v) => <>{formatDatetime(v, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)}</>,
+                           getFilterValue: (v) => formatDatetime(v, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)
+                        },
+                        { field: "person_contraloria", headerName: "Contraloría", visibility: "expanded" },
+                        { field: "oficial_payroll", headerName: "Nómina Oficial", visibility: "expanded" },
+                        { field: "person_oficial", headerName: "Oficial", visibility: "expanded" },
+                        { field: "vehicle_service_type", headerName: "Tipo de Servicio Vehicular", visibility: "expanded" },
+                        { field: "alcohol_concentration", headerName: "Concentración Alcohol", visibility: "expanded" },
+                        { field: "group", headerName: "Grupo", visibility: "expanded" },
+                        { field: "municipal_police", headerName: "Policía Municipal" ,visibility: "expanded"},
+                        { field: "civil_protection", headerName: "Protección Civil" ,visibility: "expanded"},
+                        { field: "command_vehicle", headerName: "Vehículo Comando" ,visibility: "expanded"},
+                        { field: "command_troops", headerName: "Tropa Comando" ,visibility: "expanded"},
+                        { field: "command_details", headerName: "Detalles Comando" ,visibility: "expanded"},
+                        { field: "filter_supervisor", headerName: "Supervisor Filtro" ,visibility: "expanded"},
+                        { field: "cp", headerName: "Código Postal", visibility: "always" },
+                        { field: "city", headerName: "Ciudad", visibility: "always" },
+                        { field: "age", headerName: "Edad", visibility: "expanded", },
+                        { field: "amountAlcohol", headerName: "Cantidad Alcohol" ,visibility: "expanded"},
+                        { field: "number_of_passengers", headerName: "Número de Pasajeros" ,visibility: "expanded"},
+                        { field: "plate_number", headerName: "Número de Placa" ,visibility: "expanded"},
+                        { field: "detainee_phone_number", headerName: "Teléfono del Detenido" ,visibility: "expanded"},
+                        { field: "curp", headerName: "CURP" ,visibility: "expanded"},
+                        { field: "observations", headerName: "Observaciones" ,visibility: "expanded"},
+                        { field: "created_by_name", headerName: "Creado Por" ,visibility: "expanded"},
+                        {
+                           field: "active",
+                           headerName: "Activo",
+                           renderField: (v) => (
+                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${v ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                                 {v ? "Activo" : "Desactivado"}
+                              </span>
+                           )
+                        }
                      ]}
                      actions={(row) => (
                         <>
@@ -786,11 +793,19 @@ const PagePenalities = () => {
                               </Tooltip>
                            </PermissionRoute>
                            <PermissionRoute requiredPermission={"multas_eliminar"}>
-                              <Tooltip content="Eliminar la multa y sus antecedentes de la persona">
-                                 <CustomButton size="sm" color="red" onClick={() => handleDelete(row)}>
-                                    <FaTrash />
-                                 </CustomButton>
-                              </Tooltip>
+                              {row.active ? (
+                                 <Tooltip content="Eliminar la multa y sus antecedentes de la persona">
+                                    <CustomButton size="sm" color="red" onClick={() => handleDelete(row)}>
+                                       <FaTrash />
+                                    </CustomButton>
+                                 </Tooltip>
+                              ) : (
+                                 <Tooltip content="Reactivar multa">
+                                    <CustomButton size="sm" color="green" onClick={() => handleReactive(row)}>
+                                       <FaSync />
+                                    </CustomButton>
+                                 </Tooltip>
+                              )}
                            </PermissionRoute>
                         </>
                      )}

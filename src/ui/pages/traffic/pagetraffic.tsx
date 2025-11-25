@@ -3,7 +3,7 @@ import { ApiUsers } from "../../../infrastructure/infrastructureusers/inftrastru
 import { useUsersState } from "../../../store/storeusers/users.store";
 import CompositePage from "../../components/compositecustoms/compositePage";
 import FormikForm from "../../formik/Formik";
-import { FormikAutocomplete, FormikInput } from "../../formik/FormikInputs/FormikInput";
+import { FormikAutocomplete, FormikInput, FormikNativeTimeInput } from "../../formik/FormikInputs/FormikInput";
 import type { Users } from "../../../domain/models/users/users.domain";
 import CustomTable from "../../components/table/customtable";
 import { CustomButton } from "../../components/button/custombuttom";
@@ -21,31 +21,31 @@ import { useDependenceStore } from "../../../store/dependence/dependence.store";
 import { DependenceApi } from "../../../infrastructure/dependence/dependence.infra";
 import { FiEdit, FiTrash2 } from "react-icons/fi";
 import CustomDataDisplay from "../../components/movil/view/customviewmovil";
-import { userMovilView } from "./infomovil.users";
 import { FloatingActionButton } from "../../components/movil/button/custombuttommovil";
+import useEmployesData from "../../../hooks/employesdata";
 
-const PageUsersPanel = () => {
-   const {
-      fetchUsers,
-      setModalForm,
-      modalForm,
-      initialValues,
-      fetchAddUser,
-      users,
-      loading,
-      setInitialValues,
-      deleteUser,
-      resetValues,
-      permissions,
-      fetchPermissions
-   } = useUsersState();
-   const {dependence,fetchDependence, loading :loadingDependece} = useDependenceStore()
+const PagTraffic = () => {
+   //    const {
+   //       fetchUsers,
+   //       setModalForm,
+   //       modalForm,
+   //       initialValues,
+   //       fetchAddUser,
+   //       users,
+   //       loading,
+   //       setInitialValues,
+   //       deleteUser,
+   //       resetValues,
+   //       permissions,
+   //       fetchPermissions
+   //    } = useUsersState();
+   //    const { dependence, fetchDependence, loading: loadingDependece } = useDependenceStore();
    const api = new ApiUsers();
-   const apiDependence = new DependenceApi()
+   const apiDependence = new DependenceApi();
+   const { contraloria, oficiales, proteccionCivil } = useEmployesData();
+
    useEffect(() => {
-      fetchUsers(api);
-      fetchPermissions(api);
-      fetchDependence(apiDependence)
+      oficiales.refetch();
    }, []);
    const responsive = {
       "2xl": 12,
@@ -69,93 +69,45 @@ const PageUsersPanel = () => {
       permissions: Yup.array().of(Yup.number()).min(1, "Debe asignar al menos un permiso").required("Debe asignar al menos un permiso")
    });
 
-   const getEmployed = async (values: Record<string, any>, setFieldValue: (name: string, value: any) => void) => {
-      if (initialValues.id > 0) return; // No hace fetch al editar
-
-      if (values?.payroll?.length >= 4) {
-         try {
-            const res = await fetch(`https://apideclaracionesgp.gomezpalacio.gob.mx:4434/api/compaq/show/${values.payroll}`);
-
-            if (!res.ok) {
-               showToast("falla de la petición", "info");
-            }
-
-            const employed = await res.json();
-
-            // Verificamos si hay resultados
-            if (employed?.data?.result?.length > 0) {
-               const emp = employed.data.result[0];
-
-               setFieldValue("firstName", emp.nombreE || "");
-               setFieldValue("paternalSurname", emp.apellidoP || "");
-               setFieldValue("maternalSurname", emp.apellidoM || "");
-            } else {
-               showToast("El empleado no existe", "error");
-
-               // No se encontró empleado
-               setFieldValue("firstName", "");
-               setFieldValue("paternalSurname", "");
-               setFieldValue("maternalSurname", "");
-               // Opcional: puedes mostrar un toast o alerta al usuario
-            }
-         } catch (error) {}
-      } else {
-         // Si el payroll es menor a 4 caracteres, limpiamos campos
-         setFieldValue("firstName", "");
-         setFieldValue("paternalSurname", "");
-         setFieldValue("maternalSurname", "");
-      }
-   };
-
    return (
       <>
-         {loading && <Spinner />}
+         {/* {loading && <Spinner />} */}
          <CompositePage
             formDirection="modal"
-            onClose={setModalForm}
-            isOpen={modalForm}
-            modalTitle="Usuarios"
+            onClose={() => {}}
+            isOpen={true}
+            modalTitle="Transito y vialidad"
             // tableDirection="izq"
             form={() => (
                <div className="pt-4">
                   {/* <Typography variant="h2" className="mb-2" size="lg" >Dependencia</Typography> */}
                   <FormikForm
+                     initialValues={{}}
                      validationSchema={validationSchema}
-                     buttonMessage={initialValues.id > 0 ? "Actualizar" : "Registrar"}
-                     initialValues={initialValues}
+                      buttonMessage={ "Registrar"}
+                     //  initialValues={initialValues}
                      children={(values, setFieldValue, setTouched, errors, touched) => (
                         <>
-                           <FormikInput name="payroll" label="Nomina" handleModified={getEmployed} responsive={responsive} />
+                           <FormikInput label={"Nombre del ciudadano"} name={""} />
+                           <FormikInput label={"Edad"} name={""} />
+                           <FormikInput label={"Grado"} name={""} />
+                           <FormikInput label={"N° de placa"} name={""} />
+                           <FormikInput label={"Folio"} name={""} />
+                           <FormikInput label={"Marca vehiculo"} name={""} />
+                           <FormikNativeTimeInput label={"Hora"} name={""} />
+                           <FormikInput label={"Lugar donde se encuentran"} name={""} />
                            <FormikAutocomplete
-                              label="Dependencia"
-                              name="dependence_id"
-                              options={dependence}
-                              loading={loadingDependece}
-                              responsive={responsive}
-                              idKey="id"
-                              labelKey="name"
+                              label="Oficial"
+                              name="person_oficial"
+                              options={oficiales.employes}
+                              loading={oficiales.loading}
+                              idKey="value"
+                              labelKey="text"
                            />
-                           <FormikAutocomplete
-                              label="Rol"
-                              name="role"
-                              options={[
-                                 { id: "administrativo", name: "administrativo" },
-                                 { id: "director", name: "director" },
-                                 { id: "usuario", name: "usuario" }
-                              ]}
-                              loading={loadingDependece}
-                              responsive={responsive}
-                              idKey="id"
-                              labelKey="name"
-                           />
-                           <FormikInput name="firstName" label="Nombre" disabled responsive={responsive} />
-                           <FormikInput name="paternalSurname" label="Apellido Paterno" disabled responsive={responsive} />
-                           <FormikInput name="maternalSurname" label="Apellido Materno" disabled responsive={responsive} />
-                           <FTransferList name="permissions" label="Asignar Permissos" departamentos={permissions} idKey="id" labelKey="name" />
                         </>
                      )}
                      onSubmit={(values) => {
-                        fetchAddUser(api, values as Users);
+                        // fetchAddUser(api, values as Users);
                      }}
                   />
                </div>
@@ -166,8 +118,8 @@ const PageUsersPanel = () => {
                      <div className="absolute z-20 right-2 bottom-2">
                         <FloatingActionButton
                            onClick={() => {
-                              resetValues();
-                              setModalForm();
+                              //   resetValues();
+                              //   setModalForm();
                            }}
                            icon={<FaPlus />}
                            color="primary"
@@ -175,6 +127,7 @@ const PageUsersPanel = () => {
                         />
                      </div>
                      <CustomTable
+                        data={[]}
                         mobileConfig={{
                            listTile: {
                               leading: (user) => (
@@ -188,33 +141,33 @@ const PageUsersPanel = () => {
 
                            swipeActions: {
                               left: [
-                                 {
-                                    icon: <FiTrash2 size={18} />,
-                                    color: "bg-red-500",
-                                    action: (user) => {
-                                       showConfirmationAlert(`Eliminar`, { text: "Se eliminará la multa" }).then((isConfirmed) => {
-                                          if (isConfirmed) {
-                                             deleteUser(api, user);
-                                          } else {
-                                             showToast("La acción fue cancelada.", "error");
-                                          }
-                                       });
-                                    }
-                                 }
+                                 //  {
+                                 //     icon: <FiTrash2 size={18} />,
+                                 //     color: "bg-red-500",
+                                 //     action: (user) => {
+                                 //        showConfirmationAlert(`Eliminar`, { text: "Se eliminará la multa" }).then((isConfirmed) => {
+                                 //           if (isConfirmed) {
+                                 //             //  deleteUser(api, user);
+                                 //           } else {
+                                 //              showToast("La acción fue cancelada.", "error");
+                                 //           }
+                                 //        });
+                                 //     }
+                                 //  }
                               ],
                               right: [
-                                 {
-                                    icon: <FiEdit size={18} />,
-                                    color: "bg-blue-500",
-                                    action: (user) => setInitialValues(user, "form")
-                                 }
+                                 //  {
+                                 //     icon: <FiEdit size={18} />,
+                                 //     color: "bg-blue-500",
+                                 //     action: (user) => setInitialValues(user, "form")
+                                 //  }
                               ]
-                           },
-                           bottomSheet: {
-                              height: 100,
-                              showCloseButton: true,
-                              builder: (user, onClose) => <CustomDataDisplay data={user} config={userMovilView} />
                            }
+                           //    bottomSheet: {
+                           //       height: 100,
+                           //       showCloseButton: true,
+                           //       builder: (user, onClose) => <CustomDataDisplay data={user} config={userMovilView} />
+                           //    }
                         }}
                         headerActions={() => (
                            <>
@@ -222,8 +175,8 @@ const PageUsersPanel = () => {
                                  <Tooltip content="Agregar usuario">
                                     <CustomButton
                                        onClick={() => {
-                                          resetValues();
-                                          setModalForm();
+                                          //   resetValues();
+                                          //   setModalForm();
                                        }}
                                     >
                                        {" "}
@@ -235,7 +188,7 @@ const PageUsersPanel = () => {
                                  <CustomButton
                                     color="purple"
                                     onClick={() => {
-                                       fetchUsers(api);
+                                       //    fetchUsers(api);
                                     }}
                                  >
                                     {" "}
@@ -244,10 +197,10 @@ const PageUsersPanel = () => {
                               </Tooltip>
                            </>
                         )}
-                        data={users}
+                        // data={users}
                         conditionExcel={"usuarios_exportar"}
                         paginate={[10, 25, 50]}
-                        loading={loading}
+                        // loading={loading}
                         columns={[
                            {
                               field: "payroll",
@@ -277,7 +230,7 @@ const PageUsersPanel = () => {
                                              size="sm"
                                              color="yellow"
                                              onClick={() => {
-                                                setInitialValues(row, "form");
+                                                // setInitialValues(row, "form");
                                                 // setModalForm()
                                              }}
                                           >
@@ -292,12 +245,13 @@ const PageUsersPanel = () => {
                                                 size="sm"
                                                 color="red"
                                                 onClick={() => {
-                                                   showConfirmationAlert(`Eliminar`, {
-                                                      text: "Se desactiva el usuario"
-                                                   }).then((isConfirmed) => {
-                                                      if (isConfirmed) deleteUser(api, row);
-                                                      else showToast("La acción fue cancelada.", "error");
-                                                   });
+                                                   //    showConfirmationAlert(`Eliminar`, {
+                                                   //       text: "Se desactiva el usuario"
+                                                   //    }).then((isConfirmed) => {
+                                                   //       if (isConfirmed)
+                                                   //          deleteUser(api, row);
+                                                   //       else showToast("La acción fue cancelada.", "error");
+                                                   //    });
                                                 }}
                                              >
                                                 <FaTrash />
@@ -312,12 +266,12 @@ const PageUsersPanel = () => {
                                        size="sm"
                                        color="green"
                                        onClick={() => {
-                                          showConfirmationAlert(`Reactivar`, {
-                                             text: "Se reactivará el usuario"
-                                          }).then((isConfirmed) => {
-                                             if (isConfirmed) deleteUser(api, row);
-                                             else showToast("La acción fue cancelada.", "error");
-                                          });
+                                          //   showConfirmationAlert(`Reactivar`, {
+                                          //      text: "Se reactivará el usuario"
+                                          //   }).then((isConfirmed) => {
+                                          //      if (isConfirmed) deleteUser(api, row);
+                                          //      else showToast("La acción fue cancelada.", "error");
+                                          //   });
                                        }}
                                     >
                                        <FaSync />
@@ -334,4 +288,4 @@ const PageUsersPanel = () => {
       </>
    );
 };
-export default PageUsersPanel;
+export default PagTraffic;

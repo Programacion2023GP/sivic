@@ -14,6 +14,9 @@ import { LuRefreshCcw } from "react-icons/lu";
 import { showConfirmationAlert, showToast } from "../../../../sweetalert/Sweetalert";
 import * as Yup from "yup";
 import { PermissionRoute } from "../../../../App";
+import { FiEdit, FiTrash2 } from "react-icons/fi";
+import CustomDataDisplay from "../../../components/movil/view/customviewmovil";
+import { dependenceMovilView } from "./infomovildependece";
 
 const PageDependence = () => {
    const { dependence, fetchDependence, loading, postDependence, initialValues, open, setOpen, handleChangeDependence, removeDependence } = useDependenceStore();
@@ -32,32 +35,32 @@ const PageDependence = () => {
       md: 12,
       sm: 12
    };
- 
-  const allColors = [
-     "#FF0000",
-     "#FF1493",
-     "#FF4500",
-     "#FF8C00",
-     "#FFD700",
-     "#FFFF00",
-     "#00FF00",
-     "#006400",
-     "#0000FF",
-     "#1E90FF",
-     "#000080",
-     "#00BFFF",
-     "#800080",
-     "#8A2BE2",
-     "#FF00FF",
-     "#00FFFF",
-     "#FFFFFF",
-     "#C0C0C0",
-     "#8B4513"
-  ];
 
-  // 🔹 Filtrar los colores ya usados
-  const usedColors = dependence.map((dep) => dep.color).filter(Boolean);
-  const availableColors = allColors.filter((color) => !usedColors.includes(color));
+   const allColors = [
+      "#FF0000",
+      "#FF1493",
+      "#FF4500",
+      "#FF8C00",
+      "#FFD700",
+      "#FFFF00",
+      "#00FF00",
+      "#006400",
+      "#0000FF",
+      "#1E90FF",
+      "#000080",
+      "#00BFFF",
+      "#800080",
+      "#8A2BE2",
+      "#FF00FF",
+      "#00FFFF",
+      "#FFFFFF",
+      "#C0C0C0",
+      "#8B4513"
+   ];
+
+   // 🔹 Filtrar los colores ya usados
+   const usedColors = dependence.map((dep) => dep.color).filter(Boolean);
+   const availableColors = allColors.filter((color) => !usedColors.includes(color));
 
    return (
       <CompositePage
@@ -92,6 +95,48 @@ const PageDependence = () => {
          table={() => (
             <>
                <CustomTable
+                  mobileConfig={{
+                     listTile: {
+                        leading: (user) => (
+                           <div className="flex items-center justify-center w-10 h-10 font-bold text-white bg-red-500 rounded-full">{user.name?.charAt(0) || "P"}</div>
+                        ),
+                        title: (user) => <span className="font-semibold">{user.name || "Sin nombre"}</span>
+                        // subtitle: (penalty) => <span className="text-gray-600">{penalty.description || "Sin descripción"}</span>
+                     },
+
+                     swipeActions: {
+                        left: [
+                           {
+                              icon: <FiTrash2 size={18} />,
+                              color: "bg-red-500",
+                              action: (dependence) => {
+                                 showConfirmationAlert(`Eliminar`, { text: "Se eliminará la dependencia" }).then((isConfirmed) => {
+                                    if (isConfirmed) {
+                                       removeDependence(dependence, api);
+                                    } else {
+                                       showToast("La acción fue cancelada.", "error");
+                                    }
+                                 });
+                              }
+                           }
+                        ],
+                        right: [
+                           {
+                              icon: <FiEdit size={18} />,
+                              color: "bg-blue-500",
+                              action: (row) => {
+                                 handleChangeDependence(row);
+                                 setOpen();
+                              }
+                           }
+                        ]
+                     },
+                     bottomSheet: {
+                        height: 100,
+                        showCloseButton: true,
+                        builder: (user, onClose) => <CustomDataDisplay data={user} config={dependenceMovilView} />
+                     }
+                  }}
                   headerActions={() => (
                      <>
                         <PermissionRoute requiredPermission={"catalogo_dependencia_crear"}>
@@ -125,7 +170,6 @@ const PageDependence = () => {
                         field: "color",
                         headerName: "color",
                         renderField: (value) => {
-                           console.log(dependence);
                            const color = value ? String(value) : "#FFFFFF"; // fallback blanco si es undefined
 
                            return (

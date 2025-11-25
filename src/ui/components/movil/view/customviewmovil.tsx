@@ -14,11 +14,12 @@ import {
    FiStar,
    FiTag,
    FiPercent,
-   FiBox
+   FiBox,
+   FiDroplet // Asegúrate de importar FiDroplet para el icono de color
 } from "react-icons/fi";
 
 // Tipos para la configuración
-export type FieldType = "text" | "number" | "currency" | "date" | "datetime" | "phone" | "email" | "badge" | "percentage" | "custom";
+export type FieldType = "text" | "number" | "currency" | "date" | "datetime" | "phone" | "email" | "badge" | "percentage" | "color" | "custom"; // Agregamos "color"
 
 export interface FieldConfig {
    key: string;
@@ -43,7 +44,7 @@ export interface DataDisplayConfig {
    title: string | ((data: any) => string);
    subtitle?: string | ((data: any) => string);
    badge?: string | ((data: any) => string);
-   badgeColor?: string;
+   badgeColor?: string | ((data: any) => string); // Cambiamos a string o función
    fields: FieldConfig[];
    sections: SectionConfig[];
    layout?: "default" | "compact" | "detailed";
@@ -100,6 +101,16 @@ const CustomDataDisplay: React.FC<DataDisplayProps> = ({ data, config, className
       return phone;
    };
 
+   // Función para formatear el color
+   const formatColor = (color: string) => {
+      return (
+         <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full border border-gray-300" style={{ backgroundColor: color }} />
+            <span>{color}</span>
+         </div>
+      );
+   };
+
    // Get field by key
    const getField = (key: string): FieldConfig | undefined => {
       return config.fields.find((field) => field.key === key);
@@ -131,6 +142,9 @@ const CustomDataDisplay: React.FC<DataDisplayProps> = ({ data, config, className
 
          case "percentage":
             return typeof value === "number" ? `${value}%` : value;
+
+         case "color":
+            return typeof value === "string" ? formatColor(value) : value;
 
          case "badge":
             return <span className={`px-3 py-1 rounded-full text-sm font-medium ${field.color || "bg-gray-100 text-gray-800"}`}>{value}</span>;
@@ -179,6 +193,11 @@ const CustomDataDisplay: React.FC<DataDisplayProps> = ({ data, config, className
    const title = typeof config.title === "function" ? config.title(data) : config.title;
    const subtitle = config.subtitle ? (typeof config.subtitle === "function" ? config.subtitle(data) : config.subtitle) : undefined;
    const badge = config.badge ? (typeof config.badge === "function" ? config.badge(data) : config.badge) : undefined;
+   const badgeColor = config.badgeColor
+      ? typeof config.badgeColor === "function"
+         ? config.badgeColor(data)
+         : config.badgeColor
+      : "bg-red-100 text-red-800 border border-red-200";
 
    return (
       <div className={`bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden ${className}`}>
@@ -195,9 +214,7 @@ const CustomDataDisplay: React.FC<DataDisplayProps> = ({ data, config, className
                   )}
                </div>
 
-               {badge && (
-                  <div className={`px-4 py-2 rounded-full text-sm font-semibold ${config.badgeColor || "bg-red-100 text-red-800 border border-red-200"}`}>{badge}</div>
-               )}
+               {badge && <div className={`px-4 py-2 rounded-full text-sm font-semibold ${badgeColor}`}>{badge}</div>}
             </div>
          </div>
 
@@ -207,9 +224,3 @@ const CustomDataDisplay: React.FC<DataDisplayProps> = ({ data, config, className
    );
 };
 export default CustomDataDisplay;
-// Configuración predefinida para Multas
-
-
-// Componente específico para Multas (opcional)
-
-
