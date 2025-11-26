@@ -6,7 +6,7 @@ import CompositePage from "../../components/compositecustoms/compositePage";
 import FormikForm from "../../formik/Formik";
 import { PermissionRoute } from "../../../App";
 import { CustomButton } from "../../components/button/custombuttom";
-import { FiBell, FiSettings, FiUser } from "react-icons/fi";
+import { FiBell, FiEdit, FiSettings, FiTrash2, FiUser } from "react-icons/fi";
 import { CustomTab } from "../../components/tab/customtab";
 import { usePenaltiesStore } from "../../../store/penalties/penalties.store";
 import { PenaltiesApi } from "../../../infrastructure/penalties/penalties.infra";
@@ -17,12 +17,16 @@ import { FaRegFilePdf } from "react-icons/fa6";
 import { FormikInput, FormikNativeTimeInput } from "../../formik/FormikInputs/FormikInput";
 import CustomTable from "../../components/table/customtable";
 import { DateFormat, formatDatetime } from "../../../utils/formats";
-import { FaEye, FaPlay, FaTrash } from "react-icons/fa";
+import { FaEye, FaPlay, FaPlus, FaTrash } from "react-icons/fa";
 import Tooltip from "../../components/toltip/Toltip";
 import { VscDiffAdded } from "react-icons/vsc";
 import { LuRefreshCcw } from "react-icons/lu";
 import { CiEdit } from "react-icons/ci";
 import { showConfirmationAlert, showToast } from "../../../sweetalert/Sweetalert";
+import CustomDataDisplay from "../../components/movil/view/customviewmovil";
+import Spinner from "../../components/loading/loading";
+import { FloatingActionButton } from "../../components/movil/button/custombuttommovil";
+import { CustomPaginate } from "../../components/paginate/CustomPaginate";
 
 const PageCourts = () => {
    const { courts, fetchCourts, handleChangeCourt, initialValues, loading, open, postCourt, removeCourt, setOpen, handleCourtValues, disabled, handleResetValues } =
@@ -62,7 +66,7 @@ const PageCourts = () => {
                               <FormikNativeTimeInput name="entry_time" label="Hora de entrada" />
                               <FormikInput type="datetime-local" name="exit_datetime" label="Hora y Fecha de salida" />
                               <FormikInput name="exit_reason" label="Causa de salida" />
-                              <FormikInput name="fine_amount" label="Multa" />
+                              <FormikInput name="fine_amount" label="Multa" type="number" />
                            </>
                         )}
                         onSubmit={(values) => {
@@ -169,15 +173,60 @@ const PageCourts = () => {
                            headerName: "Hora y Fecha de salida",
                            renderField: (v) => <>{formatDatetime(String(v), true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)}</>
                         },
+
                         {
                            field: "exit_reason",
+                           visibility: "expanded",
                            headerName: "Causa de salida"
                         },
                         {
+                           visibility: "expanded",
+
                            field: "fine_amount",
                            headerName: "Multa"
                         }
                      ]}
+                     mobileConfig={{
+                        listTile: {
+                           leading: (row) => (
+                              <div className="flex items-center justify-center w-10 h-10 font-bold text-white bg-red-500 rounded-full">
+                                 {row.detainee_name?.charAt(0) || "P"}
+                              </div>
+                           ),
+                           title: (row) => <span className="font-semibold">{row.detainee_name || "Sin nombre"}</span>
+                           // subtitle: (penalty) => <span className="text-gray-600">{penalty.description || "Sin descripción"}</span>
+                        },
+
+                        swipeActions: {
+                           left: [
+                              {
+                                 icon: <FiTrash2 size={18} />,
+                                 color: "bg-red-500",
+                                 action: (row) => {
+                                    showConfirmationAlert(`Eliminar`, { text: "Se eliminará la multa" }).then((isConfirmed) => {
+                                       if (isConfirmed) {
+                                          removeCourt(row, api);
+                                       } else {
+                                          showToast("La acción fue cancelada.", "error");
+                                       }
+                                    });
+                                 }
+                              }
+                           ],
+                           right: [
+                              {
+                                 icon: <FiEdit size={18} />,
+                                 color: "bg-blue-500",
+                                 action: (row) => handleChangeCourt(row)
+                              }
+                           ]
+                        }
+                        // bottomSheet: {
+                        //    height: 100,
+                        //    showCloseButton: true,
+                        //    builder: (user, onClose) => <CustomDataDisplay data={user} config={userMovilView} />
+                        // }
+                     }}
                   />
                )}
             />
@@ -192,26 +241,33 @@ const PageCourts = () => {
                {loadingPenalties ? (
                   <div className="text-center py-8">Cargando multas...</div>
                ) : (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                     {penalties.map((penalty) => (
+                  <CustomPaginate
+                     data={penalties}
+                     itemsPerPage={12}
+                     direction="row" // Grid horizontal
+                     animationDirection="vertical"
+                     searchFields={["id", "name"]}
+                     renderItem={(item, index) => (
                         <CardPenalty
-                           key={penalty.id}
-                           penalty={penalty}
+                           key={item.id}
+                           penalty={item}
                            onViewDetails={() => {
-                              console.log("first", openTab);
                               setOpenTab("juzgados");
                               setOpen();
-                              handleCourtValues(penalty.id);
+                              handleCourtValues(item.id);
                            }}
                            onViewPdf={() => {
                               setPdfPenalties({
-                                 data: penalty,
+                                 data: item,
                                  open: true
                               });
                            }}
                         />
-                     ))}
-                  </div>
+                     )}
+                     onPageChange={(info) => {
+                        console.log(`Mostrando productos ${info.from} a ${info.to} de ${info.currentItems.length}`);
+                     }}
+                  />
                )}
             </div>
          )
@@ -232,6 +288,21 @@ const PageCourts = () => {
 
    return (
       <>
+         {loading &&<Spinner/>}
+            {/* <PermissionRoute requiredPermission={"usuarios_crear"}> */}
+         
+                              <div className="absolute z-20 right-2 bottom-2">
+                                 <FloatingActionButton
+                                    onClick={() => {
+                                       handleResetValues();
+                                       setOpen();
+                                    }}
+                                    icon={<FaPlus />}
+                                    color="primary"
+                                    size="normal"
+                                 />
+                              </div>
+         {/* </PermissionRoute> */}
          <CompositePage
             formDirection="modal"
             onClose={setOpen}

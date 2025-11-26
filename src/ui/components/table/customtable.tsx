@@ -477,7 +477,7 @@ const CustomTable = <T extends object>({
                               {/* Columnas principales */}
                               {visibleColumns.map((col) => (
                                  <td key={String(col.field)} className="px-3 py-3 text-sm text-gray-800 whitespace-nowrap" title={String(row[col.field] ?? "")}>
-                                    <div className="truncate max-w-[200px]">
+                                    <div className=" max-w-[200px]">
                                        {col.renderField ? col.renderField(row[col.field]) : highlight(String(row[col.field] ?? ""))}
                                     </div>
                                  </td>

@@ -81,27 +81,20 @@ export enum DateFormat {
 // EJEMPLOS DE USO:
 // formatDatetime(new Date(), true, DateFormat.DD_MM_YYYY_HH_MM)
 // formatDatetime(new Date(), false, DateFormat.DD_DE_MMMM_DE_YYYY)
-export function formatDatetime(
-  the_date: DateInput | string,
-  long_format: boolean = true,
-  format: DateFormat
-): string {
-  if (!the_date) return "Sin Fecha";
+export function formatDatetime(the_date: DateInput | string, long_format: boolean = true, format: DateFormat): string {
+   if (!the_date) return "Sin Fecha";
 
-  let date: Date;
+   // --- Si solo contiene hora (HH:mm o HH:mm:ss o HH:mm:ss a)
+   const horaRegex = /^(\d{1,2}:\d{2}(:\d{2})?(\s?[ap]m)?)$/i;
+   if (typeof the_date === "string" && horaRegex.test(the_date.trim())) {
+      // Parseo especial solo para horas
+      return dayjs(the_date.trim(), ["HH:mm", "HH:mm:ss", "hh:mm:ss a"]).format(format);
+   }
 
-  if (typeof the_date === "string" || typeof the_date === "number") {
-    date = new Date(the_date);
-  } else {
-    date = the_date;
-  }
+   // --- Caso normal: fecha completa
+   const date = new Date(the_date);
+   if (isNaN(date.getTime())) return "Fecha inválida";
 
-  // Validamos que sea una fecha válida
-//   if (isNaN(date.getTime())) return "Fecha inválida";
-
-  // Formato por defecto
-  const defaultFormat = long_format ? "DD-MM-YYYY h:mm:ss a" : "DD-MM-YYYY";
-  const finalFormat = format || defaultFormat;
-
-  return dayjs(date).format(finalFormat);
+   const defaultFormat = long_format ? "DD-MM-YYYY h:mm:ss a" : "DD-MM-YYYY";
+   return dayjs(date).format(format || defaultFormat);
 }

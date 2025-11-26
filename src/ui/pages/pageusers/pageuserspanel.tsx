@@ -39,13 +39,13 @@ const PageUsersPanel = () => {
       permissions,
       fetchPermissions
    } = useUsersState();
-   const {dependence,fetchDependence, loading :loadingDependece} = useDependenceStore()
+   const { dependence, fetchDependence, loading: loadingDependece } = useDependenceStore();
    const api = new ApiUsers();
-   const apiDependence = new DependenceApi()
+   const apiDependence = new DependenceApi();
    useEffect(() => {
       fetchUsers(api);
       fetchPermissions(api);
-      fetchDependence(apiDependence)
+      fetchDependence(apiDependence);
    }, []);
    const responsive = {
       "2xl": 12,
@@ -163,17 +163,19 @@ const PageUsersPanel = () => {
             table={() => (
                <>
                   <PermissionRoute requiredPermission={"usuarios_ver"}>
-                     <div className="absolute z-20 right-2 bottom-2">
-                        <FloatingActionButton
-                           onClick={() => {
-                              resetValues();
-                              setModalForm();
-                           }}
-                           icon={<FaPlus />}
-                           color="primary"
-                           size="normal"
-                        />
-                     </div>
+                     <PermissionRoute requiredPermission={"usuarios_crear"}>
+                        <div className="absolute z-20 right-2 bottom-2">
+                           <FloatingActionButton
+                              onClick={() => {
+                                 resetValues();
+                                 setModalForm();
+                              }}
+                              icon={<FaPlus />}
+                              color="primary"
+                              size="normal"
+                           />
+                        </div>
+                     </PermissionRoute>
                      <CustomTable
                         mobileConfig={{
                            listTile: {

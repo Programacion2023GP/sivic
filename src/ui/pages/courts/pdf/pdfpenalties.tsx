@@ -163,10 +163,10 @@ export default function MultaPDF({ data }: { data: any }) {
             rightContent={
                <>
                   <View style={tw("text-center mb-2")}>
-                     <Text style={tw("text-lg font-bold text-guinda-primary")}>{data.alcohol_concentration || "0"} mg/L</Text>
-                     <Text style={tw("text-[8px] text-gris uppercase tracking-wide")}>Concentración de Alcohol</Text>
+                     <Text style={tw("text-lg font-bold text-guinda-primary")}>{data.amountAlcohol || "0"} mg/L</Text>
+                     <Text style={tw("text-[8px] text-gris uppercase tracking-wide")}>Cantidad de Alcohol</Text>
                   </View>
-                  <InfoField label="Cantidad consumida" value={data.amountAlcohol} compact />
+                  <InfoField label="Grado de alcohol" value={data.alcohol_concentration} compact />
                   <InfoField label="Observaciones" value={data.observations} compact />
                </>
             }

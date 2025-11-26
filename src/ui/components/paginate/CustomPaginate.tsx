@@ -111,7 +111,7 @@ export function CustomPaginate<T>({
   const isLoading = loading || animating;
 
   return (
-    <div className="flex flex-col gap-4 relative w-full ">
+    <div className="flex flex-col gap-4 relative w-full  ">
       {/* Buscador */}
       <div className="flex bg-gray-50  items-center  w-full border border-gray-300 rounded-lg px-3 py-1 shadow-sm focus-within:ring-1 focus-within:ring-cyan-400">
         <FiSearch className="text-gray-400 mr-2" />
@@ -134,7 +134,7 @@ export function CustomPaginate<T>({
 
       {/* Contenido paginado */}
       <div
-        className={`grid gap-2 w-full ${direction === "row"
+        className={`grid gap-2 w-full  ${direction === "row"
             ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4"
             : "grid-flow-row"
           }`}

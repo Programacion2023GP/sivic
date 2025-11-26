@@ -6,6 +6,7 @@ import Logo from "../../../assets/logo-c.png";
 // Types and Interfaces
 interface SpinnerProps {
    image?: string;
+   fixed?:boolean,
    size?: "sm" | "md" | "lg" | "xl" | "2xl" | "3xl";
    message?: string;
    overlayColor?: string;
@@ -71,6 +72,7 @@ const Spinner = ({
    maxLoadingTime = 15000,
    enableVoiceOver = true,
    theme = "auto",
+   fixed=true,
    disableExpansion = false
 }: SpinnerProps) => {
    const [isExpanded, setIsExpanded] = useState(false);
@@ -366,7 +368,7 @@ const Spinner = ({
    return ReactDOM.createPortal(
       <AnimatePresence>
          <motion.div
-            className={`fixed z-[3000] inset-0 ${isExpanded ? "bg-[#651D32]" : overlayColor} ${
+            className={`${!fixed ? 'fixed':'absolute'} z-[3000] inset-0 ${isExpanded ? "bg-[#651D32]" : overlayColor} ${
                blurClasses[blurIntensity]
             } flex flex-col justify-center items-center transition-all duration-1000`}
             initial={{ opacity: 0 }}

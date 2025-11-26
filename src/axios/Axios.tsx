@@ -121,8 +121,10 @@ export const AxiosRequest = async (url: string, method: "POST" | "PUT" | "DELETE
          localStorage.clear();
          // window.location.href = "/";
       } else {
+
+
          console.error("Error en AxiosRequest:", error);
-         return error.response?.data || { message: "Error desconocido" };
+      throw error;
       }
    }
 };
