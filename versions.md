@@ -4,6 +4,90 @@
 
 ---
 
+## 🔧 **v2.3.1.6** · *🧪 Beta*
+📅 **Fecha:** 28 de noviembre de 2025, 3:36 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v2.3.1.5** · *🧪 Beta*
+📅 **Fecha:** 28 de noviembre de 2025, 3:32 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v2.3.1.4** · *🧪 Beta*
+📅 **Fecha:** 28 de noviembre de 2025, 3:28 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v2.3.1.3** · *🧪 Beta*
+📅 **Fecha:** 28 de noviembre de 2025, 3:26 p.m.  
+👤 **Autor:** n  
+🧭 **Tipo:** Build
+
+**✨ Mejoras**
+- n
+
+
+
+---
+
+## 🔧 **v2.3.1.2** · *🧪 Beta*
+📅 **Fecha:** 28 de noviembre de 2025, 3:21 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🧩 **v2.3.1.1** · *🧪 Beta*
+📅 **Fecha:** 28 de noviembre de 2025, 3:19 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Patch
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v2.3.0.2** · *🧪 Beta*
+📅 **Fecha:** 28 de noviembre de 2025, 2:04 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## ✨ **v2.3.0.1** · *🧪 Beta*
+📅 **Fecha:** 28 de noviembre de 2025, 1:09 p.m.  
+👤 **Autor:** luis gutierrez  
+🧭 **Tipo:** Minor
+
+**✨ Mejoras**
+- se agrego juzgadosy y transitos
+
+**🧩 Nuevas Funciones**
+- mejoras de diseño inputs
+
+**⚙️ Optimizaciones**
+- versionamiento
+
+
+
+---
+
 ## 🔧 **v2.2.0.2** · *🧪 Beta*
 📅 **Fecha:** 21 de noviembre de 2025, 2:42 p.m.  
 👤 **Autor:** luis  

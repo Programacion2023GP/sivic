@@ -8,18 +8,18 @@ import { DoctorRepository } from "../../domain/repositories/doctor/doctor.reposi
 
 
 interface DoctorStore {
-    initialValues: Doctor,
-    doctor: Doctor[],
-    loading: boolean,
-    error: string | null,
-    fetchDoctor: (repo: DoctorRepository) => Promise<void>,
-    postDoctor: (doctor: Doctor, repo: DoctorRepository) => Promise<void>,
-    handleChangeDoctor: (doctor: Doctor) => void,
-    removeDoctor: (doctor: Doctor, repo: DoctorRepository) => void,
+   initialValues: Doctor;
+   doctor: Doctor[];
+   loading: boolean;
+   error: string | null;
+   fetchDoctor: (repo: DoctorRepository) => Promise<void>;
+   postDoctor: (doctor: Doctor, repo: DoctorRepository) => Promise<void>;
+   handleChangeDoctor: (doctor: Doctor) => void;
+   removeDoctor: (doctor: Doctor, repo: DoctorRepository) => void;
+   resetDoctor: () => void;
 
-    open: boolean,
-    setOpen: () => void;
-
+   open: boolean;
+   setOpen: () => void;
 }
 
 export const useDoctorStore = create<DoctorStore>((set, get) => ({
@@ -36,6 +36,14 @@ export const useDoctorStore = create<DoctorStore>((set, get) => ({
     doctor: [],
     loading: false,
     error: null,
+    resetDoctor:async()=>{
+        set({initialValues: {
+        id: 0,
+        name: "",
+        certificate:"",
+        active: true
+    }})
+    },
     fetchDoctor: async (repo: DoctorRepository) => {
         set({ loading: true })
         try {

@@ -6,18 +6,19 @@ import { showToast } from "../../sweetalert/Sweetalert";
 
 
 interface DependenceStore {
-    initialValues: Dependence,
-    dependence: Dependence[],
-    loading: boolean,
-    error: string | null,
-    fetchDependence: (repo: DependenceRepository) => Promise<void>,
-    postDependence: (dependence: Dependence, repo: DependenceRepository) => Promise<void>,
-    handleChangeDependence: (dependence: Dependence) => void,
-    removeDependence: (dependence: Dependence, repo: DependenceRepository) => void,
+   initialValues: Dependence;
+   dependence: Dependence[];
+   loading: boolean;
+   error: string | null;
+   fetchDependence: (repo: DependenceRepository) => Promise<void>;
+   postDependence: (dependence: Dependence, repo: DependenceRepository) => Promise<void>;
+   handleChangeDependence: (dependence: Dependence) => void;
+   resetValues: () => void;
 
-    open: boolean,
-    setOpen: () => void;
+   removeDependence: (dependence: Dependence, repo: DependenceRepository) => void;
 
+   open: boolean;
+   setOpen: () => void;
 }
 
 export const useDependenceStore = create<DependenceStore>((set, get) => ({
@@ -51,6 +52,14 @@ export const useDependenceStore = create<DependenceStore>((set, get) => ({
             }
             set({ error: message, loading: false })
         }
+    },
+    resetValues:async()=>{
+        set({initialValues: {
+        id: 0,
+        name: "",
+        color:"",
+        active: true
+    },});
     },
     postDependence: async (dependence: Dependence, repo: DependenceRepository) => {
         set({ loading: true })

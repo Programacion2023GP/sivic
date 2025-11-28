@@ -37,6 +37,7 @@ import { PenaltyPreloadDataApi } from "../../../infrastructure/penaltypreloaddat
 import Typography from "../../components/typografy/Typografy";
 import dayjs from "dayjs";
 import useEmployesData from "../../../hooks/employesdata";
+import { useLocation } from "../../../hooks/localization";
 // -----------------------------
 // Tipos y Constantes
 // -----------------------------
@@ -178,6 +179,7 @@ const PagePenalities = () => {
    const api = useMemo(() => new PenaltiesApi(), []);
    const apiDoc = useMemo(() => new DoctorApi(), []);
    const apiPenaltyPreloadData = useMemo(() => new PenaltyPreloadDataApi(), []);
+   const { location,address, getLocation,loading:LoadingCp } = useLocation();
 
    const { width: windowWidth } = useWindowSize();
    const isMobile = windowWidth < 1024;
@@ -246,13 +248,21 @@ const PagePenalities = () => {
    // Fetch data logic (Optimizado)
    // -----------------------------
 
+   const initializeData = async () => {
+      try {
+         // await getLocation(true);
+         fetchPenalties(api);
+         fetchDoctor(apiDoc);
+         contraloria.refetch()
+         oficiales.refetch()
+         proteccionCivil.refetch()
 
+      } catch (err) {
+         console.error("❌ Error inicializando datos:", err);
+      }
+   };
    useEffect(() => {
-      fetchPenalties(api);
-      fetchDoctor(apiDoc);
-      contraloria.refetch()
-      oficiales.refetch()
-      proteccionCivil.refetch()
+      initializeData()
    }, []);
 
    // -----------------------------
@@ -611,6 +621,8 @@ const PagePenalities = () => {
             table={() => (
                <PermissionRoute requiredPermission={"multas_ver"}>
                   <div className="absolute z-20 right-2 bottom-2">
+               <PermissionRoute requiredPermission={"multas_crear"}>
+
                      <FloatingActionButton
                         onClick={() => {
                            resetInitialValues();
@@ -621,6 +633,7 @@ const PagePenalities = () => {
                         color="primary"
                         size="normal"
                      />
+                     </PermissionRoute>
                   </div>
                   <CustomTable
                      conditionExcel={"multas_exportar"}
@@ -674,14 +687,16 @@ const PagePenalities = () => {
                                           showToast("La acción fue cancelada.", "error");
                                        }
                                     });
-                                 }
+                                 },
+                                 hasPermission: ["multas_eliminar"]
                               }
                            ],
                            right: [
                               {
                                  icon: <FiEdit size={18} />,
                                  color: "bg-blue-500",
-                                 action: (penalty) => handleChangePenaltie(penalty)
+                                 action: (penalty) => handleChangePenaltie(penalty),
+                                 hasPermission: ["multas_actualizar"]
                               }
                            ]
                         },
@@ -693,7 +708,7 @@ const PagePenalities = () => {
                      }}
                      columns={[
                         { field: "id", headerName: "Folio", visibility: "always" },
-                        { field: "name", headerName: "Nombre", visibility: "always" },
+                        { field: "name", headerName: "Nombre del detenido", visibility: "always" },
                         { field: "detainee_released_to", headerName: "Persona que acudio", visibility: "always" },
 
                         { field: "image_penaltie", visibility: "expanded", headerName: "Foto Multa", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
@@ -727,22 +742,22 @@ const PagePenalities = () => {
                         { field: "vehicle_service_type", headerName: "Tipo de Servicio Vehicular", visibility: "expanded" },
                         { field: "alcohol_concentration", headerName: "Concentración Alcohol", visibility: "expanded" },
                         { field: "group", headerName: "Grupo", visibility: "expanded" },
-                        { field: "municipal_police", headerName: "Policía Municipal" ,visibility: "expanded"},
-                        { field: "civil_protection", headerName: "Protección Civil" ,visibility: "expanded"},
-                        { field: "command_vehicle", headerName: "Vehículo Comando" ,visibility: "expanded"},
-                        { field: "command_troops", headerName: "Tropa Comando" ,visibility: "expanded"},
-                        { field: "command_details", headerName: "Detalles Comando" ,visibility: "expanded"},
-                        { field: "filter_supervisor", headerName: "Supervisor Filtro" ,visibility: "expanded"},
+                        { field: "municipal_police", headerName: "Policía Municipal", visibility: "expanded" },
+                        { field: "civil_protection", headerName: "Protección Civil", visibility: "expanded" },
+                        { field: "command_vehicle", headerName: "Vehículo Comando", visibility: "expanded" },
+                        { field: "command_troops", headerName: "Tropa Comando", visibility: "expanded" },
+                        { field: "command_details", headerName: "Detalles Comando", visibility: "expanded" },
+                        { field: "filter_supervisor", headerName: "Supervisor Filtro", visibility: "expanded" },
                         { field: "cp", headerName: "Código Postal", visibility: "always" },
                         { field: "city", headerName: "Ciudad", visibility: "always" },
-                        { field: "age", headerName: "Edad", visibility: "expanded", },
-                        { field: "amountAlcohol", headerName: "Cantidad Alcohol" ,visibility: "expanded"},
-                        { field: "number_of_passengers", headerName: "Número de Pasajeros" ,visibility: "expanded"},
-                        { field: "plate_number", headerName: "Número de Placa" ,visibility: "expanded"},
-                        { field: "detainee_phone_number", headerName: "Teléfono del Detenido" ,visibility: "expanded"},
-                        { field: "curp", headerName: "CURP" ,visibility: "expanded"},
-                        { field: "observations", headerName: "Observaciones" ,visibility: "expanded"},
-                        { field: "created_by_name", headerName: "Creado Por" ,visibility: "expanded"},
+                        { field: "age", headerName: "Edad", visibility: "expanded" },
+                        { field: "amountAlcohol", headerName: "Cantidad Alcohol", visibility: "expanded" },
+                        { field: "number_of_passengers", headerName: "Número de Pasajeros", visibility: "expanded" },
+                        { field: "plate_number", headerName: "Número de Placa", visibility: "expanded" },
+                        { field: "detainee_phone_number", headerName: "Teléfono del Detenido", visibility: "expanded" },
+                        { field: "curp", headerName: "CURP", visibility: "expanded" },
+                        { field: "observations", headerName: "Observaciones", visibility: "expanded" },
+                        { field: "created_by_name", headerName: "Creado Por", visibility: "expanded" },
                         {
                            field: "active",
                            headerName: "Activo",
@@ -824,6 +839,7 @@ const PagePenalities = () => {
                   loading={loading}
                   columns={[
                      { field: "id", headerName: "Folio" },
+                     { field: "name", headerName: "Nombre  del detenido" },
                      { field: "image_penaltie", headerName: "Foto Multa", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
                      { field: "images_evidences", headerName: "Foto evidencia del ciudadano", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
                      { field: "images_evidences_car", headerName: "Foto evidencia del vehículo", renderField: (value) => <PhotoZoom src={value} alt={value} /> },
@@ -841,7 +857,6 @@ const PagePenalities = () => {
                      { field: "command_troops", headerName: "Tropa Comando" },
                      { field: "command_details", headerName: "Detalles Comando" },
                      { field: "filter_supervisor", headerName: "Supervisor Filtro" },
-                     { field: "name", headerName: "Nombre" },
                      { field: "cp", headerName: "Código Postal" },
                      { field: "city", headerName: "Ciudad" },
                      { field: "age", headerName: "Edad" },

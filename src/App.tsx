@@ -67,8 +67,8 @@ const MainLayout = () => {
       () => [
          { prefix: "usuarios_", route: "/usuarios", icon: <FaUserTie />, label: "Usuarios" },
          { prefix: "multas_", route: "/multa", icon: <FaFileInvoiceDollar />, label: "Multas" },
-         { prefix: "multas_", route: "/juzgados", icon: <FaFileInvoiceDollar />, label: "Juzgados" },
-         { prefix: "multas_", route: "/transito-vialidad", icon: <FaFileInvoiceDollar />, label: "Transito y vialidad" },
+         { prefix: "juzgados_", route: "/juzgados", icon: <FaFileInvoiceDollar />, label: "Juzgados" },
+         { prefix: "transito_vialidad_", route: "/transito-vialidad", icon: <FaFileInvoiceDollar />, label: "Transito y vialidad" },
 
          { prefix: "vista_", route: "/logs", icon: <FaCode />, label: "Logs" },
          {
@@ -93,18 +93,18 @@ const MainLayout = () => {
                      }
                   ]
                },
-               {
-                  prefix: ["catalogo_motivo_detencion_"],
-                  label: "Vialidad",
-                  children: [
-                     {
-                        prefix: "catalogo_motivo_detencion_",
-                        route: "/catalogos/motivodet",
-                        icon: <FaStopCircle />,
-                        label: "Motivo detención"
-                     }
-                  ]
-               }
+               // {
+               //    prefix: ["catalogo_motivo_detencion_"],
+               //    label: "Vialidad",
+               //    children: [
+               //       {
+               //          prefix: "catalogo_motivo_detencion_",
+               //          route: "/catalogos/motivodet",
+               //          icon: <FaStopCircle />,
+               //          label: "Motivo detención"
+               //       }
+               //    ]
+               // }
             ]
          },
          {

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { showToast } from "../sweetalert/Sweetalert";
 
 interface AddressData {
    road?: string;
@@ -94,7 +95,6 @@ export const useLocation = (options?: PositionOptions): UseLocationReturn => {
       // Verificar cache
       const cached = cache.address.get(cacheKey);
       if (cached && now - cached.timestamp < cache.CACHE_DURATION) {
-         console.log("✅ Dirección en cache");
          setAddress(cached.data);
          return cached.data;
       }
@@ -261,7 +261,7 @@ export const useLocation = (options?: PositionOptions): UseLocationReturn => {
                      };
 
                      const message = errorMessages[error.code] || "Error al obtener ubicación";
-                     console.error("❌", message);
+                     showToast(message, "error");
 
                      setError(message);
                      setLoading(false);

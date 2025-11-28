@@ -67,14 +67,22 @@ const PageReportMap = () => {
          return;
       }
 
-      // Fecha seleccionada YYYY-MM-DD
-      const iso = selectedDate.toISOString().split("T")[0];
+      // Formatear selectedDate a YYYY-MM-DD en zona local
+     const nextDate = new Date(selectedDate);
+     nextDate.setDate(nextDate.getDate() + 1);
 
-      const filtered = limitedPenalties.filter((p) => {
-         const dateStr = String(p.date ?? "").split("T")[0];
-         return dateStr === iso;
-      });
+     const year = nextDate.getFullYear();
+     const month = String(nextDate.getMonth() + 1).padStart(2, "0");
+     const day = String(nextDate.getDate()).padStart(2, "0");
+     const selectedDateStr = `${year}-${month}-${day}`;
 
+     console.log("Fecha original:", selectedDate);
+     console.log("Fecha +1 día:", selectedDateStr);
+
+     const filtered = limitedPenalties.filter((p) => {
+      console.log(p.id, p.date, selectedDateStr, p.date == selectedDateStr);
+        return p.date == selectedDateStr;
+     });
       setFilteredPenalties(filtered);
    }, [selectedDate, limitedPenalties]);
 

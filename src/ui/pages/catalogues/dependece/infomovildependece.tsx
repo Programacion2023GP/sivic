@@ -3,9 +3,9 @@ import { DataDisplayConfig } from "../../../components/movil/view/customviewmovi
 
 // Ejemplo de configuración para usuario
 export const dependenceMovilView: DataDisplayConfig = {
-   title: (data) => data.name || "Usuario",
+   title: (data) => data.name || "Dependencia",
    subtitle: (data) => `ID: ${data.id || "N/A"}`,
-   badge: (data) => data.role || "Usuario",
+   badge: (data) => data.role || "Dependencia",
    badgeColor: (data) => {
       const role = data.role?.toLowerCase();
       if (role === "admin") return "bg-purple-100 text-purple-800 border-purple-200";

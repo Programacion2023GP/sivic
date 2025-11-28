@@ -17,9 +17,7 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
          const stored = localStorage.getItem("permisos");
          const parsed = stored ? JSON.parse(stored) : [];
          set({ permissions: parsed });
-         console.log("✅ Permisos cargados:", parsed);
       } catch (error) {
-         console.error("❌ Error al cargar permisos:", error);
          set({ permissions: [] });
       }
    },
@@ -27,7 +25,6 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
    updatePermissions: (newPermissions: string[]) => {
       set({ permissions: newPermissions });
       localStorage.setItem("permisos", JSON.stringify(newPermissions));
-      console.log("🔄 Permisos actualizados:", newPermissions);
    },
 
    hasPermission: (permission: string) => {
@@ -37,7 +34,6 @@ export const usePermissionsStore = create<PermissionsState>((set, get) => ({
    hasPermissionPrefix: (prefix: string) => {
       const permissions = get().permissions;
       const hasIt = permissions.some((p) => p.startsWith(prefix));
-      console.log(`🔍 Checking prefix "${prefix}":`, { permissions, hasIt });
       return hasIt;
    },
 

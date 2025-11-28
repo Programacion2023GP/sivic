@@ -37,7 +37,7 @@ const PagTraffic = () => {
             active: true,
             id: 0,
             rank: "",
-            age: 0,
+            age: null,
             citizen_name: "",
             location: "",
             person_oficial: "",
@@ -161,7 +161,8 @@ const PagTraffic = () => {
                                           showToast("La acción fue cancelada.", "error");
                                        }
                                     });
-                                 }
+                                 },
+                                 hasPermission: "transito_vialidad__eliminar"
                               }
                            ],
                            right: [
@@ -171,7 +172,8 @@ const PagTraffic = () => {
                                  action: (row) => {
                                     setOpen();
                                     handleChangeItem(row);
-                                 }
+                                 },
+                                 hasPermission: "transito_vialidad__actualizar"
                               }
                            ]
                         },
@@ -183,8 +185,8 @@ const PagTraffic = () => {
                      }}
                      headerActions={() => (
                         <>
-                           <PermissionRoute requiredPermission={"usuarios_crear"}>
-                              <Tooltip content="Agregar usuario">
+                           <PermissionRoute requiredPermission={"transito_vialidad__crear"}>
+                              <Tooltip content="Agregar Multa">
                                  <CustomButton
                                     onClick={() => {
                                        setOpen();
@@ -211,10 +213,14 @@ const PagTraffic = () => {
                         </>
                      )}
                      // data={users}
-                     conditionExcel={"usuarios_exportar"}
+                     conditionExcel={"transito_vialidad__exportar"}
                      paginate={[10, 25, 50]}
                      // loading={loading}
                      columns={[
+                        {
+                           field: "id",
+                           headerName: "Folio"
+                        },
                         {
                            field: "citizen_name",
                            headerName: "Nombre"
@@ -251,7 +257,7 @@ const PagTraffic = () => {
                      actions={(row) => (
                         <>
                            <>
-                              <PermissionRoute requiredPermission={"usuarios_actualizar"}>
+                              <PermissionRoute requiredPermission={"transito_vialidad__actualizar"}>
                                  <Tooltip content="Editar Multa">
                                     <CustomButton
                                        size="sm"
@@ -267,7 +273,7 @@ const PagTraffic = () => {
                                     </CustomButton>
                                  </Tooltip>
                               </PermissionRoute>
-                              <PermissionRoute requiredPermission={"usuarios_eliminar"}>
+                              <PermissionRoute requiredPermission={"transito_vialidad__eliminar"}>
                                  <>
                                     <Tooltip content="Eliminar multa">
                                        <CustomButton

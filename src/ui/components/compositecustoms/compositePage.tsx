@@ -54,7 +54,7 @@ const CompositePage: React.FC<PropsCompositePage> = ({
       } else if (isTablet) {
          setSheetHeight("100vh");
       }
-   }, [isSmallMobile, isMediumMobile, isTablet]);
+   }, [isSmallMobile, isMediumMobile, isTablet,table,form]);
 
    const handleClose = () => {
       setIsClosing(true);

@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 import { showToast } from "../../sweetalert/Sweetalert";
 import { CourtsRepository } from "../../domain/repositories/courts/courts.repositories";
+import { Penalties } from "../../domain/models/penalties/penalties.model";
 
 interface CourtStore {
    initialValues: Court;
@@ -10,7 +11,7 @@ interface CourtStore {
    loading: boolean;
    error: string | null;
    fetchCourts: (repo: CourtsRepository) => Promise<void>;
-   handleCourtValues: (penalties_id: number) => Promise<void>;
+   handleCourtValues: (penaltie: Penalties) => Promise<void>;
    handleResetValues: () => Promise<void>;
 
    postCourt: (courts: Court, repo: CourtsRepository) => Promise<void>;
@@ -34,9 +35,9 @@ const now = new Date();
 export const useCourtStore = create<CourtStore>((set, get) => ({
    open: false,
    setOpen: () => {
-      set({ open: !get().open,disabled:false });
+      set({ open: !get().open, disabled: false });
    },
-   handleResetValues:async()=>{
+   handleResetValues: async () => {
       set({
          initialValues: {
             id: 0,
@@ -57,9 +58,8 @@ export const useCourtStore = create<CourtStore>((set, get) => ({
          }
       });
    },
-   disabled:false,
+   disabled: false,
    initialValues: {
-
       id: 0,
       date: new Date().toISOString().split("T")[0], // "2024-01-15"
       referring_agency: "",
@@ -79,22 +79,20 @@ export const useCourtStore = create<CourtStore>((set, get) => ({
    courts: [],
    loading: false,
    error: null,
-   
-   handleCourtValues:async(penalties_id:number)=>{
+
+   handleCourtValues: async (penaltie: Penalties) => {
+      const now = new Date();
+
       set({
-         disabled:true,
+         disabled: true,
          initialValues: {
-            penalties_id:penalties_id,
+            penalties_id: penaltie.id,
             id: 0,
             date: new Date().toISOString().split("T")[0], // "2024-01-15"
             referring_agency: "Alcoholimetros",
-            detainee_name: "",
-            detention_reason: "",
-            entry_time: now.toLocaleTimeString("en-US", {
-               hour: "2-digit",
-               minute: "2-digit",
-               hour12: false
-            }),
+            detainee_name: penaltie.name,
+            detention_reason: "Alcoholimetros",
+            entry_time: now.getHours().toString().padStart(2, "0") + ":" + now.getMinutes().toString().padStart(2, "0"),
             exit_datetime: getLocalDateTime(),
             exit_reason: "",
             fine_amount: null,
@@ -145,7 +143,7 @@ export const useCourtStore = create<CourtStore>((set, get) => ({
    },
 
    handleChangeCourt: async (court: Court) => {
-      set({ open:true,initialValues: court });
+      set({ open: true, initialValues: court });
    },
    removeCourt: async (court: Court, repo: CourtsRepository) => {
       set({ loading: true });

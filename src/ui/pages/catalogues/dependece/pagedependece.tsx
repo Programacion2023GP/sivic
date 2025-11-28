@@ -9,7 +9,7 @@ import { FormikColorPicker, FormikInput } from "../../../formik/FormikInputs/For
 import type { Dependence } from "../../../../domain/models/dependence/dependence";
 import { CiEdit } from "react-icons/ci";
 import { VscDiffAdded } from "react-icons/vsc";
-import { FaTrash } from "react-icons/fa";
+import { FaPlus, FaTrash } from "react-icons/fa";
 import { LuRefreshCcw } from "react-icons/lu";
 import { showConfirmationAlert, showToast } from "../../../../sweetalert/Sweetalert";
 import * as Yup from "yup";
@@ -17,9 +17,11 @@ import { PermissionRoute } from "../../../../App";
 import { FiEdit, FiTrash2 } from "react-icons/fi";
 import CustomDataDisplay from "../../../components/movil/view/customviewmovil";
 import { dependenceMovilView } from "./infomovildependece";
+import { FloatingActionButton } from "../../../components/movil/button/custombuttommovil";
 
 const PageDependence = () => {
-   const { dependence, fetchDependence, loading, postDependence, initialValues, open, setOpen, handleChangeDependence, removeDependence } = useDependenceStore();
+   const { dependence, fetchDependence, loading, postDependence, initialValues, open, setOpen, handleChangeDependence, removeDependence, resetValues } =
+      useDependenceStore();
    const api = new DependenceApi();
    useEffect(() => {
       fetchDependence(api);
@@ -94,6 +96,17 @@ const PageDependence = () => {
          )}
          table={() => (
             <>
+               <div className="absolute z-20 right-2 bottom-2">
+                  <FloatingActionButton
+                     onClick={() => {
+                        resetValues(),
+                        setOpen();
+                     }}
+                     icon={<FaPlus />}
+                     color="primary"
+                     size="normal"
+                  />
+               </div>
                <CustomTable
                   mobileConfig={{
                      listTile: {
@@ -117,7 +130,8 @@ const PageDependence = () => {
                                        showToast("La acción fue cancelada.", "error");
                                     }
                                  });
-                              }
+                              },
+                              hasPermission: "catalogo_dependencia_eliminar"
                            }
                         ],
                         right: [
@@ -127,7 +141,8 @@ const PageDependence = () => {
                               action: (row) => {
                                  handleChangeDependence(row);
                                  setOpen();
-                              }
+                              },
+                              hasPermission: "catalogo_dependencia_actualizar"
                            }
                         ]
                      },
@@ -140,7 +155,10 @@ const PageDependence = () => {
                   headerActions={() => (
                      <>
                         <PermissionRoute requiredPermission={"catalogo_dependencia_crear"}>
-                           <CustomButton onClick={setOpen}>
+                           <CustomButton onClick={()=>{
+                              resetValues()
+                              setOpen()
+                           }}>
                               {" "}
                               <VscDiffAdded />
                            </CustomButton>

@@ -201,14 +201,16 @@ const PageUsersPanel = () => {
                                              showToast("La acción fue cancelada.", "error");
                                           }
                                        });
-                                    }
+                                    },
+                                    hasPermission: "usuarios_eliminar"
                                  }
                               ],
                               right: [
                                  {
                                     icon: <FiEdit size={18} />,
                                     color: "bg-blue-500",
-                                    action: (user) => setInitialValues(user, "form")
+                                    action: (user) => setInitialValues(user, "form"),
+                                    hasPermission: "usuarios_actualizar"
                                  }
                               ]
                            },

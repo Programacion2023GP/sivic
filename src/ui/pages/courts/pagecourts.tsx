@@ -27,6 +27,7 @@ import CustomDataDisplay from "../../components/movil/view/customviewmovil";
 import Spinner from "../../components/loading/loading";
 import { FloatingActionButton } from "../../components/movil/button/custombuttommovil";
 import { CustomPaginate } from "../../components/paginate/CustomPaginate";
+import { juzgadosMovilView } from "./infomovilcourts";
 
 const PageCourts = () => {
    const { courts, fetchCourts, handleChangeCourt, initialValues, loading, open, postCourt, removeCourt, setOpen, handleCourtValues, disabled, handleResetValues } =
@@ -39,6 +40,7 @@ const PageCourts = () => {
       data: {}
    });
    const [openTab, setOpenTab] = useState<"juzgados" | "alcohol">("juzgados");
+   
    const tabs = [
       {
          id: "juzgados",
@@ -78,66 +80,75 @@ const PageCourts = () => {
                )}
                table={() => (
                   <CustomTable
+                     conditionExcel={"juzgados_exportar"}
                      headerActions={() => (
                         <>
-                           <Tooltip content="Agregar juicio">
-                              <CustomButton
-                                 onClick={() => {
-                                    handleResetValues();
-                                    setOpen();
-                                 }}
-                              >
-                                 {" "}
-                                 <VscDiffAdded />
-                              </CustomButton>
-                           </Tooltip>
-                           <Tooltip content="Refrescar la tabla">
-                              <CustomButton
-                                 color="purple"
-                                 onClick={() => {
-                                    fetchCourts(api);
-                                 }}
-                              >
-                                 {" "}
-                                 <LuRefreshCcw />
-                              </CustomButton>
-                           </Tooltip>
+                           <PermissionRoute requiredPermission={"juzgados_crear"}>
+                              <Tooltip content="Agregar juicio">
+                                 <CustomButton
+                                    onClick={() => {
+                                       handleResetValues();
+                                       setOpen();
+                                    }}
+                                 >
+                                    <VscDiffAdded />
+                                 </CustomButton>
+                              </Tooltip>
+                           </PermissionRoute>
+                           <PermissionRoute requiredPermission={"juzgados_ver"}>
+                              <Tooltip content="Refrescar la tabla">
+                                 <CustomButton
+                                    color="purple"
+                                    onClick={() => {
+                                       fetchCourts(api);
+                                    }}
+                                 >
+                                    {" "}
+                                    <LuRefreshCcw />
+                                 </CustomButton>
+                              </Tooltip>
+                           </PermissionRoute>
                         </>
                      )}
                      data={courts}
                      actions={(row) => (
                         <>
-                           <Tooltip content="Editar Juicio">
-                              <CustomButton
-                                 size="sm"
-                                 color="yellow"
-                                 onClick={() => {
-                                    handleChangeCourt(row);
-                                    // setModalForm()
-                                 }}
-                              >
-                                 <CiEdit />
-                              </CustomButton>
-                           </Tooltip>
-                           <Tooltip content="Eliminar Juicio">
-                              <CustomButton
-                                 size="sm"
-                                 color="red"
-                                 onClick={() => {
-                                    showConfirmationAlert(`Eliminar `, {
-                                       text: "Se elimina el juicio"
-                                    }).then((isConfirmed) => {
-                                       if (isConfirmed) {
-                                          removeCourt(row, api);
-                                       } else {
-                                          showToast("La acción fue cancelada.", "error");
-                                       }
-                                    });
-                                 }}
-                              >
-                                 <FaTrash />
-                              </CustomButton>
-                           </Tooltip>
+                           <PermissionRoute requiredPermission={"juzgados_actualizar"}>
+                              <Tooltip content="Editar Juicio">
+                                 <CustomButton
+                                    size="sm"
+                                    color="yellow"
+                                    onClick={() => {
+                                       handleChangeCourt(row);
+                                       // setModalForm()
+                                    }}
+                                 >
+                                    <CiEdit />
+                                 </CustomButton>
+                              </Tooltip>
+                           </PermissionRoute>
+
+                           <PermissionRoute requiredPermission={"juzgados_eliminar"}>
+                              <Tooltip content="Eliminar Juicio">
+                                 <CustomButton
+                                    size="sm"
+                                    color="red"
+                                    onClick={() => {
+                                       showConfirmationAlert(`Eliminar `, {
+                                          text: "Se elimina el juicio"
+                                       }).then((isConfirmed) => {
+                                          if (isConfirmed) {
+                                             removeCourt(row, api);
+                                          } else {
+                                             showToast("La acción fue cancelada.", "error");
+                                          }
+                                       });
+                                    }}
+                                 >
+                                    <FaTrash />
+                                 </CustomButton>
+                              </Tooltip>
+                           </PermissionRoute>
                         </>
                      )}
                      paginate={[5, 10, 25, 50, 100, 500]}
@@ -210,22 +221,24 @@ const PageCourts = () => {
                                           showToast("La acción fue cancelada.", "error");
                                        }
                                     });
-                                 }
+                                 },
+                                 hasPermission: "juzgados_eliminar"
                               }
                            ],
                            right: [
                               {
                                  icon: <FiEdit size={18} />,
                                  color: "bg-blue-500",
-                                 action: (row) => handleChangeCourt(row)
+                                 action: (row) => handleChangeCourt(row),
+                                 hasPermission: "juzgados_actualizar"
                               }
                            ]
+                        },
+                        bottomSheet: {
+                           height: 100,
+                           showCloseButton: true,
+                           builder: (row, onClose) => <CustomDataDisplay data={row} config={juzgadosMovilView} />
                         }
-                        // bottomSheet: {
-                        //    height: 100,
-                        //    showCloseButton: true,
-                        //    builder: (user, onClose) => <CustomDataDisplay data={user} config={userMovilView} />
-                        // }
                      }}
                   />
                )}
@@ -254,7 +267,7 @@ const PageCourts = () => {
                            onViewDetails={() => {
                               setOpenTab("juzgados");
                               setOpen();
-                              handleCourtValues(item.id);
+                              handleCourtValues(item);
                            }}
                            onViewPdf={() => {
                               setPdfPenalties({
@@ -288,20 +301,20 @@ const PageCourts = () => {
 
    return (
       <>
-         {loading &&<Spinner/>}
-            {/* <PermissionRoute requiredPermission={"usuarios_crear"}> */}
-         
-                              <div className="absolute z-20 right-2 bottom-2">
-                                 <FloatingActionButton
-                                    onClick={() => {
-                                       handleResetValues();
-                                       setOpen();
-                                    }}
-                                    icon={<FaPlus />}
-                                    color="primary"
-                                    size="normal"
-                                 />
-                              </div>
+         {loading && <Spinner />}
+         {/* <PermissionRoute requiredPermission={"usuarios_crear"}> */}
+
+         <div className="absolute z-20 right-2 bottom-2">
+            <FloatingActionButton
+               onClick={() => {
+                  handleResetValues();
+                  setOpen();
+               }}
+               icon={<FaPlus />}
+               color="primary"
+               size="normal"
+            />
+         </div>
          {/* </PermissionRoute> */}
          <CompositePage
             formDirection="modal"
@@ -309,13 +322,15 @@ const PageCourts = () => {
             isOpen={open}
             modalTitle="Juzgados"
             table={() => (
-               <CustomTab
-                  tabs={tabs}
-                  defaultTab={openTab}
-                  onTabChange={(tabId) => {
-                     setOpenTab(tabId as "juzgados" | "alcohol");
-                  }}
-               />
+               <PermissionRoute requiredPermission={"juzgados_ver"}>
+                  <CustomTab
+                     tabs={tabs}
+                     defaultTab={openTab}
+                     onTabChange={(tabId) => {
+                        setOpenTab(tabId as "juzgados" | "alcohol");
+                     }}
+                  />
+               </PermissionRoute>
             )}
          />
 

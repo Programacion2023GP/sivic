@@ -33,42 +33,145 @@ export const FormikTextArea: React.FC<InputWithLabelProps> = ({
    responsive = { sm: 12, md: 12, lg: 12, xl: 12, "2xl": 12 },
    handleModified,
    disabled = false,
-   id
+   id,
+   padding = true,
+   value
 }) => {
+   const formik = useFormikContext();
+   const [isFocused, setIsFocused] = useState(false);
+
+   useEffect(() => {
+      if (value !== undefined && value !== null) {
+         formik.setFieldValue(name, value, false);
+      }
+   }, [value]);
+
    return (
-      <ColComponent responsive={responsive} autoPadding>
+      <ColComponent responsive={responsive} autoPadding={padding}>
          <FastField name={name}>
-            {({ field, form: { errors, touched, values, setFieldValue } }: any) => {
-               const error = touched?.[name] && typeof errors?.[name] === "string" ? (errors?.[name] as string) : null;
-               if (handleModified) {
-                  handleModified(values, setFieldValue);
-               }
+            {({ field, form: { errors, touched, values, setFieldValue, setFieldTouched } }: any) => {
+               const error = touched?.[name] && errors?.[name] ? String(errors[name]) : null;
+               const hasValue = values?.[name] && values[name].toString().length > 0;
+               const isActive = hasValue || isFocused;
+
+               const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+                  const newValue = e.target.value;
+                  setFieldValue(name, newValue);
+
+                  if (newValue !== field.value && handleModified) {
+                     handleModified({ ...values, [name]: newValue }, setFieldValue);
+                  }
+               };
+
+               const handleFocus = () => setIsFocused(true);
+               const handleBlur = () => {
+                  setIsFocused(false);
+                  setFieldTouched(name, true, true);
+               };
+
                return (
-                  <div id={id} className={`relative z-0 w-full mb-5 ${disabled && "cursor-not-allowed opacity-40"}`}>
-                     <textarea
-                        disabled={disabled}
-                        {...field}
-                        value={values?.[name] || ""}
-                        id={name}
-                        placeholder=" "
-                        autoComplete="off"
-                        rows={4} // Número de filas que el textarea mostrará por defecto
-                        cols={12}
-                        className={`peer block w-full px-4 py-3 mt-2 bg-transparent border-2 rounded-md focus:outline-none focus:ring-2 focus:ring-black focus:border-black ${
-                           error ? "border-red-500" : "border-gray-300"
-                        } transition-all duration-300`}
-                     />
-                     <label
-                        htmlFor={name}
-                        className={`absolute left-4 -top-6 text-gray-500 text-sm transition-all duration-300 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-placeholder-shown:text-gray-400 peer-focus:-top-6 peer-focus:text-sm peer-focus:text-black`}
-                     >
-                        {label}
-                     </label>
-                     {error && (
-                        <span className="text-sm font-semibold text-red-600" id={`${name}-error`}>
-                           {error}
-                        </span>
+                  <div className={`relative w-full mb-1 group ${disabled ? "opacity-70 cursor-not-allowed" : ""}`}>
+                     {disabled ? (
+                        <div className="relative">
+                           {/* Label flotante para disabled */}
+                           <label
+                              className={`
+                                 absolute left-3 -top-2.5 text-xs px-1 transition-all duration-300
+                                 ${error ? "text-red-600 bg-white" : "text-gray-600 bg-white"} font-medium
+                              `}
+                           >
+                              {label}
+                           </label>
+
+                           {/* Contenedor del campo disabled */}
+                           <div
+                              className={`relative pt-3 pb-2 px-3 border-2 rounded-lg transition-colors duration-200 ${
+                                 error ? "border-red-300 bg-red-50" : "border-gray-300 bg-gray-100"
+                              }`}
+                           >
+                              <span className="text-gray-700 block min-h-[80px] whitespace-pre-wrap">{values?.[name] || ""}</span>
+                           </div>
+                        </div>
+                     ) : (
+                        <div className="relative mb-3">
+                           {/* Fieldset para el borde animado */}
+                           <fieldset
+                              className={`
+                                 absolute -inset-[2px] m-0 px-2 pointer-events-none
+                                 border-2 rounded-lg transition-all duration-300
+                                 ${error ? "border-red-500" : isFocused ? "border-blue-500 ring-2 ring-blue-500/20" : "border-gray-400 group-hover:border-gray-600"}
+                                 ${isActive ? "border-2" : ""}
+                              `}
+                           >
+                              {/* <legend
+                                 className={`
+                                    ml-2 px-1 text-xs transition-all duration-300
+                                    ${error ? "text-red-500" : isFocused ? "text-blue-500" : "text-gray-600"}
+                                    ${isActive ? "max-w-full opacity-100" : "max-w-0 opacity-0"}
+                                 `}
+                              >
+                                 {label}
+                              </legend> */}
+                           </fieldset>
+
+                           {/* Textarea principal */}
+                           <textarea
+                              {...field}
+                              id={id || name}
+                              placeholder=" "
+                              autoComplete="off"
+                              value={values?.[name] ?? ""}
+                              onChange={handleChange}
+                              onFocus={handleFocus}
+                              onBlur={handleBlur}
+                              rows={4}
+                              className={`
+                                 block w-full px-3 pt-4 pb-2 bg-transparent rounded-lg
+                                 transition-all duration-200 focus:outline-none
+                                 text-gray-900 placeholder-transparent resize-none
+                                 ${error ? "caret-red-500" : "caret-blue-500"}
+                                 ${disabled ? "cursor-not-allowed" : ""}
+                              `}
+                           />
+
+                           {/* Label flotante */}
+                           <label
+                              htmlFor={id || name}
+                              className={`
+                                 absolute left-3 transition-all duration-300 pointer-events-none
+                                 transform origin-left
+                                 ${
+                                    isActive
+                                       ? `-top-2.5 text-xs px-1 bg-white ${error ? "text-red-500" : isFocused ? "text-blue-500" : "text-gray-700"} font-medium`
+                                       : "top-4 text-base text-gray-500"
+                                 }
+                                 ${disabled ? "text-gray-400" : ""}
+                              `}
+                           >
+                              {label}
+                           </label>
+                        </div>
                      )}
+
+                     {/* Mensaje de error mejorado */}
+                     {error ? (
+                        <motion.div
+                           initial={{ opacity: 0, y: -5 }}
+                           animate={{ opacity: 1, y: 0 }}
+                           transition={{ duration: 0.2 }}
+                           className="flex items-center gap-2 mt-2 px-1"
+                        >
+                           <div className="w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0"></div>
+                           <span className="text-sm font-medium text-red-600 leading-tight">{error}</span>
+                        </motion.div>
+                     ) : null}
+
+                     {/* Contador de caracteres */}
+                     {hasValue && !disabled ? (
+                        <div className="absolute -bottom-6 right-0">
+                           <span className="text-xs text-gray-400">{values?.[name]?.length || ""} caracteres</span>
+                        </div>
+                     ) : null}
                   </div>
                );
             }}
@@ -76,7 +179,6 @@ export const FormikTextArea: React.FC<InputWithLabelProps> = ({
       </ColComponent>
    );
 };
-
 export const FormikInput: React.FC<InputWithLabelProps> = ({
    label,
    value,
@@ -89,6 +191,7 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
    hidden = false
 }) => {
    const formik = useFormikContext();
+   const [isFocused, setIsFocused] = useState(false);
 
    useEffect(() => {
       if (value !== undefined && value !== null) {
@@ -99,15 +202,14 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
    return (
       <ColComponent responsive={responsive} autoPadding={padding}>
          <FastField name={name}>
-            {({ field, form: { values, setFieldValue, setFieldTouched, touched, errors } }: any) => {
+            {({ field, form: { values, setFieldValue, setFieldTouched, touched, errors } }) => {
                const error = touched?.[name] && errors?.[name] ? String(errors[name]) : null;
+               const hasValue = values?.[name] && values[name].toString().length > 0;
+               const isActive = hasValue || isFocused;
+               const isActiveDisabled = disabled && values?.[name]?.toString()?.length > 0;
 
-               const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                  let newValue = e.target.value;
-
-                  // 🔥 TRANSFORMAR A MAYÚSCULAS
-                  newValue = newValue.toUpperCase();
-
+               const handleChange = (e) => {
+                  let newValue = e.target.value.toUpperCase();
                   setFieldValue(name, newValue);
 
                   if (newValue !== field.value && handleModified) {
@@ -115,57 +217,132 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
                   }
                };
 
+               const handleFocus = () => setIsFocused(true);
                const handleBlur = () => {
+                  setIsFocused(false);
                   setFieldTouched(name, true, true);
                };
 
-               // Clase base del borde dependiendo del error
-               const borderClass = error ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-black";
-
                return (
-                  <div className="relative z-0 w-full mb-5">
+                  <div className={`relative w-full mb-3 group ${disabled ? "opacity-70 cursor-not-allowed" : ""}`}>
                      {disabled ? (
-                        <div className={`pt-4 pb-2 border-b-2 ${borderClass} cursor-not-allowed`}>{values?.[name] || ""}</div>
-                     ) : (
-                        <input
-                           {...field}
-                           id={name}
-                           type={type}
-                           placeholder=" "
-                           autoComplete="off"
-                           value={values?.[name] ?? ""}
-                           onChange={handleChange}
-                           onBlur={handleBlur}
-                           className={`peer pt-4 pb-2 block w-full bg-transparent border-0 border-b-2 focus:outline-none focus:ring-0 `}
-                           hidden={hidden}
-                        />
-                     )}
+                        <div className="relative w-full mb-1">
+                           {/* LABEL flotante que tapa bien el borde */}
+                           <label
+                              htmlFor={name}
+                              className={`
+            absolute left-3 pointer-events-none transition-all duration-300
+            -top-2.5 text-xs px-1 bg-white font-medium z-[2]
+            ${error ? "text-red-500" : "text-gray-700"}
+         `}
+                           >
+                              {label}
+                           </label>
 
-                     <label
-                        htmlFor={name}
-                        className={`absolute left-0 -top-3.5 text-sm transition-all duration-300 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-3.5 peer-focus:text-sm ${
-                           error
-                              ? "text-red-600 peer-placeholder-shown:text-red-400 peer-focus:text-red-600"
-                              : "text-gray-500 peer-placeholder-shown:text-gray-400 peer-focus:text-black"
-                        }`}
-                     >
-                        {label}
-                     </label>
-
-                     {error && (
-                        <div className="flex items-center gap-1 mt-1">
-                           <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path
-                                 fillRule="evenodd"
-                                 d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                 clipRule="evenodd"
+                           {/* CONTENEDOR con borde visible */}
+                           <div
+                              className={`
+            relative px-3 pt-4 pb-2 rounded-lg border-2 transition-colors duration-200
+            ${error ? "border-red-300 bg-red-50" : "border-gray-300 bg-gray-100"}
+         `}
+                           >
+                              {/* Esta línea TAPA la parte superior del borde (efecto border-top abierto) */}
+                              <div
+                                 className={`
+               absolute -top-[2px] left-[10px] h-[4px] 
+               ${error ? "bg-red-50" : "bg-gray-100"} 
+               z-[1]
+            `}
+                                 style={{
+                                    width: `${label.length * 7 + 20}px` // tamaño dinámico según el label
+                                 }}
                               />
-                           </svg>
-                           <span className="text-sm font-semibold text-red-600" id={`${name}-error`}>
-                              {error}
-                           </span>
+
+                              {/* Texto del campo deshabilitado */}
+                              <span className="text-gray-700 block min-h-[20px] relative z-[2]">{values?.[name] || ""}</span>
+                           </div>
+                        </div>
+                     ) : (
+                        <div className="relative mb-3">
+                           {/* Fieldset para el borde animado */}
+                           <fieldset
+                              className={`
+                                 absolute -inset-[2px] m-0 px-2 pointer-events-none
+                                 border-2 rounded-lg transition-all duration-300
+                                 ${error ? "border-red-500" : isFocused ? "border-blue-500 ring-2 ring-blue-500/20" : "border-gray-400 group-hover:border-gray-600"}
+                                 ${isActive ? "border-2" : ""}
+                              `}
+                           >
+                              {/* <legend
+                                 className={`
+                                    ml-2 px-1 text-xs transition-all duration-300
+                                    ${error ? "text-red-500" : isFocused ? "text-blue-500" : "text-gray-600"}
+                                    ${isActive ? "max-w-full opacity-100" : "max-w-0 opacity-0"}
+                                 `}
+                              >
+                                 {label}
+                              </legend> */}
+                           </fieldset>
+
+                           {/* Input principal */}
+                           <input
+                              {...field}
+                              id={name}
+                              type={type}
+                              placeholder=" "
+                              autoComplete="off"
+                              value={values?.[name] ?? ""}
+                              onChange={handleChange}
+                              onFocus={handleFocus}
+                              onBlur={handleBlur}
+                              className={`
+                                 block w-full px-3 pt-4 pb-2 bg-transparent rounded-lg
+                                 transition-all duration-200 focus:outline-none
+                                 text-gray-900 placeholder-transparent
+                                 ${error ? "caret-red-500" : "caret-blue-500"}
+                                 ${disabled ? "cursor-not-allowed" : ""}
+                              `}
+                              hidden={hidden}
+                           />
+
+                           {/* Label flotante */}
+                           <label
+                              htmlFor={name}
+                              className={`
+                                 absolute left-3 transition-all duration-300 pointer-events-none
+                                 transform origin-left
+                                 ${
+                                    isActive
+                                       ? `-top-2.5 text-xs px-1 bg-white ${error ? "text-red-500" : isFocused ? "text-blue-500" : "text-gray-700"} font-medium`
+                                       : "top-4 text-base text-gray-500"
+                                 }
+                                 ${disabled ? "text-gray-400" : ""}
+                              `}
+                           >
+                              {label}
+                           </label>
                         </div>
                      )}
+
+                     {/* Mensaje de error mejorado */}
+                     {error ? (
+                        <motion.div
+                           initial={{ opacity: 0, y: -5 }}
+                           animate={{ opacity: 1, y: 0 }}
+                           transition={{ duration: 0.2 }}
+                           className="flex items-center gap-2 mt-2 px-1"
+                        >
+                           <div className="w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0"></div>
+                           <span className="text-sm font-medium text-red-600 leading-tight">{error}</span>
+                        </motion.div>
+                     ) : null}
+
+                     {/* Contador de caracteres (opcional) */}
+                     {hasValue && type === "text" ? (
+                        <div className="absolute -bottom-6 right-0">
+                           <span className="text-xs text-gray-400">{values?.[name]?.length || ""} caracteres</span>
+                        </div>
+                     ) : null}
                   </div>
                );
             }}
@@ -184,13 +361,21 @@ export const FormikNativeTimeInput: React.FC<InputWithLabelProps> = ({
    type = "time"
 }) => {
    const formik = useFormikContext();
+   const [isFocused, setIsFocused] = useState(false);
+
+   useEffect(() => {
+      if (value !== undefined && value !== null) {
+         formik.setFieldValue(name, value, false);
+      }
+   }, [value]);
 
    return (
       <ColComponent responsive={responsive} autoPadding={padding}>
          <FastField name={name}>
             {({ field, form: { values, setFieldValue, setFieldTouched, touched, errors } }: any) => {
                const error = touched?.[name] && errors?.[name] ? String(errors[name]) : null;
-               const borderClass = error ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-black";
+               const hasValue = values?.[name] && values[name].toString().length > 0;
+               const isActive = hasValue || isFocused;
 
                const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   const newValue = e.target.value;
@@ -201,49 +386,102 @@ export const FormikNativeTimeInput: React.FC<InputWithLabelProps> = ({
                   }
                };
 
+               const handleFocus = () => setIsFocused(true);
+               const handleBlur = () => {
+                  setIsFocused(false);
+                  setFieldTouched(name, true, true);
+               };
+
                return (
-                  <div className="relative z-0 w-full mb-5">
+                  <div className={`relative w-full mb-3 group ${disabled ? "opacity-70 cursor-not-allowed" : ""}`}>
                      {disabled ? (
-                        <div className={`pt-4 pb-2 border-b-2 ${borderClass} cursor-not-allowed`}>{values?.[name] || ""}</div>
+                        <div
+                           className={`relative pt-3 pb-2 px-3 border-2 rounded-lg transition-colors duration-200 ${
+                              error ? "border-red-300 bg-red-50" : "border-gray-300 bg-gray-100"
+                           }`}
+                        >
+                           <span className="text-gray-700 block min-h-[24px]">{values?.[name] || ""}</span>
+                           <label
+                              className={`absolute left-3 -top-2.5 text-xs px-1 transition-colors duration-200 ${
+                                 error ? "text-red-600 bg-red-50" : "text-gray-600 bg-gray-100"
+                              }`}
+                           >
+                              {/* {label} */}
+                           </label>
+                        </div>
                      ) : (
-                        <input
-                           {...field}
-                           id={name}
-                           type={type}
-                           placeholder=" "
-                           autoComplete="off"
-                           value={values?.[name] ?? ""}
-                           onChange={handleChange}
-                           onBlur={() => setFieldTouched(name, true, true)}
-                           className={`peer pt-4 pb-2 block w-full bg-transparent border-0 border-b-2 focus:outline-none focus:ring-0 ${borderClass}`}
-                        />
-                     )}
+                        <div className="relative mb-3">
+                           {/* Fieldset para el borde animado */}
+                           <fieldset
+                              className={`
+                                 absolute -inset-[2px] m-0 px-2 pointer-events-none
+                                 border-2 rounded-lg transition-all duration-300
+                                 ${error ? "border-red-500" : isFocused ? "border-blue-500 ring-2 ring-blue-500/20" : "border-gray-400 group-hover:border-gray-600"}
+                                 ${isActive ? "border-2" : ""}
+                              `}
+                           >
+                              {/* <legend
+                                 className={`
+                                    ml-2 px-1 text-xs transition-all duration-300
+                                    ${error ? "text-red-500" : isFocused ? "text-blue-500" : "text-gray-600"}
+                                    ${isActive ? "max-w-full opacity-100" : "max-w-0 opacity-0"}
+                                 `}
+                              >
+                                 {label}
+                              </legend> */}
+                           </fieldset>
 
-                     <label
-                        htmlFor={name}
-                        className={`absolute left-0 -top-3.5 text-sm transition-all duration-300 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-3.5 peer-focus:text-sm ${
-                           error
-                              ? "text-red-600 peer-placeholder-shown:text-red-400 peer-focus:text-red-600"
-                              : "text-gray-500 peer-placeholder-shown:text-gray-400 peer-focus:text-black"
-                        }`}
-                     >
-                        {label}
-                     </label>
+                           {/* Input principal */}
+                           <input
+                              {...field}
+                              id={name}
+                              type={type}
+                              placeholder=" "
+                              autoComplete="off"
+                              value={values?.[name] ?? ""}
+                              onChange={handleChange}
+                              onFocus={handleFocus}
+                              onBlur={handleBlur}
+                              className={`
+                                 block w-full px-3 pt-4 pb-2 bg-transparent rounded-lg
+                                 transition-all duration-200 outline-none
+                                 text-gray-900 placeholder-transparent
+                                 ${error ? "caret-red-500" : "caret-blue-500"}
+                                 ${disabled ? "cursor-not-allowed" : ""}
+                              `}
+                           />
 
-                     {error && (
-                        <div className="flex items-center gap-1 mt-1">
-                           <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                              <path
-                                 fillRule="evenodd"
-                                 d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                                 clipRule="evenodd"
-                              />
-                           </svg>
-                           <span className="text-sm font-semibold text-red-600" id={`${name}-error`}>
-                              {error}
-                           </span>
+                           {/* Label flotante */}
+                           <label
+                              htmlFor={name}
+                              className={`
+                                 absolute left-3 transition-all duration-300 pointer-events-none
+                                 transform origin-left
+                                 ${
+                                    
+                                        `-top-2.5 text-xs px-1 bg-white ${error ? "text-red-500" : isFocused ? "text-blue-500" : "text-gray-700"} font-medium`
+                                      
+                                 }
+                                 ${disabled ? "text-gray-400" : ""}
+                              `}
+                           >
+                              {label}
+                           </label>
                         </div>
                      )}
+
+                     {/* Mensaje de error mejorado */}
+                     {error ? (
+                        <motion.div
+                           initial={{ opacity: 0, y: -5 }}
+                           animate={{ opacity: 1, y: 0 }}
+                           transition={{ duration: 0.2 }}
+                           className="flex items-center gap-2 mt-2 px-1"
+                        >
+                           <div className="w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0"></div>
+                           <span className="text-sm font-medium text-red-600 leading-tight">{error}</span>
+                        </motion.div>
+                     ) : null}
                   </div>
                );
             }}
@@ -974,6 +1212,7 @@ export const FormikAutocomplete = <T extends Record<string, any>>({
    const [activeIndex, setActiveIndex] = useState(-1);
    const [showOptions, setShowOptions] = useState(false);
    const [textSearch, setTextSearch] = useState("");
+   const [isFocused, setIsFocused] = useState(false);
    const inputRef = useRef<HTMLInputElement>(null);
    const optionRefs = useRef<(HTMLLIElement | null)[]>([]);
    const menuRef = useRef<HTMLUListElement>(null);
@@ -992,6 +1231,8 @@ export const FormikAutocomplete = <T extends Record<string, any>>({
    };
 
    const error = getError();
+   const hasValue = textSearch && textSearch.length > 0;
+   const isActive = hasValue || isFocused;
 
    // Sincronizar con los valores de Formik
    useEffect(() => {
@@ -1070,6 +1311,7 @@ export const FormikAutocomplete = <T extends Record<string, any>>({
    const handleClickOutside = (e: MouseEvent) => {
       if (inputRef.current && !inputRef.current.contains(e.target as Node) && menuRef.current && !menuRef.current.contains(e.target as Node)) {
          setShowOptions(false);
+         setIsFocused(false);
       }
    };
 
@@ -1107,6 +1349,7 @@ export const FormikAutocomplete = <T extends Record<string, any>>({
             break;
          case "Escape":
             setShowOptions(false);
+            setIsFocused(false);
             break;
       }
    };
@@ -1144,6 +1387,7 @@ export const FormikAutocomplete = <T extends Record<string, any>>({
       formik.setFieldTouched(fieldToTouch, true, false);
 
       setShowOptions(false);
+      setIsFocused(false);
    };
 
    const handleOptionClick = (option: T) => selectOption(option);
@@ -1152,72 +1396,153 @@ export const FormikAutocomplete = <T extends Record<string, any>>({
       return textSearch;
    };
 
+   const handleFocus = () => {
+      setIsFocused(true);
+      if (!disabled) {
+         setFilteredOptions(options);
+         setShowOptions(true);
+      }
+   };
+
+   const handleBlur = () => {
+      setIsFocused(false);
+      const fieldToTouch = Array.isArray(name) ? name[0] : name;
+      formik.setFieldTouched(fieldToTouch, true, false);
+   };
+
    return (
       <ColComponent responsive={responsive} autoPadding={padding}>
-         <div className={`relative w-full mb-5 ${disabled ? "cursor-not-allowed" : ""}`}>
-            <input
-               disabled={disabled}
-               ref={inputRef}
-               type="text"
-               value={displayValue()}
-               placeholder=" "
-               autoComplete="off"
-               onFocus={() => {
-                  if (!disabled) {
-                     setFilteredOptions(options);
-                     setShowOptions(true);
-                  }
-               }}
-               onChange={(e) => !disabled && handleFilter(e.target.value)}
-               onKeyDown={handleKeyDown}
-               className={`block w-full px-0 pt-4 pb-2 mt-0 bg-transparent border-0 border-b-2 appearance-none peer focus:outline-none focus:ring-0 ${
-                  error ? "border-red-500 focus:border-red-500" : "border-gray-200 focus:border-black"
-               } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
-            />
-
-            <label
-               className={`absolute left-0 -top-3.5 text-sm transition-all duration-300 peer-placeholder-shown:top-4 peer-placeholder-shown:text-base peer-focus:-top-3.5 peer-focus:text-sm ${
-                  error
-                     ? "text-red-600 peer-placeholder-shown:text-red-400 peer-focus:text-red-600"
-                     : "text-gray-500 peer-placeholder-shown:text-gray-400 peer-focus:text-black"
-               }`}
-            >
-               {label}
-               {loading && <span className="inline-block w-4 h-4 ml-2 border-2 border-gray-500 rounded-full animate-spin border-t-transparent"></span>}
-            </label>
-
-            <div onClick={() => !disabled && setShowOptions(true)} className="absolute right-0 cursor-pointer top-6">
-               {!disabled && <IoMdArrowDropdown />}
-            </div>
-
-            {showOptions && (
-               <ul ref={menuRef} className="absolute z-10 w-full mt-1 overflow-auto bg-white border border-gray-300 rounded shadow-md max-h-40">
-                  {filteredOptions.map((option, index) => (
-                     <li
-                        key={Array.isArray(idKey) ? idKey.map((k) => option[k]).join("-") : String(option[idKey])}
-                        ref={(el) => {
-                           optionRefs.current[index] = el;
-                        }}
-                        className={`px-4 py-2 cursor-pointer hover:bg-blue-100 ${activeIndex === index ? "bg-blue-200" : ""}`}
-                        onClick={() => handleOptionClick(option)}
+         <div className={`relative w-full mb-1 group ${disabled ? "opacity-70 cursor-not-allowed" : ""}`}>
+            {disabled ? (
+               <div
+                  className={`relative pt-3 pb-2 px-3 border-2 rounded-lg transition-colors duration-200 ${
+                     error ? "border-red-300 bg-red-50" : "border-gray-300 bg-gray-100"
+                  }`}
+               >
+                  <span className="text-gray-700 block min-h-[24px]">{displayValue() || ""}</span>
+                  <label
+                     className={`absolute left-3 -top-2.5 text-xs px-1 transition-colors duration-200 ${
+                        error ? "text-red-600 bg-red-50" : "text-gray-600 bg-gray-100"
+                     }`}
+                  >
+                     {/* {label} */}
+                  </label>
+               </div>
+            ) : (
+               <div className="relative mb-3">
+                  {/* Fieldset para el borde animado */}
+                  <fieldset
+                     className={`
+                        absolute -inset-[2px] m-0 px-2 pointer-events-none
+                        border-2 rounded-lg transition-all duration-300
+                        ${error ? "border-red-500" : isFocused ? "border-blue-500 ring-2 ring-blue-500/20" : "border-gray-400 group-hover:border-gray-600"}
+                        ${isActive ? "border-2" : ""}
+                     `}
+                  >
+                     {/* <legend
+                        className={`
+                           ml-2 px-1 text-xs transition-all duration-300
+                           ${error ? "text-red-500" : isFocused ? "text-blue-500" : "text-gray-600"}
+                           ${isActive ? "max-w-full opacity-100" : "max-w-0 opacity-0"}
+                        `}
                      >
-                        {String(option[labelKey])}
-                     </li>
-                  ))}
+                        {label}
+                     </legend> */}
+                  </fieldset>
+
+                  {/* Input principal */}
+                  <input
+                     disabled={disabled}
+                     ref={inputRef}
+                     type="text"
+                     value={displayValue()}
+                     placeholder=" "
+                     autoComplete="off"
+                     onFocus={handleFocus}
+                     onChange={(e) => !disabled && handleFilter(e.target.value)}
+                     onKeyDown={handleKeyDown}
+                     onBlur={handleBlur}
+                     className={`
+                        block w-full px-3 pt-4 pb-2 bg-transparent rounded-lg
+                        transition-all duration-200 focus:outline-none
+                        text-gray-900 placeholder-transparent pr-10
+                        ${error ? "caret-red-500" : "caret-blue-500"}
+                        ${disabled ? "cursor-not-allowed" : ""}
+                     `}
+                  />
+
+                  {/* Label flotante */}
+                  <label
+                     htmlFor={Array.isArray(name) ? name[0] : name}
+                     className={`
+                        absolute left-3 transition-all duration-300 pointer-events-none
+                        transform origin-left
+                        ${
+                           isActive
+                              ? `-top-2.5 text-xs px-1 bg-white ${error ? "text-red-500" : isFocused ? "text-blue-500" : "text-gray-700"} font-medium`
+                              : "top-4 text-base text-gray-500"
+                        }
+                        ${disabled ? "text-gray-400" : ""}
+                     `}
+                  >
+                     {label}
+                  </label>
+
+                  {/* Icono de flecha */}
+                  <div
+                     className="absolute right-3 top-1/2 transform -translate-y-1/2 cursor-pointer text-gray-500"
+                     onClick={() => !disabled && setShowOptions(!showOptions)}
+                  >
+                     {!disabled && (
+                        <svg
+                           className={`w-5 h-5 transition-transform duration-200 ${showOptions ? "rotate-180" : ""}`}
+                           fill="none"
+                           stroke="currentColor"
+                           viewBox="0 0 24 24"
+                        >
+                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                     )}
+                  </div>
+               </div>
+            )}
+
+            {/* Lista de opciones */}
+            {showOptions && !disabled && (
+               <ul ref={menuRef} className="absolute z-20 w-full mt-1 overflow-auto bg-white border-2 border-gray-300 rounded-lg shadow-lg max-h-60">
+                  {filteredOptions.length > 0 ? (
+                     filteredOptions.map((option, index) => (
+                        <li
+                           key={Array.isArray(idKey) ? idKey.map((k) => option[k]).join("-") : String(option[idKey])}
+                           ref={(el) => {
+                              optionRefs.current[index] = el;
+                           }}
+                           className={`px-4 py-3 cursor-pointer transition-colors duration-150 ${
+                              activeIndex === index ? "bg-blue-100 border-blue-500" : "hover:bg-gray-100"
+                           } border-l-2 ${activeIndex === index ? "border-blue-500" : "border-transparent"}`}
+                           onClick={() => handleOptionClick(option)}
+                        >
+                           <span className="text-gray-900">{String(option[labelKey])}</span>
+                        </li>
+                     ))
+                  ) : (
+                     <li className="px-4 py-3 text-gray-500 text-center">No se encontraron opciones</li>
+                  )}
                </ul>
             )}
 
-            {/* Mostrar error de Formik */}
-            {error && (
-               <div className="flex items-center gap-1 mt-1">
-                  <svg className="w-4 h-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                     <path
-                        fillRule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                        clipRule="evenodd"
-                     />
-                  </svg>
-                  <span className="text-sm font-medium text-red-600">{error}</span>
+            {/* Mensaje de error mejorado */}
+            {error ? (
+               <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="flex items-center gap-2 mt-2 px-1">
+                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0"></div>
+                  <span className="text-sm font-medium text-red-600 leading-tight">{error}</span>
+               </motion.div>
+            ) : null}
+
+            {/* Indicador de carga */}
+            {loading && (
+               <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <div className="w-4 h-4 border-2 border-gray-500 rounded-full animate-spin border-t-transparent"></div>
                </div>
             )}
          </div>
@@ -1246,6 +1571,17 @@ interface FormikRadioProps<T> {
    padding?: boolean;
 }
 
+interface FormikRadioProps<T> {
+   label: string;
+   name: string;
+   options: T[];
+   idKey: keyof T;
+   labelKey: keyof T;
+   responsive?: { [key: string]: number };
+   disabled?: boolean;
+   padding?: boolean;
+}
+
 export const FormikRadio = <T extends Record<string, any>>({
    label,
    name,
@@ -1260,36 +1596,103 @@ export const FormikRadio = <T extends Record<string, any>>({
    if (!formik) throw new Error("Formik context not found");
 
    const [field, meta] = useField(name);
-
-   const error = meta.touched && meta.error && typeof meta.error === "string" ? meta.error : null;
+   const error = meta.touched && meta.error ? String(meta.error) : null;
 
    return (
       <ColComponent responsive={responsive} autoPadding={padding}>
-         <label className="block mb-2 font-semibold text-gray-700">{label}</label>
-         <div className="flex flex-wrap w-full gap-3 pb-2 mb-4">
-            {options.map((option) => (
+         <div className={`relative w-full mb-1 group ${disabled ? "opacity-70 cursor-not-allowed" : ""}`}>
+            {/* Contenedor principal con borde similar a los otros componentes */}
+            <div
+               className={`
+               relative px-3 pt-4 pb-3 border-2 rounded-lg transition-all duration-300
+               ${error ? "border-red-500" : "border-gray-300 group-hover:border-gray-400"}
+               ${disabled ? "bg-gray-100 border-gray-300" : "bg-transparent"}
+            `}
+            >
+               {/* Label flotante similar a FormikInput */}
                <label
-                  key={String(option[idKey])}
-                  className={`cursor-pointer flex items-center px-4 py-2 border rounded-md transition-colors duration-200 ${
-                     field.value === option[idKey]
-                        ? "bg-blue-600 text-white border-blue-600"
-                        : "bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:bg-blue-50"
-                  } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                  className={`
+                  absolute left-3 -top-2.5 text-xs px-1 transition-all duration-300 font-medium
+                  ${error ? "text-red-500 bg-white" : "text-gray-700 bg-white"}
+                  ${disabled ? "text-gray-600 bg-gray-100" : ""}
+               `}
                >
-                  <input
-                     type="radio"
-                     name={name}
-                     value={String(option[idKey])}
-                     checked={field.value === option[idKey]}
-                     disabled={disabled}
-                     onChange={() => formik.setFieldValue(name, option[idKey])}
-                     className="hidden"
-                  />
-                  <span className="ml-2">{String(option[labelKey])}</span>
+                  {label}
                </label>
-            ))}
+
+               {/* Grid de opciones */}
+               <div className="flex flex-wrap gap-3 mt-1">
+                  {options.map((option) => {
+                     const isSelected = field.value === option[idKey];
+                     const optionId = `${name}-${String(option[idKey])}`;
+
+                     return (
+                        <label
+                           key={String(option[idKey])}
+                           htmlFor={optionId}
+                           className={`
+                              relative flex items-center gap-3 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all duration-200
+                              ${
+                                 isSelected
+                                    ? error
+                                       ? "bg-red-50 border-red-500 text-red-700"
+                                       : "bg-blue-50 border-blue-500 text-blue-700"
+                                    : "bg-white border-gray-300 text-gray-700 hover:border-gray-400 hover:bg-gray-50"
+                              }
+                              ${disabled ? "cursor-not-allowed opacity-70" : ""}
+                           `}
+                        >
+                           {/* Radio button personalizado */}
+                           <div
+                              className={`
+                              flex items-center justify-center w-5 h-5 rounded-full border-2 transition-all duration-200
+                              ${isSelected ? (error ? "border-red-500 bg-red-500" : "border-blue-500 bg-blue-500") : "border-gray-400 bg-white"}
+                              ${disabled ? "border-gray-400 bg-gray-200" : ""}
+                           `}
+                           >
+                              {isSelected && (
+                                 <div
+                                    className={`
+                                    w-2 h-2 rounded-full transition-all duration-200
+                                    ${error ? "bg-red-100" : "bg-white"}
+                                 `}
+                                 />
+                              )}
+                           </div>
+
+                           <input
+                              type="radio"
+                              id={optionId}
+                              name={name}
+                              value={String(option[idKey])}
+                              checked={isSelected}
+                              disabled={disabled}
+                              onChange={() => !disabled && formik.setFieldValue(name, option[idKey])}
+                              className="absolute opacity-0 w-0 h-0"
+                           />
+
+                           <span
+                              className={`
+                              text-sm font-medium transition-colors duration-200
+                              ${disabled ? "text-gray-500" : ""}
+                           `}
+                           >
+                              {String(option[labelKey])}
+                           </span>
+                        </label>
+                     );
+                  })}
+               </div>
+            </div>
+
+            {/* Mensaje de error mejorado - mismo estilo que FormikInput */}
+            {error ? (
+               <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="flex items-center gap-2 mt-2 px-1">
+                  <div className="w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0"></div>
+                  <span className="text-sm font-medium text-red-600 leading-tight">{error}</span>
+               </motion.div>
+            ) : null}
          </div>
-         {error && <span className="text-sm font-semibold text-red-600">{error}</span>}
       </ColComponent>
    );
 };

@@ -61,7 +61,7 @@ export const useUsersState = create<UsersState>((set, get) => ({
    resetValues: () => {
       set({
          initialValues: {
-            payroll: 0,
+            payroll: null,
             dependence_id: null,
             role: "usuario",
 
@@ -149,7 +149,7 @@ export const useUsersState = create<UsersState>((set, get) => ({
       set({ loading: false });
    },
    fetchAddUser: async (repo: UsersRepository, user: Users) => {
-      set({ modalForm: false, loading: true });
+      set({ modalForm: false});
 
       try {
          const result = await repo.register(user);

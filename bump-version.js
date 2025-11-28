@@ -18,6 +18,7 @@ const askYesNo = async (text) => {
 const bumpVersion = async () => {
    const packagePath = "./package.json";
    const versionsPath = "./versions.md";
+   const envPath = "./.env";
 
    if (!fs.existsSync(packagePath)) {
       console.error(chalk.red("❌ No se encontró el archivo package.json"));
@@ -82,6 +83,7 @@ const bumpVersion = async () => {
 
    const newVersion = `v${major}.${minor}.${patch}.${build}`;
    const fullVersion = `${newVersion} ${stageLabel}`.trim();
+   const envVersion = `${major}.${minor}.${patch}.${build}`; // Versión sin la 'v' para .env
 
    const author = await ask(chalk.cyan("👤 Autor del cambio: "));
 
@@ -124,9 +126,31 @@ const bumpVersion = async () => {
 
    const headerColor = stageLabel === "beta" ? chalk.hex("#FFA500") : stageLabel === "rc" ? chalk.hex("#00BFFF") : chalk.hex("#32CD32");
 
+   // Actualizar package.json
    pkg.version = fullVersion;
    fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2));
 
+   // Actualizar archivo .env
+   if (fs.existsSync(envPath)) {
+      let envContent = fs.readFileSync(envPath, "utf-8");
+
+      // Buscar y reemplazar VITE_APP_VERSION
+      if (envContent.includes("VITE_APP_VERSION=")) {
+         envContent = envContent.replace(/VITE_APP_VERSION=.*/, `VITE_APP_VERSION=${envVersion}`);
+      } else {
+         // Si no existe, agregarlo al final
+         envContent += `\nVITE_APP_VERSION=${envVersion}\n`;
+      }
+
+      fs.writeFileSync(envPath, envContent);
+      console.log(chalk.green(`✅ Variable VITE_APP_VERSION actualizada a ${envVersion} en .env`));
+   } else {
+      // Crear archivo .env si no existe
+      fs.writeFileSync(envPath, `VITE_APP_VERSION=${envVersion}\n`);
+      console.log(chalk.green(`✅ Archivo .env creado con VITE_APP_VERSION=${envVersion}`));
+   }
+
+   // Actualizar versions.md
    if (!fs.existsSync(versionsPath)) {
       fs.writeFileSync(versionsPath, `# 🧾 Registro de Versiones\n\n> Documenta los cambios del sistema con detalle.\n\n---\n\n`);
    }
@@ -176,6 +200,7 @@ ${changeSections || "_Sin cambios registrados._"}
 
    console.log(headerColor(`\n✅ Versión actualizada a ${newVersion} (${stageLabel.toUpperCase()})`));
    console.log(chalk.blueBright("🗒️ Cambios registrados y organizados en versions.md\n"));
+   console.log(chalk.blueBright("🔧 Variable de entorno VITE_APP_VERSION actualizada en .env\n"));
 
    rl.close();
 };

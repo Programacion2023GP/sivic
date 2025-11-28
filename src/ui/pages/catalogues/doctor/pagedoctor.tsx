@@ -6,7 +6,7 @@ import FormikForm from "../../../formik/Formik";
 import { FormikColorPicker, FormikInput } from "../../../formik/FormikInputs/FormikInput";
 import { CiEdit } from "react-icons/ci";
 import { VscDiffAdded } from "react-icons/vsc";
-import { FaTrash } from "react-icons/fa";
+import { FaPlus, FaTrash } from "react-icons/fa";
 import { LuRefreshCcw } from "react-icons/lu";
 import { showConfirmationAlert, showToast } from "../../../../sweetalert/Sweetalert";
 import * as Yup from "yup";
@@ -17,15 +17,16 @@ import { Doctor } from "../../../../domain/models/doctor/dependence";
 import { FiEdit, FiTrash2 } from "react-icons/fi";
 import CustomDataDisplay from "../../../components/movil/view/customviewmovil";
 import { doctorMovilView } from "./infomovildoctor";
+import { FloatingActionButton } from "../../../components/movil/button/custombuttommovil";
 
 const PageDoctor = () => {
-   const {doctor,fetchDoctor,handleChangeDoctor,initialValues,loading,open,setOpen,postDoctor,removeDoctor } = useDoctorStore();
+   const { doctor, fetchDoctor, handleChangeDoctor, initialValues, loading, open, setOpen, postDoctor, removeDoctor, resetDoctor } = useDoctorStore();
    const api = new DoctorApi();
    useEffect(() => {
       fetchDoctor(api);
    }, []);
    const validationSchema = Yup.object({
-      name: Yup.string().required("La dependencia es requerida"),
+      name: Yup.string().required("La dependencia es requerida")
    });
    const responsive = {
       "2xl": 12,
@@ -34,8 +35,7 @@ const PageDoctor = () => {
       md: 12,
       sm: 12
    };
- 
- 
+
    return (
       <CompositePage
          formDirection="modal"
@@ -64,11 +64,26 @@ const PageDoctor = () => {
          )}
          table={() => (
             <>
+               <div className="absolute z-20 right-2 bottom-2">
+                  <FloatingActionButton
+                     onClick={() => {
+                        resetDoctor()
+                        setOpen();
+                     }}
+                     icon={<FaPlus />}
+                     color="primary"
+                     size="normal"
+                  />
+               </div>
                <CustomTable
                   headerActions={() => (
                      <>
                         <PermissionRoute requiredPermission={"catalogo_doctor_crear"}>
-                           <CustomButton onClick={setOpen}>
+                           <CustomButton onClick={()=>{
+                        resetDoctor();
+                              
+                              setOpen()
+                           }}>
                               {" "}
                               <VscDiffAdded />
                            </CustomButton>
@@ -121,7 +136,8 @@ const PageDoctor = () => {
                                        showToast("La acción fue cancelada.", "error");
                                     }
                                  });
-                              }
+                              },
+                              hasPermission: "catalogo_doctor_eliminar"
                            }
                         ],
                         right: [
@@ -131,7 +147,8 @@ const PageDoctor = () => {
                               action: (row) => {
                                  handleChangeDoctor(row);
                                  setOpen();
-                              }
+                              },
+                              hasPermission: "catalogo_doctor_actualizar"
                            }
                         ]
                      },

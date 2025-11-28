@@ -5,6 +5,7 @@ import { FiSearch, FiChevronUp, FiChevronDown, FiX, FiAlertCircle, FiInbox, FiMo
 import { RiFileExcelFill } from "react-icons/ri";
 import { MdOutlineKeyboardArrowRight, MdOutlineKeyboardArrowLeft } from "react-icons/md";
 import { PermissionRoute } from "../../../App";
+import { usePermissionsStore } from "../../../store/menu/menu.store";
 
 interface Column<T extends object> {
    field: keyof T;
@@ -30,12 +31,14 @@ interface MobileConfig<T extends object> {
          color: string;
          action: (row: T) => void;
          label?: string;
+         hasPermission?: string | string[]; // Nueva prop opcional
       }[];
       right?: {
          icon: React.ReactNode;
          color: string;
          action: (row: T) => void;
          label?: string;
+         hasPermission?: string | string[]; // Nueva prop opcional
       }[];
    };
    bottomSheet?: {
@@ -89,6 +92,7 @@ const CustomTable = <T extends object>({
    const [selectedRowForSheet, setSelectedRowForSheet] = useState<T | null>(null);
    const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
    const [viewMode, setViewMode] = useState<"table" | "cards">(defaultView);
+   const hasPermission = usePermissionsStore((state) => state.hasPermission);
 
    const [swipeData, setSwipeData] = useState<{
       index: number | null;
@@ -246,7 +250,7 @@ const CustomTable = <T extends object>({
       }
    };
 
-   const handleSwipeEnd = (row: T, idx: number) => {
+   const handleSwipeEnd = (row: T, idx: number, hasPermission: any) => {
       if (swipeData.index === idx) {
          const threshold = 60;
          const leftAction = mobileConfig?.swipeActions?.left?.[0];
@@ -255,6 +259,15 @@ const CustomTable = <T extends object>({
          if (swipeData.offset > threshold && leftAction) {
             setSwipeData((prev) => ({ ...prev, offset: 120 }));
             setTimeout(() => {
+               if (leftAction.hasPermission) {
+                  const allowed = Array.isArray(leftAction.hasPermission)
+                     ? leftAction.hasPermission.some((p) => hasPermission(p))
+                     : hasPermission(leftAction?.hasPermission);
+
+                  if (!allowed) {
+                     return null;
+                  }
+               }
                leftAction.action(row);
                setSwipeData({
                   index: null,
@@ -264,6 +277,15 @@ const CustomTable = <T extends object>({
                });
             }, 300);
          } else if (swipeData.offset < -threshold && rightAction) {
+            if (rightAction.hasPermission) {
+               const allowed = Array.isArray(rightAction.hasPermission)
+                  ? rightAction.hasPermission.some((p) => hasPermission(p))
+                  : hasPermission(rightAction?.hasPermission);
+
+               if (!allowed) {
+                  return null;
+               }
+            }
             setSwipeData((prev) => ({ ...prev, offset: -120 }));
             setTimeout(() => {
                rightAction.action(row);
@@ -477,9 +499,7 @@ const CustomTable = <T extends object>({
                               {/* Columnas principales */}
                               {visibleColumns.map((col) => (
                                  <td key={String(col.field)} className="px-3 py-3 text-sm text-gray-800 whitespace-nowrap" title={String(row[col.field] ?? "")}>
-                                    <div className=" max-w-[200px]">
-                                       {col.renderField ? col.renderField(row[col.field]) : highlight(String(row[col.field] ?? ""))}
-                                    </div>
+                                    <div className=" max-w-[200px]">{col.renderField ? col.renderField(row[col.field]) : highlight(String(row[col.field] ?? ""))}</div>
                                  </td>
                               ))}
 
@@ -610,142 +630,176 @@ const CustomTable = <T extends object>({
    // ... (el resto del código permanece igual: renderMobileListView, getDefaultTitle, getDefaultSubtitle, renderBottomSheet, etc.)
 
    // VISTA MÓVIL MEJORADA
-   const renderMobileListView = () => (
-      <motion.div className="space-y-2 p-3 bg-gray-50 min-h-fit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
-         <AnimatePresence>
-            {currentRows.map((row, idx) => {
-               const isBeingSwiped = swipeData.index === idx;
-               const swipeProgress = Math.min(Math.abs(swipeData.offset) / 80, 1);
+   const renderMobileListView = (hasPermission: any) => {
+      return (
+         <motion.div className="space-y-2 p-3 bg-gray-50 min-h-fit" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.4 }}>
+            <AnimatePresence>
+               {currentRows.map((row, idx) => {
+                  const isBeingSwiped = swipeData.index === idx;
+                  const swipeProgress = Math.min(Math.abs(swipeData.offset) / 80, 1);
 
-               const leftAction = mobileConfig?.swipeActions?.left?.[0];
-               const rightAction = mobileConfig?.swipeActions?.right?.[0];
+                  const leftAction = mobileConfig?.swipeActions?.left?.[0];
+                  const rightAction = mobileConfig?.swipeActions?.right?.[0];
 
-               let actionColor = null;
-               let actionIcon = null;
+                  let actionColor = null;
+                  let actionIcon = null;
 
-               if (swipeData.offset > 40 && leftAction) {
-                  actionColor = leftAction.color;
-                  actionIcon = leftAction.icon;
-               } else if (swipeData.offset < -40 && rightAction) {
-                  actionColor = rightAction.color;
-                  actionIcon = rightAction.icon;
-               }
+                  // =============================
+                  //     LÓGICA DE ACCIÓN ACTUAL
+                  // =============================
+                  const isSwipingRight = swipeData.offset > 0; // dedo hacia la derecha
+                  const isSwipingLeft = swipeData.offset < 0; // dedo hacia la izquierda
 
-               return (
-                  <motion.div
-                     key={idx}
-                     className="relative"
-                     layout
-                     initial={{ opacity: 0, y: 10 }}
-                     animate={{
-                        opacity: 1,
-                        y: 0
-                     }}
-                     exit={{ opacity: 0, y: -10 }}
-                     transition={{
-                        type: "spring",
-                        damping: 30,
-                        stiffness: 400,
-                        delay: idx * 0.02
-                     }}
-                  >
-                     {/* FONDO DE ACCIÓN SUAVE */}
-                     {actionColor && (
-                        <motion.div
-                           className={`absolute inset-0 rounded-xl ${actionColor} flex items-center ${
-                              swipeData.offset > 0 ? "justify-start pl-4" : "justify-end pr-4"
-                           }`}
-                           initial={{ opacity: 0, scale: 0.98 }}
-                           animate={{
-                              opacity: swipeProgress * 0.8,
-                              scale: 1
-                           }}
-                           transition={{
-                              type: "spring",
-                              damping: 35,
-                              stiffness: 500
-                           }}
-                        >
+                  // elegimos cuál acción evaluar
+                  const currentAction = isSwipingRight
+                     ? leftAction // si swipes hacia la derecha → acción left
+                     : isSwipingLeft
+                     ? rightAction // si swipes hacia la izquierda → acción right
+                     : null;
+
+                  // si existe una acción válida
+                  if (currentAction) {
+                     // si tiene condición, la evaluamos
+                     const passed = currentAction.hasPermission;
+
+                     if (passed !=undefined) {
+
+                        actionColor = currentAction.color;
+                        actionIcon = currentAction.icon;
+                        const allowed = Array.isArray(passed) ? passed.some((p) => hasPermission(p)) : hasPermission(passed);
+   
+                        if (!allowed) {
+                           return null;
+                        }
+                     }
+                     else{
+
+                        if (swipeData.offset > 40 && leftAction) {
+                           actionColor = leftAction.color;
+                           actionIcon = leftAction.icon;
+                        } else if (swipeData.offset < -40 && rightAction) {
+                           actionColor = rightAction.color;
+                           actionIcon = rightAction.icon;
+                        }
+                     }
+                  }
+
+                  return (
+                     <motion.div
+                        key={idx}
+                        className="relative"
+                        layout
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{
+                           opacity: 1,
+                           y: 0
+                        }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{
+                           type: "spring",
+                           damping: 30,
+                           stiffness: 400,
+                           delay: idx * 0.02
+                        }}
+                     >
+                        {/* FONDO DE ACCIÓN SUAVE */}
+                        {actionColor && (
                            <motion.div
-                              initial={{ scale: 0, opacity: 0 }}
+                              className={`absolute inset-0 rounded-xl ${actionColor} flex items-center ${
+                                 swipeData.offset > 0 ? "justify-start pl-4" : "justify-end pr-4"
+                              }`}
+                              initial={{ opacity: 0, scale: 0.98 }}
                               animate={{
-                                 scale: swipeProgress,
-                                 opacity: swipeProgress
+                                 opacity: swipeProgress * 0.8,
+                                 scale: 1
                               }}
                               transition={{
                                  type: "spring",
-                                 damping: 25,
-                                 stiffness: 400
+                                 damping: 35,
+                                 stiffness: 500
                               }}
-                              className="text-white text-lg"
                            >
-                              {actionIcon}
+                              <motion.div
+                                 initial={{ scale: 0, opacity: 0 }}
+                                 animate={{
+                                    scale: swipeProgress,
+                                    opacity: swipeProgress
+                                 }}
+                                 transition={{
+                                    type: "spring",
+                                    damping: 25,
+                                    stiffness: 400
+                                 }}
+                                 className="text-white text-lg"
+                              >
+                                 {actionIcon}
+                              </motion.div>
                            </motion.div>
-                        </motion.div>
-                     )}
+                        )}
 
-                     {/* ITEM PRINCIPAL CON MOVIMIENTO SUAVE */}
-                     <motion.div
-                        className="relative bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden"
-                        drag="x"
-                        dragConstraints={{ left: 0, right: 0 }}
-                        dragElastic={0.1}
-                        onDragStart={() => handleSwipeStart(idx)}
-                        onDrag={(_, info) => handleSwipeMove(info.offset.x, idx)}
-                        onDragEnd={() => handleSwipeEnd(row, idx)}
-                        style={{
-                           x: isBeingSwiped ? swipeData.offset : 0
-                        }}
-                        whileHover={{
-                           y: -1,
-                           transition: { duration: 0.15 }
-                        }}
-                        whileTap={{
-                           scale: 0.995,
-                           transition: { duration: 0.1 }
-                        }}
-                     >
-                        <div className="p-3 active:bg-gray-50 transition-colors duration-150" onClick={(e) => handleTileTap(row, e)}>
-                           <div className="flex items-center space-x-3">
-                              {/* Leading */}
-                              {mobileConfig?.listTile?.leading && <div className="flex-shrink-0">{mobileConfig.listTile.leading(row)}</div>}
+                        {/* ITEM PRINCIPAL CON MOVIMIENTO SUAVE */}
+                        <motion.div
+                           className="relative bg-white rounded-xl shadow-xs border border-gray-100 overflow-hidden"
+                           drag="x"
+                           dragConstraints={{ left: 0, right: 0 }}
+                           dragElastic={0.1}
+                           onDragStart={() => handleSwipeStart(idx)}
+                           onDrag={(_, info) => handleSwipeMove(info.offset.x, idx)}
+                           onDragEnd={() => handleSwipeEnd(row, idx, hasPermission)}
+                           style={{
+                              x: isBeingSwiped ? swipeData.offset : 0
+                           }}
+                           whileHover={{
+                              y: -1,
+                              transition: { duration: 0.15 }
+                           }}
+                           whileTap={{
+                              scale: 0.995,
+                              transition: { duration: 0.1 }
+                           }}
+                        >
+                           <div className="p-3 active:bg-gray-50 transition-colors duration-150" onClick={(e) => handleTileTap(row, e)}>
+                              <div className="flex items-center space-x-3">
+                                 {/* Leading */}
+                                 {mobileConfig?.listTile?.leading && <div className="flex-shrink-0">{mobileConfig.listTile.leading(row)}</div>}
 
-                              {/* Content */}
-                              <div className="flex-1 min-w-0">
-                                 <div className="flex items-center justify-between">
-                                    <div className="text-base font-medium text-gray-900 truncate">
-                                       {mobileConfig?.listTile?.title ? mobileConfig.listTile.title(row) : getDefaultTitle(row)}
+                                 {/* Content */}
+                                 <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between">
+                                       <div className="text-base font-medium text-gray-900 truncate">
+                                          {mobileConfig?.listTile?.title ? mobileConfig.listTile.title(row) : getDefaultTitle(row)}
+                                       </div>
+                                       {mobileConfig?.listTile?.trailing && <div className="flex-shrink-0 ml-2">{mobileConfig.listTile.trailing(row)}</div>}
                                     </div>
-                                    {mobileConfig?.listTile?.trailing && <div className="flex-shrink-0 ml-2">{mobileConfig.listTile.trailing(row)}</div>}
-                                 </div>
 
-                                 {/* Subtitle */}
-                                 {mobileConfig?.listTile?.subtitle && (
-                                    <div className="text-sm text-gray-600 mt-0.5 truncate">{mobileConfig.listTile.subtitle(row)}</div>
-                                 )}
+                                    {/* Subtitle */}
+                                    {mobileConfig?.listTile?.subtitle && (
+                                       <div className="text-sm text-gray-600 mt-0.5 truncate">{mobileConfig.listTile.subtitle(row)}</div>
+                                    )}
+                                 </div>
                               </div>
                            </div>
-                        </div>
 
-                        {/* INDICADOR VISUAL SUTIL */}
-                        {isBeingSwiped && Math.abs(swipeData.offset) > 20 && (
-                           <motion.div
-                              className={`absolute top-1/2 transform -translate-y-1/2 w-1 h-8 rounded-full ${swipeData.offset > 0 ? " left-2" : " right-2"}`}
-                              initial={{ scale: 0, opacity: 0 }}
-                              animate={{
-                                 scale: 1,
-                                 opacity: Math.min(Math.abs(swipeData.offset) / 60, 0.7)
-                              }}
-                              transition={{ type: "spring", stiffness: 600 }}
-                           />
-                        )}
+                           {/* INDICADOR VISUAL SUTIL */}
+                           {isBeingSwiped && Math.abs(swipeData.offset) > 20 && (
+                              <motion.div
+                                 className={`absolute top-1/2 transform -translate-y-1/2 w-1 h-8 rounded-full ${swipeData.offset > 0 ? " left-2" : " right-2"}`}
+                                 initial={{ scale: 0, opacity: 0 }}
+                                 animate={{
+                                    scale: 1,
+                                    opacity: Math.min(Math.abs(swipeData.offset) / 60, 0.7)
+                                 }}
+                                 transition={{ type: "spring", stiffness: 600 }}
+                              />
+                           )}
+                        </motion.div>
                      </motion.div>
-                  </motion.div>
-               );
-            })}
-         </AnimatePresence>
-      </motion.div>
-   );
+                  );
+               })}
+            </AnimatePresence>
+         </motion.div>
+      );
+   };
 
    const getDefaultTitle = (row: T): React.ReactNode => {
       if (cardTitleField && row[cardTitleField]) {
@@ -979,7 +1033,7 @@ const CustomTable = <T extends object>({
                renderEmpty()
             ) : isMobile ? (
                <div className="overflow-y-auto">
-                  {renderMobileListView()}
+                  {renderMobileListView(hasPermission)}
                   {renderBottomSheet()}
                </div>
             ) : viewMode === "cards" ? (
