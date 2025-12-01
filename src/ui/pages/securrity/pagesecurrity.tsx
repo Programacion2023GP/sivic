@@ -13,14 +13,10 @@ import { showConfirmationAlert, showToast } from "../../../sweetalert/Sweetalert
 import { FaPlus, FaSync, FaTrash } from "react-icons/fa";
 import { CiEdit } from "react-icons/ci";
 import * as Yup from "yup";
-import FTransferList from "../../components/transferlist/TransferList";
 import { PermissionRoute } from "../../../App";
 import Spinner from "../../components/loading/loading";
 import Tooltip from "../../components/toltip/Toltip";
-import { useDependenceStore } from "../../../store/dependence/dependence.store";
-import { DependenceApi } from "../../../infrastructure/dependence/dependence.infra";
 import { FiEdit, FiTrash2 } from "react-icons/fi";
-import CustomDataDisplay from "../../components/movil/view/customviewmovil";
 import { FloatingActionButton } from "../../components/movil/button/custombuttommovil";
 import useEmployesData from "../../../hooks/employesdata";
 import { useGenericStore } from "../../../store/generic/generic.store";
@@ -28,37 +24,37 @@ import { Traffic } from "../../../domain/models/traffic/traffic";
 import { GenericApi } from "../../../infrastructure/generic/infra.generic";
 import { useLocation } from "../../../hooks/localization";
 import { DateFormat, formatDatetime } from "../../../utils/formats";
-import { trafficMovilView } from "./trafficmovil";
+import { Public_Securrity } from "../../../domain/models/security/security";
 
-const PagTraffic = () => {
-   const useTrafficStore = useMemo(
+const PagePublicSecurity = () => {
+   const usePublicSecurityStore = useMemo(
       () =>
-         useGenericStore<Traffic>({
-            active: true,
-            id: 0,
-            rank: "",
-            age: null,
-            citizen_name: "",
-            location: "",
-            person_oficial: "",
-            plate_number: "",
-            time: "",
-            vehicle_brand: ""
+         useGenericStore<Public_Securrity>({
+             id: 0,
+             detainee_name: "",
+             officer_name: "",
+             patrol_unit_number: "",
+             detention_reason: "",
+             date: "",
+             time: "",
+             age: null,
+             location: "",
+             active: true
          }),
       []
    );
 
-   const { location,address, getLocation,loading:LoadingCp } = useLocation();
-   const { initialValues, fetchData, handleChangeItem, items, loading, open, postItem, error, removeItemData, setOpen, setPrefix } = useTrafficStore();
+   const { location, address, getLocation, loading: LoadingCp } = useLocation();
+   const { initialValues, fetchData, handleChangeItem, items, loading, open, postItem, error, removeItemData, setOpen, setPrefix } = usePublicSecurityStore();
    const { contraloria, oficiales, proteccionCivil } = useEmployesData();
-   const trafficApi = new GenericApi<Traffic>();
+   const Security = new GenericApi<Public_Securrity>();
    // useEffect corregido
    useEffect(() => {
       const initializeData = async () => {
          try {
-             await getLocation(true);
-            setPrefix("traffic");
-            await fetchData(trafficApi);
+            await getLocation(true);
+            setPrefix("public_security");
+            await fetchData(Security);
             oficiales.refetch();
          } catch (err) {
             console.error("❌ Error inicializando datos:", err);
@@ -69,7 +65,6 @@ const PagTraffic = () => {
    }, []);
 
    // Agrega este useEffect para debuggear cambios en la ubicación
-   
 
    const responsive = {
       "2xl": 6,
@@ -88,7 +83,7 @@ const PagTraffic = () => {
             formDirection="modal"
             onClose={setOpen}
             isOpen={open}
-            modalTitle="Transito y vialidad"
+            modalTitle="Seguridad Publica"
             form={() => (
                <div className="pt-4">
                   <FormikForm
@@ -97,26 +92,18 @@ const PagTraffic = () => {
                      buttonMessage={initialValues.id == 0 ? "Registrar" : "Actualizar"}
                      children={(values, setFieldValue, setTouched, errors, touched) => (
                         <>
-                           <FormikInput label="Nombre del ciudadano" name="citizen_name" responsive={responsive} />
+                           <FormikInput label="Nombre del detenido" name="detainee_name" responsive={responsive} />
+                           <FormikInput label="Nombre del Asente" name="officer_name" responsive={responsive} />
                            <FormikInput label="Edad" name="age" responsive={responsive} type="number" />
-                           <FormikInput label="Grado" name="rank" responsive={responsive} />
-                           <FormikInput label="N° de placa" name="plate_number" responsive={responsive} />
-                           <FormikInput label="Marca vehiculo" name="vehicle_brand" responsive={responsive} />
-                           <FormikNativeTimeInput label="Hora" name="time" responsive={responsive} />
+                           <FormikInput label="N° de patrulla" name="patrol_unit_number" responsive={responsive} />
+                           <FormikInput label="Motivo de detención" name="detention_reason" responsive={responsive} />
+                           <FormikNativeTimeInput  label="Hora" name="time" responsive={responsive} />
+                           <FormikNativeTimeInput label="Fecha de operativo" type="date" name="date" responsive={responsive} />
                            <FormikInput disabled value={location?.address?.city} label="Lugar donde se encuentran" name="location" responsive={responsive} />
-                           <FormikAutocomplete
-                              label="Oficial"
-                              name="person_oficial"
-                              options={oficiales.employes}
-                              loading={oficiales.loading}
-                              idKey="value"
-                              labelKey="text"
-                              responsive={responsive}
-                           />
                         </>
                      )}
                      onSubmit={(values) => {
-                        postItem(values as Traffic, trafficApi);
+                        postItem(values as Public_Securrity, Security);
                      }}
                   />
                </div>
@@ -139,12 +126,12 @@ const PagTraffic = () => {
                      data={items}
                      mobileConfig={{
                         listTile: {
-                           leading: (user) => (
+                           leading: (row) => (
                               <div className="flex items-center justify-center w-10 h-10 font-bold text-white bg-red-500 rounded-full">
-                                 {user.citizen_name?.charAt(0) || "P"}
+                                 {row.detainee_name?.charAt(0) || "P"}
                               </div>
                            ),
-                           title: (user) => <span className="font-semibold">{user.citizen_name || "Sin nombre"}</span>
+                           title: (row) => <span className="font-semibold">{row.detainee_name || "Sin nombre"}</span>
                            // subtitle: (penalty) => <span className="text-gray-600">{penalty.description || "Sin descripción"}</span>
                         },
 
@@ -156,13 +143,13 @@ const PagTraffic = () => {
                                  action: (row) => {
                                     showConfirmationAlert(`Eliminar`, { text: "Se eliminará la multa" }).then((isConfirmed) => {
                                        if (isConfirmed) {
-                                          removeItemData(row, trafficApi);
+                                          removeItemData(row, Security);
                                        } else {
                                           showToast("La acción fue cancelada.", "error");
                                        }
                                     });
                                  },
-                                 hasPermission: "transito_vialidad__eliminar"
+                                  hasPermission: "seguridad_publica__eliminar"
                               }
                            ],
                            right: [
@@ -173,19 +160,19 @@ const PagTraffic = () => {
                                     setOpen();
                                     handleChangeItem(row);
                                  },
-                                 hasPermission: "transito_vialidad__actualizar"
+                                  hasPermission: "seguridad_publica__actualizar"
                               }
                            ]
-                        },
-                        bottomSheet: {
-                           height: 100,
-                           showCloseButton: true,
-                           builder: (row, onClose) => <CustomDataDisplay data={row} config={trafficMovilView} />
                         }
+                        // bottomSheet: {
+                        //    height: 100,
+                        //    showCloseButton: true,
+                        //    builder: (row, onClose) => <CustomDataDisplay data={row} config={trafficMovilView} />
+                        // }
                      }}
                      headerActions={() => (
                         <>
-                           <PermissionRoute requiredPermission={"transito_vialidad__crear"}>
+                           <PermissionRoute requiredPermission={"seguridad_publica__crear"}>
                               <Tooltip content="Agregar Multa">
                                  <CustomButton
                                     onClick={() => {
@@ -203,7 +190,7 @@ const PagTraffic = () => {
                               <CustomButton
                                  color="purple"
                                  onClick={() => {
-                                    fetchData(trafficApi)
+                                    fetchData(Security)
                                     //    fetchUsers(api);
                                  }}
                               >
@@ -214,7 +201,7 @@ const PagTraffic = () => {
                         </>
                      )}
                      // data={users}
-                     conditionExcel={"transito_vialidad__exportar"}
+                     conditionExcel={"seguridad_publica__exportar"}
                      paginate={[10, 25, 50]}
                      // loading={loading}
                      columns={[
@@ -223,24 +210,28 @@ const PagTraffic = () => {
                            headerName: "Folio"
                         },
                         {
-                           field: "citizen_name",
+                           field: "detainee_name",
                            headerName: "Nombre"
                         },
                         {
-                           field: "age",
-                           headerName: "Edad"
+                           field: "officer_name",
+                           headerName: "Nombre del asente"
+                        },
+
+                        {
+                           field: "patrol_unit_number",
+                           headerName: "Número de patrulla"
                         },
                         {
-                           field: "rank",
-                           headerName: "Grado"
+                           field: "detention_reason",
+                           headerName: "Motivo de la detención"
                         },
                         {
-                           field: "plate_number",
-                           headerName: "N° de placa"
-                        },
-                        {
-                           field: "vehicle_brand",
-                           headerName: "Marca vehículo"
+                           field: "date",
+                           headerName: "Fecha",
+                           visibility: "expanded",
+                           renderField: (v) => <>{formatDatetime(`${v}`, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)}</>,
+                           getFilterValue: (v) => formatDatetime(`${v}`, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)
                         },
                         {
                            field: "time",
@@ -258,7 +249,7 @@ const PagTraffic = () => {
                      actions={(row) => (
                         <>
                            <>
-                              <PermissionRoute requiredPermission={"transito_vialidad__actualizar"}>
+                              <PermissionRoute requiredPermission={"seguridad_publica__actualizar"}>
                                  <Tooltip content="Editar Multa">
                                     <CustomButton
                                        size="sm"
@@ -274,7 +265,7 @@ const PagTraffic = () => {
                                     </CustomButton>
                                  </Tooltip>
                               </PermissionRoute>
-                              <PermissionRoute requiredPermission={"transito_vialidad__eliminar"}>
+                              <PermissionRoute requiredPermission={"seguridad_publica__eliminar"}>
                                  <>
                                     <Tooltip content="Eliminar multa">
                                        <CustomButton
@@ -284,7 +275,7 @@ const PagTraffic = () => {
                                              showConfirmationAlert(`Eliminar`, {
                                                 text: "Se eliminara la multa"
                                              }).then((isConfirmed) => {
-                                                if (isConfirmed) removeItemData(row, trafficApi);
+                                                if (isConfirmed) removeItemData(row, Security);
                                                 else showToast("La acción fue cancelada.", "error");
                                              });
                                           }}
@@ -304,4 +295,4 @@ const PagTraffic = () => {
       </>
    );
 };
-export default PagTraffic;
+export default PagePublicSecurity;

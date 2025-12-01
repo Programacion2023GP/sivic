@@ -496,7 +496,7 @@ const PagePenalities = () => {
             return (
                <div className="space-y-2">
                   <FormikNativeTimeInput name="time" label="Hora" responsive={RESPONSIVE_CONFIG} />
-                  <FormikInput type="date" name="date" label="Fecha de Operativo" responsive={RESPONSIVE_CONFIG} />
+                  <FormikNativeTimeInput type="date" name="date" label="Fecha de Operativo" responsive={RESPONSIVE_CONFIG} />
                   <FormikAutocomplete
                      label="Oficial"
                      name="person_oficial"
@@ -628,6 +628,8 @@ const PagePenalities = () => {
                            resetInitialValues();
                            setActiveStep(0);
                            setOpen();
+                           handleInitForm();
+
                         }}
                         icon={<FaPlus />}
                         color="primary"

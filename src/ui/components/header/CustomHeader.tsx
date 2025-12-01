@@ -1,5 +1,5 @@
 // components/header/Header.tsx
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { FaUserCircle, FaBars, FaTimes, FaSignOutAlt } from "react-icons/fa";
 import { useUsersState } from "../../../store/storeusers/users.store";
 import { ApiUsers } from "../../../infrastructure/infrastructureusers/inftrastructureusers";
@@ -15,25 +15,58 @@ export const Header = ({ userName = "Usuario", setOpenSidebar, id, isSidebarOpen
    const [open, setOpen] = useState(false);
    const { logout } = useUsersState();
    const api = new ApiUsers();
+   const dropdownRef = useRef<HTMLDivElement>(null);
+   const profileButtonRef = useRef<HTMLButtonElement>(null);
 
    // Función para cerrar sesión
    const handleLogout = () => {
+      console.log("Cerrando sesión...");
       setOpen(false);
       logout(api);
    };
 
    // Cierra el dropdown si se hace clic fuera
-   const handleBackdropClick = (e: React.MouseEvent) => {
-      if ((e.target as HTMLElement).closest(".dropdown-container")) return;
-      setOpen(false);
-   };
+   useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+         // Si el clic NO está dentro del dropdown NI en el botón del perfil
+         if (
+            dropdownRef.current &&
+            !dropdownRef.current.contains(event.target as Node) &&
+            profileButtonRef.current &&
+            !profileButtonRef.current.contains(event.target as Node)
+         ) {
+            setOpen(false);
+         }
+      };
+
+      // Agregar event listener
+      document.addEventListener("mousedown", handleClickOutside);
+
+      // Limpiar event listener
+      return () => {
+         document.removeEventListener("mousedown", handleClickOutside);
+      };
+   }, []);
+
+   // Evitar scroll cuando el dropdown está abierto en móvil
+   useEffect(() => {
+      if (open && window.innerWidth < 1024) {
+         document.body.style.overflow = "hidden";
+      } else {
+         document.body.style.overflow = "auto";
+      }
+
+      return () => {
+         document.body.style.overflow = "auto";
+      };
+   }, [open]);
 
    const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
 
    return (
       <>
-         {/* Backdrop solo para móvil */}
-         {open && isMobile && <div className="fixed inset-0  bg-opacity-40 z-40" onClick={handleBackdropClick} />}
+         {/* Backdrop solo para móvil cuando el dropdown está abierto */}
+         {/* {open && isMobile && <div className="fixed inset-0  bg-opacity-40 z-40" onClick={() => setOpen(false)} />} */}
 
          <header className="h-16 presidencia flex items-center justify-between px-4 lg:px-6 w-full fixed top-0 left-0 right-0 z-30 presidencia shadow-md">
             {/* Logo y botón menú */}
@@ -55,8 +88,9 @@ export const Header = ({ userName = "Usuario", setOpenSidebar, id, isSidebarOpen
             </div>
 
             {/* Perfil */}
-            <div className="relative dropdown-container">
+            <div className="relative">
                <button
+                  ref={profileButtonRef}
                   onClick={() => setOpen(!open)}
                   className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-[#651D32] transition-colors cursor-pointer border border-transparent hover:border-white/20"
                >
@@ -67,19 +101,20 @@ export const Header = ({ userName = "Usuario", setOpenSidebar, id, isSidebarOpen
                {/* Dropdown */}
                {open && (
                   <div
+                     ref={dropdownRef}
                      className={`
                         presidencia rounded-xl shadow-xl overflow-hidden
                         border border-white/10 bg-[#8B2332] backdrop-blur-sm
-                        ${isMobile ? "fixed top-16 left-4 right-4 z-50 w-auto transition-transform duration-200" : "absolute right-0 mt-2 w-56 z-50"}
+                        ${isMobile ? "fixed top-16 left-4 right-4 z-50 w-auto max-h-[80vh] overflow-y-auto" : "absolute right-0 mt-2 w-56 z-50"}
                      `}
                   >
                      {/* Header móvil */}
                      {isMobile && (
-                        <div className="flex items-center justify-between p-4 border-b border-white/10">
+                        <div className="flex items-center justify-between p-4 border-b border-white/10 sticky top-0 bg-[#8B2332] z-10">
                            <div className="flex items-center gap-3">
                               <FaUserCircle size={32} className="text-white" />
                               <div>
-                                 <p className="text-white font-semibold">{userName}</p>
+                                 <p className="text-white font-semibold truncate max-w-[150px]">{userName}</p>
                                  <p className="text-white/70 text-sm">Mi cuenta</p>
                               </div>
                            </div>
@@ -101,7 +136,11 @@ export const Header = ({ userName = "Usuario", setOpenSidebar, id, isSidebarOpen
                         {/* Botón cerrar sesión */}
                         <button
                            className="w-full flex items-center gap-3 px-3 py-3 rounded-lg text-white hover:bg-[#651D32] transition-colors text-left"
-                           onClick={handleLogout}
+                           onClick={(e) => {
+                              e.stopPropagation();
+                              // console.log("Botón cerrar sesión clickeado");
+                              handleLogout();
+                           }}
                         >
                            <FaSignOutAlt size={18} className="text-white/80" />
                            <span>Cerrar sesión</span>
@@ -111,7 +150,7 @@ export const Header = ({ userName = "Usuario", setOpenSidebar, id, isSidebarOpen
                      {/* Footer móvil */}
                      {isMobile && (
                         <div className="p-4 border-t border-white/10">
-                           <p className="text-white/50 text-xs text-center">Versión 1.0.0</p>
+                           <p className="text-white/50 text-xs text-center">{import.meta.env.VITE_APP_VERSION}</p>
                         </div>
                      )}
                   </div>

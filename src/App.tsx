@@ -13,6 +13,7 @@ import { usePermissionsStore } from "./store/menu/menu.store";
 import { FaUserDoctor } from "react-icons/fa6";
 import { FaStopCircle } from "react-icons/fa";
 import Spinner from "./ui/components/loading/loading";
+import PagePublicSecurity from "./ui/pages/securrity/pagesecurrity";
 
 // Lazy imports para todas las páginas
 const PageDependence = lazy(() => import("./ui/pages/catalogues/dependece/pagedependece"));
@@ -69,6 +70,7 @@ const MainLayout = () => {
          { prefix: "multas_", route: "/multa", icon: <FaFileInvoiceDollar />, label: "Multas" },
          { prefix: "juzgados_", route: "/juzgados", icon: <FaFileInvoiceDollar />, label: "Juzgados" },
          { prefix: "transito_vialidad_", route: "/transito-vialidad", icon: <FaFileInvoiceDollar />, label: "Transito y vialidad" },
+         { prefix: "seguridad_publica_", route: "/seguridad-publica", icon: <FaFileInvoiceDollar />, label: "Seguridad pública" },
 
          { prefix: "vista_", route: "/logs", icon: <FaCode />, label: "Logs" },
          {
@@ -92,7 +94,7 @@ const MainLayout = () => {
                         label: "Doctores"
                      }
                   ]
-               },
+               }
                // {
                //    prefix: ["catalogo_motivo_detencion_"],
                //    label: "Vialidad",
@@ -282,6 +284,14 @@ function App() {
                element={
                   <Suspense fallback={<Spinner />}>
                      <PageCourts />
+                  </Suspense>
+               }
+            />
+            <Route
+               path="seguridad-publica"
+               element={
+                  <Suspense fallback={<Spinner />}>
+                     <PagePublicSecurity />
                   </Suspense>
                }
             />

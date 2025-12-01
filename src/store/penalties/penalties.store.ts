@@ -25,6 +25,7 @@ interface PenaltiesStore {
    setOpenHistory: () => void;
 }
 const now = new Date();
+now.setDate(now.getDate() - 1);
 
 export const usePenaltiesStore = create<PenaltiesStore>((set, get) => ({
    open: false,
@@ -80,7 +81,7 @@ export const usePenaltiesStore = create<PenaltiesStore>((set, get) => ({
                minute: "2-digit",
                hour12: false // ← Cambiar a false
             }),
-            date: new Date().toISOString().split("T")[0], // "2024-01-15"
+            date: new Date().toLocaleDateString("en-CA"),
 
             person_contraloria: localStorage.getItem("name"),
             person_oficial: null,
@@ -129,11 +130,8 @@ export const usePenaltiesStore = create<PenaltiesStore>((set, get) => ({
          minute: "2-digit",
          hour12: true
       }),
-      date: now.toLocaleDateString("en-US", {
-         year: "numeric",
-         month: "2-digit",
-         day: "2-digit"
-      }),
+      date: new Date().toLocaleDateString("en-CA"),
+
       person_contraloria: localStorage.getItem("name"),
       person_oficial: null,
       vehicle_service_type: null,
@@ -246,7 +244,6 @@ export const usePenaltiesStore = create<PenaltiesStore>((set, get) => ({
          showToast(message, "error");
          set({ error: message });
       } finally {
-         
          set({
             loading: false,
             initialValues: { ...get().initialValues, id: 0 }

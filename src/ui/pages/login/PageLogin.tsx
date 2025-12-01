@@ -320,12 +320,9 @@ const PageLoginMorena = () => {
                                  whileTap={{ scale: 0.99 }}
                                  className="w-full hover:cursor-pointer bg-gradient-to-r from-[#9B2242] to-[#651D32] hover:from-[#8a1e3a] hover:to-[#7a1b2a] text-white font-bold py-4 px-4 rounded-xl transition-all duration-500 shadow-lg hover:shadow-xl border border-[#B8B6AF]/20 uppercase tracking-wide disabled:opacity-50 disabled:cursor-not-allowed"
                               >
-                                
-                                
-                                    <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
-                                       Ingresar al Sistema
-                                    </motion.span>
-                                 
+                                 <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
+                                    Ingresar al Sistema
+                                 </motion.span>
                               </motion.button>
 
                               <motion.div
@@ -337,7 +334,9 @@ const PageLoginMorena = () => {
                                     delay: 1.2
                                  }}
                               >
-                                 <p className="text-[#727372] text-xs">Sistema seguro de la Cuarta Transformación</p>
+                                 <div className="p-4 border-t border-white/10">
+                                    <p className="text-white/65 text-sm text-center">Version  {import.meta.env.VITE_APP_VERSION}</p>
+                                 </div>{" "}
                               </motion.div>
                            </Form>
                         )}
