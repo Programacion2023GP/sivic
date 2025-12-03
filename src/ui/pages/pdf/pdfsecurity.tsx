@@ -1,10 +1,12 @@
-// MultaPDF.tsx
+// PublicSecurrityPDF.tsx
 import { Document, Page, Text, View, Image } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 import { useMemo, memo } from "react";
-import Logo from "../../../../assets/logo-c.png";
-import LogoCom from "../../../../assets/TRANSITO.png";
-import Greca from "../../../../assets/greca-c.png";
+import Logo from "../../../assets/logo-c.png";
+import LogoCom from "../../../assets/TRANSITO.png";
+import Greca from "../../../assets/greca-c.png";
+import { Public_Securrity } from "../../../domain/models/security/security";
+import { DateFormat, formatDatetime } from "../../../utils/formats";
 
 const tw = createTw({
    fontFamily: {
@@ -78,8 +80,15 @@ const TwoColumnSection = memo(
 );
 
 // Componente principal optimizado para una sola página
-export default function MultaPDF({ data }: { data: any }) {
+export default function PublicSecurrityPDF({ data }: { data: Public_Securrity }) {
    // Estilos memoizados
+      const safeValue = (value: any): string => {
+      if (value === null || value === undefined || value === "") {
+         return "No proporcionado";
+      }
+      return String(value);
+   };
+
    const backgroundStyle = useMemo(
       () => ({
          position: "absolute" as const,
@@ -150,91 +159,62 @@ export default function MultaPDF({ data }: { data: any }) {
       () => (
          <TwoColumnSection
             leftTitle="Datos del detenido"
-            rightTitle="Resultados de la prueba"
+            rightTitle="Datos de la detención"
             leftContent={
                <>
-                  <InfoField label="Nombre Completo" value={data.name} compact />
+                  <InfoField label="Nombre Completo" value={data.detainee_name} compact />
                   <InfoField label="Edad" value={data.age} compact />
-                  <InfoField label="CURP" value={data.curp} compact />
-                  <InfoField label="Teléfono" value={data.detainee_phone_number} compact />
-                  <InfoField label="Persona que acudió" value={data.detainee_released_to} compact />
+                  <InfoField label="Ubicación" value={data.location} compact />
                </>
             }
             rightContent={
                <>
-                  <View style={tw("text-center mb-2")}>
-                     <Text style={tw("text-lg font-bold text-guinda-primary")}>{data.amountAlcohol || "0"} mg/L</Text>
-                     <Text style={tw("text-[8px] text-gris uppercase tracking-wide")}>Cantidad de Alcohol</Text>
-                  </View>
-                  <InfoField label="Grado de alcohol" value={data.alcohol_concentration} compact />
-                  <InfoField label="Observaciones" value={data.observations} compact />
+                  <InfoField label="Motivo de la detención" value={data.detention_reason} compact />
+                  <InfoField label="Oficial" value={data.officer_name} compact />
+                  <InfoField label="Número de patrulla" value={data.patrol_unit_number} compact />
                </>
             }
          />
       ),
-      [data.name, data.age, data.curp, data.detainee_phone_number, data.detainee_released_to, data.alcohol_concentration, data.amountAlcohol, data.observations]
+      [data.detainee_name, data.age, data.location, data.detention_reason, data.officer_name, data.patrol_unit_number]
    );
 
-   const vehicleInfo = useMemo(
+   const detaineeStatus = useMemo(
       () => (
-         <Section title="Información del vehículo">
+         <Section title="Estado del detenido">
             <ThreeCols>
-               <InfoField label="Número de Placa" value={data.plate_number} compact />
-               <InfoField label="Tipo de Servicio" value={data.vehicle_service_type} compact />
-               <InfoField label="N° de Pasajeros" value={data.number_of_passengers} compact />
+               <View style={tw("text-center")}>
+                  <Text style={tw("text-lg font-bold text-guinda-primary")}>{data.active ? "ACTIVO" : "INACTIVO"}</Text>
+                  <Text style={tw("text-[8px] text-gris uppercase tracking-wide")}>Estado del Registro</Text>
+               </View>
+              
             </ThreeCols>
          </Section>
       ),
-      [data.plate_number, data.vehicle_service_type, data.number_of_passengers]
-   );
-
-   const personalInfo = useMemo(
-      () => (
-         <Section title="Personal interviniente">
-            <TwoCols>
-               <InfoField label="Oficial" value={data.person_oficial} compact />
-               <InfoField label="Doctor" value={data.doctor} compact />
-            </TwoCols>
-            <TwoCols>
-               <InfoField label="Nómina Oficial" value={data.oficial_payroll} compact />
-               <InfoField label="Cédula" value={data.cedula} compact />
-            </TwoCols>
-            <TwoCols>
-               <InfoField label="Contraloría" value={data.person_contraloria} compact />
-               <InfoField label="Supervisor de Filtro" value={data.filter_supervisor} compact />
-            </TwoCols>
-         </Section>
-      ),
-      [data.person_oficial, data.doctor, data.oficial_payroll, data.cedula, data.person_contraloria, data.filter_supervisor]
+      [data.active, data.id]
    );
 
    const operationalData = useMemo(
       () => (
-         <Section title="Datos operativos">
+         <Section title="Información operativa">
             <ThreeCols>
-               <InfoField label="Grupo" value={data.group} compact />
-               <InfoField label="Ciudad" value={data.city} compact />
-               <InfoField label="Código Postal" value={data.cp} compact />
+               <InfoField label="Fecha de Registro" value={safeValue(formatDatetime(data.date,true,DateFormat.DDDD_DD_DE_MMMM_DE_YYYY))} compact />
+               <InfoField label="Hora de Registro" value={safeValue(formatDatetime(`205-11-05 ${data?.time}`,true,DateFormat.H_MM_A))} compact />
             </ThreeCols>
          </Section>
       ),
-      [data.group, data.city, data.cp]
+      [data.date, data.time, data.id]
    );
 
-   const resourcesData = useMemo(
+   const additionalInfo = useMemo(
       () => (
-         <Section title="Recursos desplegados">
+         <Section title="Información adicional">
             <TwoCols>
-               <InfoField label="Policía Municipal" value={data.municipal_police} compact />
-               <InfoField label="Protección Civil" value={data.civil_protection} compact />
-            </TwoCols>
-            <TwoCols>
-               <InfoField label="Vehículo Comando" value={data.command_vehicle} compact />
-               <InfoField label="Tropa Comando" value={data.command_troops} compact />
+               <InfoField label="Responsable de Registro" value={data.officer_name} compact />
             </TwoCols>
          </Section>
       ),
-      [data.municipal_police, data.civil_protection, data.command_vehicle, data.command_troops]
+      [data.date, data.time, data.officer_name]
    );
 
    return (
@@ -254,10 +234,9 @@ export default function MultaPDF({ data }: { data: any }) {
             <Separator />
 
             {/* Secciones compactas */}
-            {vehicleInfo}
-            {personalInfo}
+            {detaineeStatus}
             {operationalData}
-            {resourcesData}
+            {additionalInfo}
 
             {/* Footer más pequeño */}
             <View style={footerStyle}>

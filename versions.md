@@ -4,6 +4,27 @@
 
 ---
 
+## 🧩 **v3.0.1.1** · *🧪 Beta*
+📅 **Fecha:** 1 de diciembre de 2025, 3:37 p.m.  
+👤 **Autor:** luis  
+🧭 **Tipo:** Patch
+
+**✨ Mejoras**
+- salida de login movil
+
+
+
+---
+
+## 🚀 **v3.0.0.1** · *🧪 Beta*
+📅 **Fecha:** 1 de diciembre de 2025, 3:19 p.m.  
+👤 **Autor:** luis gutierrez  
+🧭 **Tipo:** Major
+
+_Sin cambios registrados._
+
+---
+
 ## 🔧 **v2.3.1.6** · *🧪 Beta*
 📅 **Fecha:** 28 de noviembre de 2025, 3:36 p.m.  
 👤 **Autor:**   

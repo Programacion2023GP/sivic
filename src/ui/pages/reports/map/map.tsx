@@ -4,7 +4,7 @@ import { usePenaltiesStore } from "../../../../store/penalties/penalties.store";
 import CustomMap from "../../../components/map/custommap";
 import CustomModal from "../../../components/modal/modal";
 import PdfPreview from "../../../components/pdfview/pdfview";
-import MultaPDF from "../../courts/pdf/pdfpenalties";
+import MultaPDF from "../../pdf/pdfpenalties";
 
 // 👌 Corrección: tipo para selectedDate
 type DateFilter = Date | "ALL" | null;
@@ -68,21 +68,21 @@ const PageReportMap = () => {
       }
 
       // Formatear selectedDate a YYYY-MM-DD en zona local
-     const nextDate = new Date(selectedDate);
-     nextDate.setDate(nextDate.getDate() + 1);
+      const nextDate = new Date(selectedDate);
+      nextDate.setDate(nextDate.getDate() + 1);
 
-     const year = nextDate.getFullYear();
-     const month = String(nextDate.getMonth() + 1).padStart(2, "0");
-     const day = String(nextDate.getDate()).padStart(2, "0");
-     const selectedDateStr = `${year}-${month}-${day}`;
+      const year = nextDate.getFullYear();
+      const month = String(nextDate.getMonth() + 1).padStart(2, "0");
+      const day = String(nextDate.getDate()).padStart(2, "0");
+      const selectedDateStr = `${year}-${month}-${day}`;
 
-     console.log("Fecha original:", selectedDate);
-     console.log("Fecha +1 día:", selectedDateStr);
+      console.log("Fecha original:", selectedDate);
+      console.log("Fecha +1 día:", selectedDateStr);
 
-     const filtered = limitedPenalties.filter((p) => {
-      console.log(p.id, p.date, selectedDateStr, p.date == selectedDateStr);
-        return p.date == selectedDateStr;
-     });
+      const filtered = limitedPenalties.filter((p) => {
+         console.log(p.id, p.date, selectedDateStr, p.date == selectedDateStr);
+         return p.date == selectedDateStr;
+      });
       setFilteredPenalties(filtered);
    }, [selectedDate, limitedPenalties]);
 

@@ -11,10 +11,10 @@ import { CustomTab } from "../../components/tab/customtab";
 import { usePenaltiesStore } from "../../../store/penalties/penalties.store";
 import { PenaltiesApi } from "../../../infrastructure/penalties/penalties.infra";
 import CustomModal from "../../components/modal/modal";
-import MultaPDF from "./pdf/pdfpenalties";
+import MultaPDF from "../pdf/pdfpenalties";
 import PdfPreview from "../../components/pdfview/pdfview";
 import { FaRegFilePdf } from "react-icons/fa6";
-import { FormikInput, FormikNativeTimeInput } from "../../formik/FormikInputs/FormikInput";
+import { FormikImageInput, FormikInput, FormikNativeTimeInput } from "../../formik/FormikInputs/FormikInput";
 import CustomTable from "../../components/table/customtable";
 import { DateFormat, formatDatetime } from "../../../utils/formats";
 import { FaEye, FaPlay, FaPlus, FaTrash } from "react-icons/fa";
@@ -28,6 +28,8 @@ import Spinner from "../../components/loading/loading";
 import { FloatingActionButton } from "../../components/movil/button/custombuttommovil";
 import { CustomPaginate } from "../../components/paginate/CustomPaginate";
 import { juzgadosMovilView } from "./infomovilcourts";
+import PhotoZoom from "../../components/images/images";
+import CourtPDF from "../pdf/pdfcourts";
 
 const PageCourts = () => {
    const { courts, fetchCourts, handleChangeCourt, initialValues, loading, open, postCourt, removeCourt, setOpen, handleCourtValues, disabled, handleResetValues } =
@@ -40,7 +42,10 @@ const PageCourts = () => {
       data: {}
    });
    const [openTab, setOpenTab] = useState<"juzgados" | "alcohol">("juzgados");
-   
+   const [pdf, setPdf] = useState({
+      open: false,
+      data: {}
+   });
    const tabs = [
       {
          id: "juzgados",
@@ -69,10 +74,11 @@ const PageCourts = () => {
                               <FormikInput type="datetime-local" name="exit_datetime" label="Hora y Fecha de salida" />
                               <FormikInput name="exit_reason" label="Causa de salida" />
                               <FormikInput name="fine_amount" label="Multa" type="number" />
+                              <FormikImageInput name="image_court" maxFiles={1} label="Multa" />
                            </>
                         )}
                         onSubmit={(values) => {
-                           postCourt(values as Court, api);
+                           postCourt(values as Court, api, true);
                            fetchPenaltiesCourts(apiPenalties);
                         }}
                      />
@@ -113,6 +119,19 @@ const PageCourts = () => {
                      data={courts}
                      actions={(row) => (
                         <>
+                           <CustomButton
+                              color="purple"
+                              size="sm"
+                              variant="primary"
+                              onClick={() => {
+                                 setPdf({
+                                    data: row,
+                                    open: true
+                                 });
+                              }}
+                           >
+                              <FaRegFilePdf />
+                           </CustomButton>
                            <PermissionRoute requiredPermission={"juzgados_actualizar"}>
                               <Tooltip content="Editar Juicio">
                                  <CustomButton
@@ -162,6 +181,13 @@ const PageCourts = () => {
                            headerName: "Fecha",
                            renderField: (v) => <>{formatDatetime(String(v), true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)}</>
                         },
+                        {
+                           field: "image_court",
+                           visibility: "expanded",
+                           headerName: "Foto Multa",
+                           renderField: (value) => <PhotoZoom src={String(value)} alt={String(value)} />
+                        },
+
                         {
                            field: "referring_agency",
                            headerName: "Remite"
@@ -350,6 +376,17 @@ const PageCourts = () => {
                   <MultaPDF data={pdfPenalties.data} />
                </PdfPreview>
             )}
+         </CustomModal>
+         <CustomModal
+            isOpen={pdf.open}
+            onClose={() => {
+               setPdf({
+                  data: {},
+                  open: false
+               });
+            }}
+         >
+            <PdfPreview children={<CourtPDF data={pdf.data as Court} />} name="OTRO" />
          </CustomModal>
       </>
    );

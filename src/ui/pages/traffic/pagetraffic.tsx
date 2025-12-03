@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ApiUsers } from "../../../infrastructure/infrastructureusers/inftrastructureusers";
 import { useUsersState } from "../../../store/storeusers/users.store";
 import CompositePage from "../../components/compositecustoms/compositePage";
@@ -10,7 +10,7 @@ import { CustomButton } from "../../components/button/custombuttom";
 import { LuRefreshCcw } from "react-icons/lu";
 import { VscDiffAdded } from "react-icons/vsc";
 import { showConfirmationAlert, showToast } from "../../../sweetalert/Sweetalert";
-import { FaPlus, FaSync, FaTrash } from "react-icons/fa";
+import { FaPlus, FaRegFilePdf, FaSync, FaTrash } from "react-icons/fa";
 import { CiEdit } from "react-icons/ci";
 import * as Yup from "yup";
 import FTransferList from "../../components/transferlist/TransferList";
@@ -29,6 +29,9 @@ import { GenericApi } from "../../../infrastructure/generic/infra.generic";
 import { useLocation } from "../../../hooks/localization";
 import { DateFormat, formatDatetime } from "../../../utils/formats";
 import { trafficMovilView } from "./trafficmovil";
+import CustomModal from "../../components/modal/modal";
+import PdfPreview from "../../components/pdfview/pdfview";
+import TrafficPDF from "../pdf/pdftraffic";
 
 const PagTraffic = () => {
    const useTrafficStore = useMemo(
@@ -52,6 +55,10 @@ const PagTraffic = () => {
    const { initialValues, fetchData, handleChangeItem, items, loading, open, postItem, error, removeItemData, setOpen, setPrefix } = useTrafficStore();
    const { contraloria, oficiales, proteccionCivil } = useEmployesData();
    const trafficApi = new GenericApi<Traffic>();
+   const [pdf, setPdf] = useState({
+         open: false,
+         data: {}
+      });
    // useEffect corregido
    useEffect(() => {
       const initializeData = async () => {
@@ -203,7 +210,7 @@ const PagTraffic = () => {
                               <CustomButton
                                  color="purple"
                                  onClick={() => {
-                                    fetchData(trafficApi)
+                                    fetchData(trafficApi);
                                     //    fetchUsers(api);
                                  }}
                               >
@@ -258,6 +265,20 @@ const PagTraffic = () => {
                      actions={(row) => (
                         <>
                            <>
+                              <CustomButton
+                                 color="purple"
+                                 size="sm"
+                                 variant="primary"
+                                 onClick={() => {
+                                    setPdf({
+                                       data: row,
+                                       open: true
+                                    });
+                                 }}
+                              >
+                                 <FaRegFilePdf />
+                              </CustomButton>
+
                               <PermissionRoute requiredPermission={"transito_vialidad__actualizar"}>
                                  <Tooltip content="Editar Multa">
                                     <CustomButton
@@ -301,6 +322,17 @@ const PagTraffic = () => {
                </>
             )}
          />
+         <CustomModal
+            isOpen={pdf.open}
+            onClose={() => {
+               setPdf({
+                  data: {},
+                  open: false
+               });
+            }}
+         >
+            <PdfPreview children={<TrafficPDF data={pdf.data as Traffic}  />} name="OTRO" />
+         </CustomModal>
       </>
    );
 };

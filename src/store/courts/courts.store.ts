@@ -14,7 +14,7 @@ interface CourtStore {
    handleCourtValues: (penaltie: Penalties) => Promise<void>;
    handleResetValues: () => Promise<void>;
 
-   postCourt: (courts: Court, repo: CourtsRepository) => Promise<void>;
+   postCourt: (courts: Court, repo: CourtsRepository,formData:boolean) => Promise<void>;
    handleChangeCourt: (courts: Court) => void;
    removeCourt: (courts: Court, repo: CourtsRepository) => void;
 
@@ -54,7 +54,8 @@ export const useCourtStore = create<CourtStore>((set, get) => ({
             exit_reason: "",
             fine_amount: null,
             created_at: "",
-            updated_at: ""
+            updated_at: "",
+            image_court: ""
          }
       });
    },
@@ -74,7 +75,8 @@ export const useCourtStore = create<CourtStore>((set, get) => ({
       exit_reason: "",
       fine_amount: null,
       created_at: "",
-      updated_at: ""
+      updated_at: "",
+      image_court: ""
    },
    courts: [],
    loading: false,
@@ -97,7 +99,8 @@ export const useCourtStore = create<CourtStore>((set, get) => ({
             exit_reason: "",
             fine_amount: null,
             created_at: "",
-            updated_at: ""
+            updated_at: "",
+            image_court: ""
          }
       });
    },
@@ -117,10 +120,10 @@ export const useCourtStore = create<CourtStore>((set, get) => ({
          set({ error: message, loading: false });
       }
    },
-   postCourt: async (court: Court, repo: CourtsRepository) => {
+   postCourt: async (court: Court, repo: CourtsRepository, formData: boolean) => {
       set({ loading: true });
       try {
-         const data = await repo.create(court);
+         const data = await repo.create(court,formData);
          if (data.ok == true) {
             showToast(data.message, "success");
             set({ loading: false });

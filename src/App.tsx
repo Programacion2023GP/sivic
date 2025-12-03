@@ -27,19 +27,21 @@ const PageCourts = lazy(() => import("./ui/pages/courts/pagecourts"));
 const PageTraffic = lazy(() => import("./ui/pages/traffic/pagetraffic"));
 
 const PageReportMap = lazy(() => import("./ui/pages/reports/map/map"));
+const PageCalendary = lazy(() => import("./ui/pages/reports/calendary/calendary"));
 
 // Componente Layout para las rutas autenticadas
 const MainLayout = () => {
    const [open, setOpen] = useState(false);
    const [showInstallPrompt, setShowInstallPrompt] = useState(false);
    const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+   const location = useLocation();
 
    const loadPermissions = usePermissionsStore((state) => state.loadPermissions);
 
    // 🔥 Cargar permisos al montar
    useEffect(() => {
       loadPermissions();
-   }, [loadPermissions]);
+   }, [useLocation]);
 
    // Escuchar evento de instalación PWA
    useEffect(() => {
@@ -114,6 +116,8 @@ const MainLayout = () => {
             label: "Reportes",
             children: [
                { route: "/reportes/mapa", prefix: "reports_", icon: <FaChartLine />, label: "Mapa" },
+               { route: "/reportes/calendario", prefix: "reports_", icon: <FaChartLine />, label: "Calendario" },
+
                { route: "/reportes/dashboard", prefix: "reports_", icon: <FaChartLine />, label: "Reporte Dinámico" }
             ]
          }
@@ -347,7 +351,16 @@ function App() {
                      </Suspense>
                   }
                />
+               <Route
+                  path="calendario"
+                  element={
+                     <Suspense fallback={<Spinner />}>
+                        <PageCalendary />
+                     </Suspense>
+                  }
+               />
             </Route>
+
             <Route
                path="*"
                element={

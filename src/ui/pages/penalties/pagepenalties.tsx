@@ -23,7 +23,7 @@ import Tooltip from "../../components/toltip/Toltip";
 import { useDoctorStore } from "../../../store/doctor/doctor.store";
 import { DoctorApi } from "../../../infrastructure/doctor/doctor.infra";
 import PdfPreview from "../../components/pdfview/pdfview";
-import MultaPDF from "../courts/pdf/pdfpenalties";
+import MultaPDF from "../pdf/pdfpenalties";
 import { FiEdit, FiMoreVertical, FiTrash, FiTrash2 } from "react-icons/fi";
 import { ArrowDownToDotIcon, FormInput } from "lucide-react";
 import CustomDataDisplay from "../../components/movil/view/customviewmovil";
@@ -179,11 +179,11 @@ const PagePenalities = () => {
    const api = useMemo(() => new PenaltiesApi(), []);
    const apiDoc = useMemo(() => new DoctorApi(), []);
    const apiPenaltyPreloadData = useMemo(() => new PenaltyPreloadDataApi(), []);
-   const { location,address, getLocation,loading:LoadingCp } = useLocation();
+   const { location, address, getLocation, loading: LoadingCp } = useLocation();
 
    const { width: windowWidth } = useWindowSize();
    const isMobile = windowWidth < 1024;
-   const {contraloria,oficiales,proteccionCivil} = useEmployesData()
+   const { contraloria, oficiales, proteccionCivil } = useEmployesData();
    const [activeStep, setActiveStep] = useState(0);
    const formikRef = useRef<FormikProps<FormikValues>>(null);
    const [pdfPenalties, setPdfPenalties] = useState({
@@ -194,7 +194,6 @@ const PagePenalities = () => {
 
    // Estados para datos externos
    const [citys, setCity] = useState({ loading: false, citys: [] });
-  
 
    // -----------------------------
    // Validación Schema
@@ -253,16 +252,15 @@ const PagePenalities = () => {
          // await getLocation(true);
          fetchPenalties(api);
          fetchDoctor(apiDoc);
-         contraloria.refetch()
-         oficiales.refetch()
-         proteccionCivil.refetch()
-
+         contraloria.refetch();
+         oficiales.refetch();
+         proteccionCivil.refetch();
       } catch (err) {
          console.error("❌ Error inicializando datos:", err);
       }
    };
    useEffect(() => {
-      initializeData()
+      initializeData();
    }, []);
 
    // -----------------------------
@@ -621,20 +619,18 @@ const PagePenalities = () => {
             table={() => (
                <PermissionRoute requiredPermission={"multas_ver"}>
                   <div className="absolute z-20 right-2 bottom-2">
-               <PermissionRoute requiredPermission={"multas_crear"}>
-
-                     <FloatingActionButton
-                        onClick={() => {
-                           resetInitialValues();
-                           setActiveStep(0);
-                           setOpen();
-                           handleInitForm();
-
-                        }}
-                        icon={<FaPlus />}
-                        color="primary"
-                        size="normal"
-                     />
+                     <PermissionRoute requiredPermission={"multas_crear"}>
+                        <FloatingActionButton
+                           onClick={() => {
+                              resetInitialValues();
+                              setActiveStep(0);
+                              setOpen();
+                              handleInitForm();
+                           }}
+                           icon={<FaPlus />}
+                           color="primary"
+                           size="normal"
+                        />
                      </PermissionRoute>
                   </div>
                   <CustomTable

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ApiUsers } from "../../../infrastructure/infrastructureusers/inftrastructureusers";
 import { useUsersState } from "../../../store/storeusers/users.store";
 import CompositePage from "../../components/compositecustoms/compositePage";
@@ -10,7 +10,7 @@ import { CustomButton } from "../../components/button/custombuttom";
 import { LuRefreshCcw } from "react-icons/lu";
 import { VscDiffAdded } from "react-icons/vsc";
 import { showConfirmationAlert, showToast } from "../../../sweetalert/Sweetalert";
-import { FaPlus, FaSync, FaTrash } from "react-icons/fa";
+import { FaPlus, FaRegFilePdf, FaSync, FaTrash } from "react-icons/fa";
 import { CiEdit } from "react-icons/ci";
 import * as Yup from "yup";
 import { PermissionRoute } from "../../../App";
@@ -25,21 +25,26 @@ import { GenericApi } from "../../../infrastructure/generic/infra.generic";
 import { useLocation } from "../../../hooks/localization";
 import { DateFormat, formatDatetime } from "../../../utils/formats";
 import { Public_Securrity } from "../../../domain/models/security/security";
+import CustomDataDisplay from "../../components/movil/view/customviewmovil";
+import { securityMovilView } from "./securitymovil";
+import CustomModal from "../../components/modal/modal";
+import PdfPreview from "../../components/pdfview/pdfview";
+import PublicSecurrityPDF from "../pdf/pdfsecurity";
 
 const PagePublicSecurity = () => {
    const usePublicSecurityStore = useMemo(
       () =>
          useGenericStore<Public_Securrity>({
-             id: 0,
-             detainee_name: "",
-             officer_name: "",
-             patrol_unit_number: "",
-             detention_reason: "",
-             date: "",
-             time: "",
-             age: null,
-             location: "",
-             active: true
+            id: 0,
+            detainee_name: "",
+            officer_name: "",
+            patrol_unit_number: "",
+            detention_reason: "",
+            date: "",
+            time: "",
+            age: null,
+            location: "",
+            active: true
          }),
       []
    );
@@ -48,6 +53,10 @@ const PagePublicSecurity = () => {
    const { initialValues, fetchData, handleChangeItem, items, loading, open, postItem, error, removeItemData, setOpen, setPrefix } = usePublicSecurityStore();
    const { contraloria, oficiales, proteccionCivil } = useEmployesData();
    const Security = new GenericApi<Public_Securrity>();
+   const [pdf, setPdf] = useState({
+      open: false,
+      data: {}
+   });
    // useEffect corregido
    useEffect(() => {
       const initializeData = async () => {
@@ -97,7 +106,7 @@ const PagePublicSecurity = () => {
                            <FormikInput label="Edad" name="age" responsive={responsive} type="number" />
                            <FormikInput label="N° de patrulla" name="patrol_unit_number" responsive={responsive} />
                            <FormikInput label="Motivo de detención" name="detention_reason" responsive={responsive} />
-                           <FormikNativeTimeInput  label="Hora" name="time" responsive={responsive} />
+                           <FormikNativeTimeInput label="Hora" name="time" responsive={responsive} />
                            <FormikNativeTimeInput label="Fecha de operativo" type="date" name="date" responsive={responsive} />
                            <FormikInput disabled value={location?.address?.city} label="Lugar donde se encuentran" name="location" responsive={responsive} />
                         </>
@@ -149,7 +158,7 @@ const PagePublicSecurity = () => {
                                        }
                                     });
                                  },
-                                  hasPermission: "seguridad_publica__eliminar"
+                                 hasPermission: "seguridad_publica__eliminar"
                               }
                            ],
                            right: [
@@ -160,15 +169,15 @@ const PagePublicSecurity = () => {
                                     setOpen();
                                     handleChangeItem(row);
                                  },
-                                  hasPermission: "seguridad_publica__actualizar"
+                                 hasPermission: "seguridad_publica__actualizar"
                               }
                            ]
+                        },
+                        bottomSheet: {
+                           height: 100,
+                           showCloseButton: true,
+                           builder: (row, onClose) => <CustomDataDisplay data={row} config={securityMovilView} />
                         }
-                        // bottomSheet: {
-                        //    height: 100,
-                        //    showCloseButton: true,
-                        //    builder: (row, onClose) => <CustomDataDisplay data={row} config={trafficMovilView} />
-                        // }
                      }}
                      headerActions={() => (
                         <>
@@ -190,7 +199,7 @@ const PagePublicSecurity = () => {
                               <CustomButton
                                  color="purple"
                                  onClick={() => {
-                                    fetchData(Security)
+                                    fetchData(Security);
                                     //    fetchUsers(api);
                                  }}
                               >
@@ -249,6 +258,19 @@ const PagePublicSecurity = () => {
                      actions={(row) => (
                         <>
                            <>
+                              <CustomButton
+                                 color="purple"
+                                 size="sm"
+                                 variant="primary"
+                                 onClick={() => {
+                                    setPdf({
+                                       data: row,
+                                       open: true
+                                    });
+                                 }}
+                              >
+                                 <FaRegFilePdf />
+                              </CustomButton>
                               <PermissionRoute requiredPermission={"seguridad_publica__actualizar"}>
                                  <Tooltip content="Editar Multa">
                                     <CustomButton
@@ -292,6 +314,17 @@ const PagePublicSecurity = () => {
                </>
             )}
          />
+         <CustomModal
+            isOpen={pdf.open}
+            onClose={() => {
+               setPdf({
+                  data: {},
+                  open: false
+               });
+            }}
+         >
+            <PdfPreview children={<PublicSecurrityPDF data={pdf.data as Public_Securrity} />} name="OTRO" />
+         </CustomModal>
       </>
    );
 };

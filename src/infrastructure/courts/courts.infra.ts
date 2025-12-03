@@ -5,9 +5,9 @@ import { CourtsRepository } from "../../domain/repositories/courts/courts.reposi
 
 
 export class CourtsApi implements CourtsRepository {
-   async create(court: Court): Promise<Result<Court>> {
+   async create(court: Court,formData:boolean = false): Promise<Result<Court>> {
       try {
-         const response = await AxiosRequest(`${import.meta.env.VITE_API_URL}/court/createorUpdate`, "POST", court);
+         const response = await AxiosRequest(`${import.meta.env.VITE_API_URL}/court/createorUpdate`, "POST", court,formData);
         if (response.status == "error") {
            return { ok: false, error: new Error(String(response.message)), message: String(response.message) };
         }
