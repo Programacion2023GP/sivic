@@ -18,7 +18,7 @@ interface GenericStore<T extends object> {
    setOpen: () => void;
 
    fetchData: (repo: GenericRepository<T>) => Promise<T[]>;
-   postItem: (item: T, repo: GenericRepository<T>) => Promise<void>;
+   postItem: (item: T, repo: GenericRepository<T>,formData?:boolean) => Promise<void>;
    handleChangeItem: (item: T) => void;
    removeItemData: (item: T, repo: GenericRepository<T>) => Promise<void>;
 }
@@ -43,7 +43,7 @@ export const useGenericStore = <T extends { id?: number }>(initialValues: T) => 
 
         try {
            const data = await repo.getAll(get().prefix);
-            console.log("aqui",data)
+           console.log("aqui", data);
            if (data.ok) {
               set({ items: data.data });
               return data.data; // ✅ regresa esto
@@ -62,11 +62,10 @@ export const useGenericStore = <T extends { id?: number }>(initialValues: T) => 
         }
      },
 
-     postItem: async (item: T, repo: GenericRepository<T>) => {
+     postItem: async (item: T, repo: GenericRepository<T>, formData?: boolean) => {
         set({ loading: true });
         try {
-           console.log("prefijo", get().prefix);
-           const data = await repo.create(item, get().prefix);
+           const data = await repo.create(item, get().prefix, formData);
            if (data.ok) {
               showToast(data.message, "success");
               get().setOpen();

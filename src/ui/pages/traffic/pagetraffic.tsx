@@ -3,7 +3,7 @@ import { ApiUsers } from "../../../infrastructure/infrastructureusers/inftrastru
 import { useUsersState } from "../../../store/storeusers/users.store";
 import CompositePage from "../../components/compositecustoms/compositePage";
 import FormikForm from "../../formik/Formik";
-import { FormikAutocomplete, FormikInput, FormikNativeTimeInput } from "../../formik/FormikInputs/FormikInput";
+import { FormikAutocomplete, FormikImageInput, FormikInput, FormikNativeTimeInput } from "../../formik/FormikInputs/FormikInput";
 import type { Users } from "../../../domain/models/users/users.domain";
 import CustomTable from "../../components/table/customtable";
 import { CustomButton } from "../../components/button/custombuttom";
@@ -32,11 +32,13 @@ import { trafficMovilView } from "./trafficmovil";
 import CustomModal from "../../components/modal/modal";
 import PdfPreview from "../../components/pdfview/pdfview";
 import TrafficPDF from "../pdf/pdftraffic";
+import PhotoZoom from "../../components/images/images";
 
 const PagTraffic = () => {
    const useTrafficStore = useMemo(
       () =>
          useGenericStore<Traffic>({
+            image_traffic:"",
             active: true,
             id: 0,
             rank: "",
@@ -120,10 +122,11 @@ const PagTraffic = () => {
                               labelKey="text"
                               responsive={responsive}
                            />
+                           <FormikImageInput name="image_traffic" label="Multa" />
                         </>
                      )}
                      onSubmit={(values) => {
-                        postItem(values as Traffic, trafficApi);
+                        postItem(values as Traffic, trafficApi, true);
                      }}
                   />
                </div>
@@ -260,6 +263,12 @@ const PagTraffic = () => {
                            field: "location",
                            headerName: "Ubicación",
                            visibility: "expanded"
+                        },
+                        {
+                           field: "image_traffic",
+                           headerName: "Multa",
+                           visibility: "expanded",
+                           renderField: (value) => <PhotoZoom src={String(value)} alt={String(value)} />
                         }
                      ]}
                      actions={(row) => (
@@ -331,7 +340,7 @@ const PagTraffic = () => {
                });
             }}
          >
-            <PdfPreview children={<TrafficPDF data={pdf.data as Traffic}  />} name="OTRO" />
+            <PdfPreview children={<TrafficPDF data={pdf.data as Traffic} />} name="OTRO" />
          </CustomModal>
       </>
    );

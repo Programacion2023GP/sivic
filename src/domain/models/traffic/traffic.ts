@@ -1,5 +1,6 @@
 export interface Traffic {
-    id:number
+    id:number,
+    image_traffic:string,
   citizen_name: string;      // Nombre del ciudadano
   age: number;      // Edad (puede ser número o string, dependiendo de cómo se maneje en el formulario)
   rank: string;              // Grado

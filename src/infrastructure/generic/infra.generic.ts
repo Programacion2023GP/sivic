@@ -12,10 +12,9 @@ export class GenericApi<T extends object> implements GenericRepository<T> {
          return { ok: false, error: new Error(String(error)), message: String(error) };
       }
    }
-   async create(data: T, prefix: string): Promise<Result<T>> {
+   async create(data: T, prefix: string, formData: boolean = false): Promise<Result<T>> {
       try {
-         const response = await AxiosRequest(`${import.meta.env.VITE_API_URL}/${prefix}/createorUpdate`, "POST", data);
-         console.log(response);
+         const response = await AxiosRequest(`${import.meta.env.VITE_API_URL}/${prefix}/createorUpdate`, "POST", data, formData);
 
          return {
             ok: true,

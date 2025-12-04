@@ -1,9 +1,9 @@
 import { Result } from "../../models/users/users.domain";
 
 export interface GenericRepository<T extends object> {
-   getAll(prefix:string): Promise<Result<T[]>>;
-   create(data: T,prefix:string): Promise<Result<T>>;
-   delete(data: T,prefix:string): Promise<Result<void>>;
+   getAll(prefix: string): Promise<Result<T[]>>;
+   create(data: T, prefix: string, formData?: boolean): Promise<Result<T>>;
+   delete(data: T, prefix: string): Promise<Result<void>>;
    // getById?(id: string | number): Promise<Result<T>>;
    // update?(id: string | number, data: Partial<T>): Promise<Result<T>>;
    // find?(filters: Partial<T>): Promise<Result<T[]>>;

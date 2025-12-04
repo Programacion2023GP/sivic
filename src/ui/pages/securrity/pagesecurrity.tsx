@@ -3,7 +3,7 @@ import { ApiUsers } from "../../../infrastructure/infrastructureusers/inftrastru
 import { useUsersState } from "../../../store/storeusers/users.store";
 import CompositePage from "../../components/compositecustoms/compositePage";
 import FormikForm from "../../formik/Formik";
-import { FormikAutocomplete, FormikInput, FormikNativeTimeInput } from "../../formik/FormikInputs/FormikInput";
+import { FormikAutocomplete, FormikImageInput, FormikInput, FormikNativeTimeInput } from "../../formik/FormikInputs/FormikInput";
 import type { Users } from "../../../domain/models/users/users.domain";
 import CustomTable from "../../components/table/customtable";
 import { CustomButton } from "../../components/button/custombuttom";
@@ -30,11 +30,13 @@ import { securityMovilView } from "./securitymovil";
 import CustomModal from "../../components/modal/modal";
 import PdfPreview from "../../components/pdfview/pdfview";
 import PublicSecurrityPDF from "../pdf/pdfsecurity";
+import PhotoZoom from "../../components/images/images";
 
 const PagePublicSecurity = () => {
    const usePublicSecurityStore = useMemo(
       () =>
          useGenericStore<Public_Securrity>({
+            image_security:"",
             id: 0,
             detainee_name: "",
             officer_name: "",
@@ -109,10 +111,11 @@ const PagePublicSecurity = () => {
                            <FormikNativeTimeInput label="Hora" name="time" responsive={responsive} />
                            <FormikNativeTimeInput label="Fecha de operativo" type="date" name="date" responsive={responsive} />
                            <FormikInput disabled value={location?.address?.city} label="Lugar donde se encuentran" name="location" responsive={responsive} />
+                           <FormikImageInput name="image_security" label="Multa" />
                         </>
                      )}
                      onSubmit={(values) => {
-                        postItem(values as Public_Securrity, Security);
+                        postItem(values as Public_Securrity, Security, true);
                      }}
                   />
                </div>
@@ -253,6 +256,12 @@ const PagePublicSecurity = () => {
                            field: "location",
                            headerName: "Ubicación",
                            visibility: "expanded"
+                        },
+                        {
+                           field: "image_security",
+                           headerName: "Multa",
+                           visibility: "expanded",
+                           renderField: (value) => <PhotoZoom src={String(value)} alt={String(value)} />
                         }
                      ]}
                      actions={(row) => (
