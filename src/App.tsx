@@ -275,7 +275,7 @@ function App() {
                   </Suspense>
                }
             />
-            <Route
+            {/* <Route
                path="transito-vialidad"
                element={
                   <Suspense fallback={<Spinner />}>
@@ -298,7 +298,7 @@ function App() {
                      <PagePublicSecurity />
                   </Suspense>
                }
-            />
+            /> */}
 
             <Route
                path="logs"

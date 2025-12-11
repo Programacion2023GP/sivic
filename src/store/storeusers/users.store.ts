@@ -122,8 +122,15 @@ export const useUsersState = create<UsersState>((set, get) => ({
          set({ error: message, loading: false });
       }
    },
-   login: async (user: { payroll: string; password: string }, repo: UsersRepository) => {
+      login: async (user: { payroll: string; password: string }, repo: UsersRepository) => {
       try {
+         const MODULE_ORDER = [
+            { permission: "multas_ver", route: "/#/multa" },
+            { permission: "transito_vialidad__ver", route: "/#/transito-vialidad" },
+            { permission: "juzgados_ver", route: "/#/juzgados" },
+            { permission: "seguridad_publica__ver", route: "/#/seguridad-publica" }
+         ];
+
          set({ loading: true });
          const data = await repo.login(user);
          if (data.ok == true) {
@@ -133,8 +140,12 @@ export const useUsersState = create<UsersState>((set, get) => ({
             localStorage.setItem("permisos", JSON.stringify((data.data as any).permisos));
             localStorage.setItem("name", (data.data as any).user.fullName);
             localStorage.setItem("auth_id", (data.data as any).user.id);
-
-            window.location.href = "/#/multa";
+             for (const module of MODULE_ORDER) {
+                if ((data.data as any).permisos.includes(module.permission)) {
+                   window.location.href = module.route;
+                   break; 
+                }
+             }
          } else {
             showToast("Credenciales incorrectas", "error");
          }

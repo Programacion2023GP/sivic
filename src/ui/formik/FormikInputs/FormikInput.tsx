@@ -24,8 +24,16 @@ type InputWithLabelProps = {
    padding?: boolean;
    value?: any;
    hidden?: boolean;
-
+   render?: () => React.ReactNode;
    handleModified?: (values: Record<string, any>, setFieldValue: (name: string, value: any, shouldValidate?: boolean) => void) => void;
+   onBlur?: (e: React.FocusEvent<HTMLInputElement>, values: Record<string, any>) => void;
+   maskType?: "phone" | "curp" | "cp" | "plate" | "email" | "date" | "time" | "money" | "percentage" | "onlyLetters" | "onlyNumbers" | "alphanumeric" | "rfc";
+   mask?: "phone" | "cpf" | "cnpj" | "date" | "currency" | "custom" | ((value: string) => string);
+   maskPattern?: string;
+   icon?: React.ReactNode;
+   iconPosition?: "left" | "right";
+   onIconClick?: () => void;
+   saveUnmasked?: boolean;
 };
 export const FormikTextArea: React.FC<InputWithLabelProps> = ({
    label,
@@ -188,7 +196,10 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
    disabled = false,
    handleModified,
    padding = true,
-   hidden = false
+   hidden = false,
+   onBlur,
+   render,
+   
 }) => {
    const formik = useFormikContext();
    const [isFocused, setIsFocused] = useState(false);
@@ -293,8 +304,12 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
                               autoComplete="off"
                               value={values?.[name] ?? ""}
                               onChange={handleChange}
-                              onFocus={handleFocus}
-                              onBlur={handleBlur}
+                              onFocus={(e) => {
+                                 handleFocus();
+                              }}
+                              onBlur={(e) => {
+                                 onBlur?.(e, values);
+                              }}
                               className={`
                                  block w-full px-3 pt-4 pb-2 bg-transparent rounded-lg
                                  transition-all duration-200 focus:outline-none
@@ -336,6 +351,8 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
                            <span className="text-sm font-medium text-red-600 leading-tight">{error}</span>
                         </motion.div>
                      ) : null}
+
+                     {render ? render() : null}
 
                      {/* Contador de caracteres (opcional) */}
                      {hasValue && type === "text" ? (
@@ -1257,12 +1274,16 @@ export const FormikAutocomplete = <T extends Record<string, any>>({
       deepObj[lastKey] = value;
    };
 
-   const getValueFromFormik = () => {
-      if (Array.isArray(name)) {
-         return getNestedValue(formik.values, name);
-      }
-      return formik.values[name];
-   };
+ const getValueFromFormik = () => {
+    if (!formik || !formik.values) return undefined;
+
+    if (Array.isArray(name)) {
+       return getNestedValue(formik.values, name);
+    }
+
+    return formik.values?.[name];
+ };
+
 
    // Nueva función para actualizar el valor mostrado basado en el valor actual de Formik
    const updateDisplayValue = (currentValue: any) => {

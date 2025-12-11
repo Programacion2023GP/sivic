@@ -4,6 +4,39 @@
 
 ---
 
+## 🔧 **v3.1.1.2** · *🧪 Beta*
+📅 **Fecha:** 7 de diciembre de 2025, 12:08 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🧩 **v3.1.1.1** · *🧪 Beta*
+📅 **Fecha:** 4 de diciembre de 2025, 10:36 a.m.  
+👤 **Autor:** luis gutierrez  
+🧭 **Tipo:** Patch
+
+**✨ Mejoras**
+- se cambio autamatico las fechas en seguridad publica y transito e vialidad
+
+
+
+---
+
+## ✨ **v3.1.0.1** · *🧪 Beta*
+📅 **Fecha:** 4 de diciembre de 2025, 8:39 a.m.  
+👤 **Autor:** luis gutierrez  
+🧭 **Tipo:** Minor
+
+**✨ Mejoras**
+- se agregaron imagenes de multas a transito y vialidad y seguridad publica
+
+
+
+---
+
 ## 🧩 **v3.0.1.1** · *🧪 Beta*
 📅 **Fecha:** 1 de diciembre de 2025, 3:37 p.m.  
 👤 **Autor:** luis  

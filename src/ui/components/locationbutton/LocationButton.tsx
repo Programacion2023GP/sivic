@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useFormikContext } from "formik";
-// import L from "leaflet";
-// import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import L from "leaflet";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 
 // // Ícono personalizado para Leaflet
 // const markerIcon = new L.Icon({
@@ -46,7 +46,7 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
    const [location, setLocation] = useState<{ lat: number; lon: number } | null>(null);
 
    const formik: any = useFormikContext<any>();
-   const isEditMode = Boolean(formik.values.id);
+const isEditMode = Boolean(formik?.values?.id);
 
    // Tamaños consistentes con CustomButton
    const sizeClasses = {
@@ -221,13 +221,13 @@ export const LocationButton: React.FC<LocationButtonProps> = ({
 
    // Cargar ubicación inicial desde Formik (modo edición)
    useEffect(() => {
-      const lat = parseFloat(formik.values[idNameLat]);
-      const lon = parseFloat(formik.values[idNameLng]);
+      const lat = parseFloat(formik.values?.[idNameLat]);
+      const lon = parseFloat(formik.values?.[idNameLng]);
       if (!isNaN(lat) && !isNaN(lon)) {
          setLocation({ lat, lon });
       }
       handleGetLocation();
-   }, [formik.values[idNameLat], formik.values[idNameLng]]);
+   }, [formik.values?.[idNameLat], formik.values?.[idNameLng]]);
 
    const handleGetLocation = () => {
       if (!navigator.geolocation) {

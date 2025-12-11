@@ -1,5 +1,5 @@
-import React from "react";
-
+import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
 
 type ButtonProps = {
    onClick?: () => void;
@@ -13,6 +13,15 @@ type ButtonProps = {
    className?: string;
    disabled?: boolean;
    loading?: boolean;
+
+   // Nuevas props para badges
+   badge?: string | number | React.ReactNode | boolean;
+   badgeColor?: "cyan" | "purple" | "pink" | "green" | "red" | "blue" | "yellow" | "slate" | "white" | "black" | "gray";
+   badgeVariant?: "solid" | "outline" | "dot" | "pulse";
+   badgePosition?: "top-right" | "top-left" | "bottom-right" | "bottom-left";
+   badgeClassName?: string;
+   showBadge?: boolean;
+   badgePortal?: boolean; // Nueva prop para habilitar portal
 };
 
 export const CustomButton: React.FC<ButtonProps> = ({
@@ -26,8 +35,63 @@ export const CustomButton: React.FC<ButtonProps> = ({
    iconPosition = "left",
    className = "",
    disabled = false,
-   loading = false
+   loading = false,
+
+   // Props de badge
+   badge,
+   badgeColor = "red",
+   badgeVariant = "solid",
+   badgePosition = "top-right",
+   badgeClassName = "",
+   showBadge = true,
+   badgePortal = false // Por defecto sin portal
 }) => {
+   const [buttonElement, setButtonElement] = useState<HTMLButtonElement | null>(null);
+   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+   const [buttonRect, setButtonRect] = useState<DOMRect | null>(null);
+
+   // Refs y efectos para el portal
+   useEffect(() => {
+      if (!badgePortal || !buttonElement || !badge) return;
+
+      // Obtener posición del botón
+      const updateButtonRect = () => {
+         if (buttonElement) {
+            setButtonRect(buttonElement.getBoundingClientRect());
+         }
+      };
+
+      // Crear contenedor para el portal
+      const container = document.createElement("div");
+      container.className = "custom-button-badge-portal";
+      container.style.position = "fixed";
+      container.style.zIndex = "9999";
+      container.style.pointerEvents = "none";
+      document.body.appendChild(container);
+      setPortalContainer(container);
+
+      // Actualizar posición inicial
+      updateButtonRect();
+
+      // Configurar observer para cambios en el botón
+      const observer = new ResizeObserver(updateButtonRect);
+      observer.observe(buttonElement);
+
+      // Escroll y resize listeners
+      window.addEventListener("scroll", updateButtonRect, true);
+      window.addEventListener("resize", updateButtonRect);
+
+      return () => {
+         observer.disconnect();
+         window.removeEventListener("scroll", updateButtonRect, true);
+         window.removeEventListener("resize", updateButtonRect);
+
+         if (container && document.body.contains(container)) {
+            document.body.removeChild(container);
+         }
+      };
+   }, [badgePortal, buttonElement, badge]);
+
    // Tamaños mejorados
    const sizeClasses = {
       sm: "px-4 py-2 text-sm min-h-9",
@@ -37,20 +101,7 @@ export const CustomButton: React.FC<ButtonProps> = ({
    }[size];
 
    // Sistema de colores modernizado
-   const colorVariants: Record<
-      string,
-      {
-         primary: string;
-         hover: string;
-         active: string;
-         gradientFrom: string;
-         gradientTo: string;
-         border: string;
-         text: string;
-         glow: string;
-         glass: string;
-      }
-   > = {
+   const colorVariants = {
       cyan: {
          primary: "bg-cyan-500",
          hover: "hover:bg-cyan-600 hover:shadow-lg hover:-translate-y-0.5",
@@ -141,6 +192,37 @@ export const CustomButton: React.FC<ButtonProps> = ({
       }
    };
 
+   // Colores para badges - simplificado
+   const badgeColorClasses = {
+      cyan: "bg-cyan-500 text-white border-cyan-600",
+      purple: "bg-purple-500 text-white border-purple-600",
+      pink: "bg-pink-500 text-white border-pink-600",
+      green: "bg-emerald-500 text-white border-emerald-600",
+      red: "bg-red-500 text-white border-red-600",
+      blue: "bg-blue-500 text-white border-blue-600",
+      yellow: "bg-amber-400 text-gray-800 border-amber-500",
+      slate: "bg-slate-600 text-white border-slate-700",
+      white: "bg-white text-gray-800 border-gray-200",
+      black: "bg-gray-900 text-white border-black",
+      gray: "bg-gray-500 text-white border-gray-600"
+   };
+
+   // Tamaños de badge según el tamaño del botón
+   const badgeSizeClasses = {
+      sm: "min-w-[18px] h-[18px] text-[10px] px-1",
+      md: "min-w-[20px] h-[20px] text-xs px-1",
+      lg: "min-w-[22px] h-[22px] text-sm px-1.5",
+      xl: "min-w-[24px] h-[24px] text-base px-1.5"
+   }[size];
+
+   // Tamaños de dot según el tamaño del botón
+   const dotSizeClasses = {
+      sm: "w-2 h-2",
+      md: "w-2.5 h-2.5",
+      lg: "w-3 h-3",
+      xl: "w-3.5 h-3.5"
+   }[size];
+
    const c = colorVariants[color];
 
    // Estilos base modernizados
@@ -150,7 +232,7 @@ export const CustomButton: React.FC<ButtonProps> = ({
     transition-all duration-300 ease-out
     focus:outline-none focus:ring-3 focus:ring-offset-1
     disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-    relative overflow-hidden group
+    relative group
   `;
 
    // Variantes de estilo modernizadas
@@ -202,39 +284,246 @@ export const CustomButton: React.FC<ButtonProps> = ({
    // Spinner de carga
    const LoadingSpinner = () => (
       <div className="absolute inset-0 flex items-center justify-center bg-inherit rounded-xl">
-         <div className={`w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin`} />
+         <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
       </div>
    );
 
+   // Renderizar badge normal (sin portal)
+   const renderNormalBadge = () => {
+      if (!showBadge || badge === undefined || badge === null || badge === false) return null;
+
+      const badgePositionClasses = {
+         "top-right": "top-[-4px] right-[-4px]",
+         "top-left": "top-[-4px] left-[-4px]",
+         "bottom-right": "bottom-[-4px] right-[-4px]",
+         "bottom-left": "bottom-[-4px] left-[-4px]"
+      }[badgePosition];
+
+      // Para badge tipo "dot" - solo muestra un punto
+      if (badgeVariant === "dot") {
+         return (
+            <span className={`absolute ${badgePositionClasses} ${badgeClassName} z-50`} aria-label="Notification">
+               <span className={`block ${dotSizeClasses} rounded-full ${badgeColorClasses[badgeColor].split(" ")[0]}`} />
+            </span>
+         );
+      }
+
+      // Para badge tipo "pulse" - punto con animación de pulso
+      if (badgeVariant === "pulse") {
+         return (
+            <span className={`absolute ${badgePositionClasses} ${badgeClassName} z-50`} aria-label="Notification">
+               <span className={`block ${dotSizeClasses} rounded-full ${badgeColorClasses[badgeColor].split(" ")[0]} animate-pulse`} />
+            </span>
+         );
+      }
+
+      // Para badge tipo "solid" u "outline" con contenido
+      if (typeof badge === "string" || typeof badge === "number" || badge === true) {
+         const isBoolean = badge === true;
+         const isNumber = typeof badge === "number";
+         let badgeContent = badge;
+
+         if (isBoolean) {
+            badgeContent = "";
+         } else if (isNumber && Number(badge) > 99) {
+            badgeContent = "99+";
+         }
+
+         const outlineClass =
+            badgeVariant === "outline" ? "bg-transparent border" : `${badgeColorClasses[badgeColor].split(" ")[0]} ${badgeColorClasses[badgeColor].split(" ")[1]}`;
+
+         const borderClass =
+            badgeVariant === "outline" ? badgeColorClasses[badgeColor].split(" ")[2] : badgeColorClasses[badgeColor].split(" ")[2] || "border-transparent";
+
+         return (
+            <span
+               className={`
+                  absolute ${badgePositionClasses} ${badgeClassName}
+                  z-50 flex items-center justify-center
+                  ${badgeSizeClasses}
+                  ${outlineClass}
+                  ${borderClass}
+                  rounded-full font-bold border shadow-lg
+                  ${isNumber && Number(badge) > 99 ? "px-1" : ""}
+               `}
+               title={isBoolean ? "" : badge.toString()}
+            >
+               {badgeContent}
+            </span>
+         );
+      }
+
+      // Si es un ReactNode personalizado
+      return <div className={`absolute ${badgePositionClasses} z-50 ${badgeClassName}`}>{badge}</div>;
+   };
+
+   // Renderizar badge con portal
+   const renderPortalBadge = () => {
+      if (!portalContainer || !buttonRect || !badge) return null;
+
+      // Calcular posición basada en badgePosition
+      let top = 0;
+      let left = 0;
+
+      switch (badgePosition) {
+         case "top-right":
+            top = buttonRect.top - 4;
+            left = buttonRect.right - 4;
+            break;
+         case "top-left":
+            top = buttonRect.top - 4;
+            left = buttonRect.left - 4;
+            break;
+         case "bottom-right":
+            top = buttonRect.bottom - 4;
+            left = buttonRect.right - 4;
+            break;
+         case "bottom-left":
+            top = buttonRect.bottom - 4;
+            left = buttonRect.left - 4;
+            break;
+      }
+
+      // Para badge tipo "dot"
+      if (badgeVariant === "dot") {
+         return ReactDOM.createPortal(
+            <div
+               style={{
+                  position: "fixed",
+                  top: `${top}px`,
+                  left: `${left}px`,
+                  zIndex: 9999,
+                  pointerEvents: "none"
+               }}
+               className={badgeClassName}
+            >
+               <span className={`block ${dotSizeClasses} rounded-full ${badgeColorClasses[badgeColor].split(" ")[0]}`} />
+            </div>,
+            portalContainer
+         );
+      }
+
+      // Para badge tipo "pulse"
+      if (badgeVariant === "pulse") {
+         return ReactDOM.createPortal(
+            <div
+               style={{
+                  position: "fixed",
+                  top: `${top}px`,
+                  left: `${left}px`,
+                  zIndex: 9999,
+                  pointerEvents: "none"
+               }}
+               className={badgeClassName}
+            >
+               <span className={`block ${dotSizeClasses} rounded-full ${badgeColorClasses[badgeColor].split(" ")[0]} animate-pulse`} />
+            </div>,
+            portalContainer
+         );
+      }
+
+      // Para badge tipo "solid" u "outline" con contenido
+      if (typeof badge === "string" || typeof badge === "number" || badge === true) {
+         const isBoolean = badge === true;
+         const isNumber = typeof badge === "number";
+         let badgeContent = badge;
+
+         if (isBoolean) {
+            badgeContent = "";
+         } else if (isNumber && Number(badge) > 99) {
+            badgeContent = "99+";
+         }
+
+         const outlineClass =
+            badgeVariant === "outline" ? "bg-transparent border" : `${badgeColorClasses[badgeColor].split(" ")[0]} ${badgeColorClasses[badgeColor].split(" ")[1]}`;
+
+         const borderClass =
+            badgeVariant === "outline" ? badgeColorClasses[badgeColor].split(" ")[2] : badgeColorClasses[badgeColor].split(" ")[2] || "border-transparent";
+
+         return ReactDOM.createPortal(
+            <div
+               style={{
+                  position: "fixed",
+                  top: `${top}px`,
+                  left: `${left}px`,
+                  zIndex: 9999,
+                  pointerEvents: "none"
+               }}
+               className={badgeClassName}
+            >
+               <span
+                  className={`
+                     flex items-center justify-center
+                     ${badgeSizeClasses}
+                     ${outlineClass}
+                     ${borderClass}
+                     rounded-full font-bold border shadow-lg
+                     ${isNumber && Number(badge) > 99 ? "px-1" : ""}
+                  `}
+                  title={isBoolean ? "" : badge.toString()}
+               >
+                  {badgeContent}
+               </span>
+            </div>,
+            portalContainer
+         );
+      }
+
+      // Si es un ReactNode personalizado
+      return ReactDOM.createPortal(
+         <div
+            style={{
+               position: "fixed",
+               top: `${top}px`,
+               left: `${left}px`,
+               zIndex: 9999,
+               pointerEvents: "none"
+            }}
+            className={badgeClassName}
+         >
+            {badge}
+         </div>,
+         portalContainer
+      );
+   };
+
    return (
-      <button
-         type={type}
-         onClick={onClick}
-         disabled={disabled || loading}
-         className={`
-        ${baseClasses}
-        ${sizeClasses}
-        ${variantClasses}
-        ${className}
-        transform transition-all duration-300 hover:cursor-pointer
-      `}
-      >
-         {/* Efecto de ripple */}
-         <span className="absolute inset-0 overflow-hidden rounded-xl">
-            <span className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-all duration-300 transform scale-0 group-hover:scale-100" />
-         </span>
+      <>
+         <button
+            ref={setButtonElement}
+            type={type}
+            onClick={onClick}
+            disabled={disabled || loading}
+            className={`
+               ${baseClasses}
+               ${sizeClasses}
+               ${variantClasses}
+               ${className}
+               transform transition-all duration-300 hover:cursor-pointer
+            `}
+         >
+            {/* Efecto de ripple */}
+            <span className="absolute inset-0 overflow-hidden rounded-xl">
+               <span className="absolute inset-0 bg-white/0 group-hover:bg-white/10 transition-all duration-300 transform scale-0 group-hover:scale-100" />
+            </span>
 
-         {/* Contenido */}
-         {loading && <LoadingSpinner />}
+            {/* Badge normal (sin portal) */}
+            {!badgePortal && renderNormalBadge()}
 
-         <span className={`flex items-center justify-center gap-2 ${loading ? "opacity-0" : "opacity-100"} transition-opacity`}>
-            {icon && iconPosition === "left" && <span className="shrink-0 transition-transform group-hover:scale-110">{icon}</span>}
+            {/* Contenido */}
+            {loading && <LoadingSpinner />}
 
-            {children && <span className="relative z-10 whitespace-nowrap">{children}</span>}
+            <span className={`flex items-center justify-center gap-2 ${loading ? "opacity-0" : "opacity-100"} transition-opacity relative z-10`}>
+               {icon && iconPosition === "left" && <span className="shrink-0 transition-transform group-hover:scale-110">{icon}</span>}
 
-            {icon && iconPosition === "right" && <span className="shrink-0 transition-transform group-hover:scale-110">{icon}</span>}
-         </span>
-      </button>
+               {children && <span className="relative z-10 whitespace-nowrap">{children}</span>}
+
+               {icon && iconPosition === "right" && <span className="shrink-0 transition-transform group-hover:scale-110">{icon}</span>}
+            </span>
+         </button>
+
+         {/* Badge con portal */}
+         {badgePortal && renderPortalBadge()}
+      </>
    );
 };
-

@@ -47,3 +47,4 @@ export interface Penalties {
    penalty_preload_data_id: number;
    [key: string]: any;
 }
+

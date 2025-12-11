@@ -38,7 +38,7 @@ const PagTraffic = () => {
    const useTrafficStore = useMemo(
       () =>
          useGenericStore<Traffic>({
-            image_traffic:"",
+            image_traffic: "",
             active: true,
             id: 0,
             rank: "",
@@ -47,7 +47,9 @@ const PagTraffic = () => {
             location: "",
             person_oficial: "",
             plate_number: "",
-            time: "",
+            // time: "",
+            // date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
+            time: new Date().toTimeString().slice(0, 5), // HH:MM
             vehicle_brand: ""
          }),
       []

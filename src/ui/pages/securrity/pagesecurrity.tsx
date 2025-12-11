@@ -36,14 +36,14 @@ const PagePublicSecurity = () => {
    const usePublicSecurityStore = useMemo(
       () =>
          useGenericStore<Public_Securrity>({
-            image_security:"",
+            image_security: "",
             id: 0,
             detainee_name: "",
             officer_name: "",
             patrol_unit_number: "",
             detention_reason: "",
-            date: "",
-            time: "",
+            date: new Date().toISOString().slice(0, 10), // YYYY-MM-DD
+            time: new Date().toTimeString().slice(0, 5), // HH:MM
             age: null,
             location: "",
             active: true

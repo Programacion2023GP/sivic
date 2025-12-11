@@ -200,7 +200,9 @@ export const usePenaltiesStore = create<PenaltiesStore>((set, get) => ({
       set({ loading: true, open: false });
 
       try {
-         const data = await repo.create(penaltie);
+         let newPenaltie=penaltie
+         newPenaltie['active'] = true
+         const data = await repo.create(newPenaltie);
 
          if (!data.ok) {
             throw new Error(data.message || "Error al crear multa");
