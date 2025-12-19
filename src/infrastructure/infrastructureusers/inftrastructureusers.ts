@@ -58,6 +58,7 @@ export class ApiUsers implements UsersRepository {
       try {
          const response = await AxiosRequest(`${import.meta.env.VITE_API_URL}/users/login`, "POST", user);
          // Validar que el status sea 200
+         console.log("response", response);
          if (response.status === "success") {
             return { ok: true, data: response?.data, message: response?.data?.message || "Login exitoso" };
          } else {
