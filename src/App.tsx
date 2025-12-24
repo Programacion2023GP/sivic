@@ -18,7 +18,7 @@ import PagePublicSecurity from "./ui/pages/securrity/pagesecurrity";
 // Lazy imports para todas las páginas
 const PageDependence = lazy(() => import("./ui/pages/catalogues/dependece/pagedependece"));
 const PageUsersPanel = lazy(() => import("./ui/pages/pageusers/pageuserspanel"));
-const PagePenalities = lazy(() => import("./ui/pages/penalties/pagepenalties"));
+const PagePenalities = lazy(() => import("./ui/pages/penalties/pagepenalities"));
 const PageLogs = lazy(() => import("./ui/pages/pagelogs/PageLogs"));
 const PageReports = lazy(() => import("./ui/pages/reports/dashboard/reports"));
 const PageDoctor = lazy(() => import("./ui/pages/catalogues/doctor/pagedoctor"));
@@ -271,15 +271,15 @@ function App() {
                path="multa"
                element={
                   <Suspense fallback={<Spinner />}>
-                     <PagePenalities />
+                     <PagePenalities section="penaltie" />
                   </Suspense>
                }
             />
-            {/* <Route
+            <Route
                path="transito-vialidad"
                element={
                   <Suspense fallback={<Spinner />}>
-                     <PageTraffic />
+                     <PagePenalities section="traffic" />
                   </Suspense>
                }
             />
@@ -298,7 +298,7 @@ function App() {
                      <PagePublicSecurity />
                   </Suspense>
                }
-            /> */}
+            />
 
             <Route
                path="logs"

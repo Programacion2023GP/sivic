@@ -187,6 +187,186 @@ export const FormikTextArea: React.FC<InputWithLabelProps> = ({
       </ColComponent>
    );
 };
+// export const FormikInput: React.FC<InputWithLabelProps> = ({
+//    label,
+//    value,
+//    name,
+//    responsive = { sm: 12, md: 12, lg: 12, xl: 12, "2xl": 12 },
+//    type = "text",
+//    disabled = false,
+//    handleModified,
+//    padding = true,
+//    hidden = false,
+//    onBlur,
+//    render,
+   
+// }) => {
+//    const formik = useFormikContext();
+//    const [isFocused, setIsFocused] = useState(false);
+
+//    useEffect(() => {
+//       if (value !== undefined && value !== null) {
+//          formik.setFieldValue(name, value, false);
+//       }
+//    }, [value]);
+
+//    return (
+//       <ColComponent responsive={responsive} autoPadding={padding}>
+//          <FastField name={name}>
+//             {({ field, form: { values, setFieldValue, setFieldTouched, touched, errors } }) => {
+//                const error = touched?.[name] && errors?.[name] ? String(errors[name]) : null;
+//                const hasValue = values?.[name] && values[name].toString().length > 0;
+//                const isActive = hasValue || isFocused;
+//                const isActiveDisabled = disabled && values?.[name]?.toString()?.length > 0;
+
+//                const handleChange = (e) => {
+//                   let newValue = e.target.value.toUpperCase();
+//                   setFieldValue(name, newValue);
+
+//                   if (newValue !== field.value && handleModified) {
+//                      handleModified({ ...values, [name]: newValue }, setFieldValue);
+//                   }
+//                };
+
+//                const handleFocus = () => setIsFocused(true);
+//                const handleBlur = () => {
+//                   setIsFocused(false);
+//                   setFieldTouched(name, true, true);
+//                };
+
+//                return (
+//                   <div className={`relative w-full mb-3 group ${disabled ? "opacity-70 cursor-not-allowed" : ""}`}>
+//                      {disabled ? (
+//                         <div className="relative w-full mb-1">
+//                            {/* LABEL flotante que tapa bien el borde */}
+//                            <label
+//                               htmlFor={name}
+//                               className={`
+//             absolute left-3 pointer-events-none transition-all duration-300
+//             -top-2.5 text-xs px-1 bg-white font-medium z-[2]
+//             ${error ? "text-red-500" : "text-gray-700"}
+//          `}
+//                            >
+//                               {label}
+//                            </label>
+
+//                            {/* CONTENEDOR con borde visible */}
+//                            <div
+//                               className={`
+//             relative px-3 pt-4 pb-2 rounded-lg border-2 transition-colors duration-200
+//             ${error ? "border-red-300 bg-red-50" : "border-gray-300 bg-gray-100"}
+//          `}
+//                            >
+//                               {/* Esta línea TAPA la parte superior del borde (efecto border-top abierto) */}
+//                               <div
+//                                  className={`
+//                absolute -top-[2px] left-[10px] h-[4px] 
+//                ${error ? "bg-red-50" : "bg-gray-100"} 
+//                z-[1]
+//             `}
+//                                  style={{
+//                                     width: `${label.length * 7 + 20}px` // tamaño dinámico según el label
+//                                  }}
+//                               />
+
+//                               {/* Texto del campo deshabilitado */}
+//                               <span className="text-gray-700 block min-h-[20px] relative z-[2]">{values?.[name] || ""}</span>
+//                            </div>
+//                         </div>
+//                      ) : (
+//                         <div className="relative mb-3">
+//                            {/* Fieldset para el borde animado */}
+//                            <fieldset
+//                               className={`
+//                                  absolute -inset-[2px] m-0 px-2 pointer-events-none
+//                                  border-2 rounded-lg transition-all duration-300
+//                                  ${error ? "border-red-500" : isFocused ? "border-blue-500 ring-2 ring-blue-500/20" : "border-gray-400 group-hover:border-gray-600"}
+//                                  ${isActive ? "border-2" : ""}
+//                               `}
+//                            >
+//                               {/* <legend
+//                                  className={`
+//                                     ml-2 px-1 text-xs transition-all duration-300
+//                                     ${error ? "text-red-500" : isFocused ? "text-blue-500" : "text-gray-600"}
+//                                     ${isActive ? "max-w-full opacity-100" : "max-w-0 opacity-0"}
+//                                  `}
+//                               >
+//                                  {label}
+//                               </legend> */}
+//                            </fieldset>
+
+//                            {/* Input principal */}
+//                            <input
+//                               {...field}
+//                               id={name}
+//                               type={type}
+//                               placeholder=" "
+//                               autoComplete="off"
+//                               value={values?.[name] ?? ""}
+//                               onChange={handleChange}
+//                               onFocus={(e) => {
+//                                  handleFocus();
+//                               }}
+//                               onBlur={(e) => {
+//                                  onBlur?.(e, values);
+//                               }}
+//                               className={`
+//                                  block w-full px-3 pt-4 pb-2 bg-transparent rounded-lg
+//                                  transition-all duration-200 focus:outline-none
+//                                  text-gray-900 placeholder-transparent
+//                                  ${error ? "caret-red-500" : "caret-blue-500"}
+//                                  ${disabled ? "cursor-not-allowed" : ""}
+//                               `}
+//                               hidden={hidden}
+//                            />
+
+//                            {/* Label flotante */}
+//                            <label
+//                               htmlFor={name}
+//                               className={`
+//                                  absolute left-3 transition-all duration-300 pointer-events-none
+//                                  transform origin-left
+//                                  ${
+//                                     isActive
+//                                        ? `-top-2.5 text-xs px-1 bg-white ${error ? "text-red-500" : isFocused ? "text-blue-500" : "text-gray-700"} font-medium`
+//                                        : "top-4 text-base text-gray-500"
+//                                  }
+//                                  ${disabled ? "text-gray-400" : ""}
+//                               `}
+//                            >
+//                               {label}
+//                            </label>
+//                         </div>
+//                      )}
+
+//                      {/* Mensaje de error mejorado */}
+//                      {error ? (
+//                         <motion.div
+//                            initial={{ opacity: 0, y: -5 }}
+//                            animate={{ opacity: 1, y: 0 }}
+//                            transition={{ duration: 0.2 }}
+//                            className="flex items-center gap-2 mt-2 px-1"
+//                         >
+//                            <div className="w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0"></div>
+//                            <span className="text-sm font-medium text-red-600 leading-tight">{error}</span>
+//                         </motion.div>
+//                      ) : null}
+
+//                      {render ? render() : null}
+
+//                      {/* Contador de caracteres (opcional) */}
+//                      {hasValue && type === "text" ? (
+//                         <div className="absolute -bottom-6 right-0">
+//                            <span className="text-xs text-gray-400">{values?.[name]?.length || ""} caracteres</span>
+//                         </div>
+//                      ) : null}
+//                   </div>
+//                );
+//             }}
+//          </FastField>
+//       </ColComponent>
+//    );
+// };
 export const FormikInput: React.FC<InputWithLabelProps> = ({
    label,
    value,
@@ -198,8 +378,7 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
    padding = true,
    hidden = false,
    onBlur,
-   render,
-   
+   render
 }) => {
    const formik = useFormikContext();
    const [isFocused, setIsFocused] = useState(false);
@@ -229,9 +408,16 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
                };
 
                const handleFocus = () => setIsFocused(true);
-               const handleBlur = () => {
+
+               // CORRECCIÓN: Esta función combina el blur interno con el externo
+               const handleBlurInternal = (e) => {
                   setIsFocused(false);
-                  setFieldTouched(name, true, true);
+                  setFieldTouched(name, true, true); // Esto marca el campo como touched
+
+                  // Llamar al callback externo si existe
+                  if (onBlur) {
+                     onBlur(e, values);
+                  }
                };
 
                return (
@@ -295,7 +481,7 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
                               </legend> */}
                            </fieldset>
 
-                           {/* Input principal */}
+                           {/* Input principal - CORRECCIÓN EN EL onBlur */}
                            <input
                               {...field}
                               id={name}
@@ -304,12 +490,8 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
                               autoComplete="off"
                               value={values?.[name] ?? ""}
                               onChange={handleChange}
-                              onFocus={(e) => {
-                                 handleFocus();
-                              }}
-                              onBlur={(e) => {
-                                 onBlur?.(e, values);
-                              }}
+                              onFocus={handleFocus}
+                              onBlur={handleBlurInternal} // CAMBIADO: usar handleBlurInternal
                               className={`
                                  block w-full px-3 pt-4 pb-2 bg-transparent rounded-lg
                                  transition-all duration-200 focus:outline-none

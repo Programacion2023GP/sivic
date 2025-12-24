@@ -22,10 +22,6 @@ export class GenericApi<T extends object> implements GenericRepository<T> {
             message: response.message
          };
       } catch (error: any) {
-         // ==========
-         // 🟥 ERROR DEVUELTO DESDE LARAVEL
-         // ==========
-         console.log("aqui", error);
          if (error.response) {
             const laravelError = error.response.data;
 
@@ -46,7 +42,47 @@ export class GenericApi<T extends object> implements GenericRepository<T> {
          };
       }
    }
+   async request<T>(options: { data: Partial<T>; prefix: string; method: "POST" | "PUT" | "GET" | "DELETE"; formData?: boolean }): Promise<Result<T>> {
+      const { data, prefix, method, formData = false } = options;
 
+      try {
+         let response = null;
+
+         if (method === "GET") {
+            response = await GetAxios(`${import.meta.env.VITE_API_URL}/${prefix}/index`);
+         } else {
+            response = await AxiosRequest(`${import.meta.env.VITE_API_URL}/${prefix}`, method, data, formData);
+         }
+
+         return {
+            ok: true,
+            data: response.data,
+            message: response.message
+         };
+      } catch (error: any) {
+         if (error.response) {
+            const laravelError = error.response.data;
+            const errorMessage = laravelError?.message ?? "Error desconocido desde el servidor";
+
+            return {
+               ok: false,
+               error: new Error(errorMessage),
+               message: errorMessage
+            };
+         }
+
+         // ==========
+         // 🟥 ERROR DE AXIOS O NETWORK
+         // ==========
+         const errorMessage = error.message || "Error de conexión con el servidor";
+
+         return {
+            ok: false,
+            error: new Error(errorMessage),
+            message: "Error de conexión con el servidor"
+         };
+      }
+   }
    async delete(data: T, prefix: string): Promise<Result<void>> {
       try {
          const response = await AxiosRequest(`${import.meta.env.VITE_API_URL}/${prefix}/delete`, "DELETE", data);

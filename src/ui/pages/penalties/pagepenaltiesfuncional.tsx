@@ -1,4 +1,3 @@
-// PagePenalities.tsx optimizado
 import { useEffect, useRef, useState, useMemo, useCallback, memo } from "react";
 import { useFormikContext, type FormikProps, type FormikValues } from "formik";
 import * as Yup from "yup";
@@ -7,21 +6,10 @@ import FormikForm from "../../formik/Formik";
 import { FormikAutocomplete, FormikImageInput, FormikInput, FormikNativeTimeInput, FormikRadio, FormikTextArea } from "../../formik/FormikInputs/FormikInput";
 import { CustomButton } from "../../components/button/custombuttom";
 import type { Penalties } from "../../../domain/models/penalties/penalties.model";
-import CustomTable from "../../components/table/customtable";
-import { VscDiffAdded } from "react-icons/vsc";
-import { LuRefreshCcw } from "react-icons/lu";
-import { CiEdit } from "react-icons/ci";
 import { showConfirmationAlert, showToast } from "../../../sweetalert/Sweetalert";
-import { FaPlus, FaRegFilePdf, FaSync, FaTrash } from "react-icons/fa";
-import { PermissionRoute } from "../../../App";
-import PhotoZoom from "../../components/images/images";
-import Spinner from "../../components/loading/loading";
 import CustomModal from "../../components/modal/modal";
-import Tooltip from "../../components/toltip/Toltip";
 import PdfPreview from "../../components/pdfview/pdfview";
 import MultaPDF from "../pdf/pdfpenalties";
-import { FloatingActionButton } from "../../components/movil/button/custombuttommovil";
-import { DateFormat, formatDatetime } from "../../../utils/formats";
 import { useWindowSize } from "../../../hooks/windossize";
 import LocationButton from "../../components/locationbutton/LocationButton";
 import Typography from "../../components/typografy/Typografy";
@@ -31,11 +19,10 @@ import { useAlcohol } from "../../../hooks/alcohol.hook";
 import { useDoctorStore } from "../../../store/doctor/doctor.store";
 import { DoctorApi } from "../../../infrastructure/doctor/doctor.infra";
 import { findMostSimilar } from "../../../utils/match";
-import { BsClockHistory } from "react-icons/bs";
+import CustomHistoryCase from "../components/historycases";
+import TableAlcoholCases from "../components/alcoholcases";
 
-// -----------------------------
-// Stepper memoizado
-// -----------------------------
+
 const Stepper = memo(({ steps, activeStep, setActiveStep }: { steps: string[]; activeStep: number; setActiveStep: (i: number) => void }) => {
    const { errors, touched } = useFormikContext<any>();
 
@@ -117,24 +104,34 @@ Stepper.displayName = "Stepper";
 // -----------------------------
 // Componente principal optimizado
 // -----------------------------
-const PagePenalities = () => {
+const PagePenalities = ({section}:{section:string}) => {
    // Consolidar estados relacionados
    const [uiState, setUiState] = useState({
       open: false,
       activeStep: 0,
-      pdfPenalties: { open: false, row: {} },
+      pdfPenalties: { open: false, row: {} }
    });
 
    const [citys, setCity] = useState({ loading: false, citys: [] });
    const { location, address, getLocation, loading: LoadingCp } = useLocation();
- 
+   const [duplicate, setDuplicate] = useState<{
+      duplicate: boolean;
+      value: string;
+   }>({
+      duplicate: false,
+      value: ""
+   });
+   const [history, setHistory] = useState<{open:boolean,idSearch:number}>({
+      open: false,
+      idSearch: null
+   });
    // Hooks externos
    const { width: windowWidth } = useWindowSize();
    const isMobile = windowWidth < 1024;
    const { contraloria, oficiales, proteccionCivil } = useEmployesData();
 
    // Store principal
-   const { data, loading, loadData, create, initialValues, editInitialValues, resetInitialValues, deleteRow } = useAlcohol();
+   const { data, loading, loadData, create, initialValues, editInitialValues, resetInitialValues, deleteRow, nextProccess } = useAlcohol();
 
    // Store doctor
    const { doctor, fetchDoctor, loading: doctorLoading } = useDoctorStore();
@@ -194,11 +191,8 @@ const PagePenalities = () => {
    }, []);
 
    const handleOficialChange = useCallback(
-      (name,value: any) => {
-         console.log(
-            value,
-            oficiales.employes?.find((oficial) => oficial.value == value)
-         ,"cccsadasd");
+      (name, value: any) => {
+        
          if (formikRef.current) {
             const oficialSeleccionado = oficiales.employes?.find((oficial) => oficial.value == value);
             if (oficialSeleccionado) {
@@ -226,6 +220,10 @@ const PagePenalities = () => {
 
          try {
             await create(values as Penalties);
+            setDuplicate({
+               duplicate: false,
+               value: null
+            });
             setUiState((prev) => ({
                ...prev,
                open: false,
@@ -247,16 +245,25 @@ const PagePenalities = () => {
          text: "Se eliminará la multa"
       }).then((isConfirmed) => {
          if (isConfirmed) {
-            deleteRow(row)
+            deleteRow(row);
          } else {
             showToast("La acción fue cancelada.", "error");
          }
       });
    }, []);
-
-   const handleEdit = useCallback(async(row: any) => {
-      editInitialValues("penaltie",row as Penalties)
-      
+const handleNext = useCallback((row: any) => {
+   showConfirmationAlert(`Continuar`, {
+      text: "Al aceptar, se dará continuidad a su proceso."
+   }).then((isConfirmed) => {
+      if (isConfirmed) {
+         nextProccess(row.id);
+      } else {
+         showToast("La acción fue cancelada.", "error");
+      }
+   });
+}, []);
+   const handleEdit = useCallback(async (row: any) => {
+      editInitialValues("penaltie", row as Penalties);
    }, []);
 
    // -----------------------------
@@ -267,17 +274,17 @@ const PagePenalities = () => {
 
       const initializeData = async () => {
          try {
-         //   const localization =  await getLocation(true);
-         //    editInitialValues(
-         //       "penaltie",
-         //       {
-         //          cp: localization?.address?.postcode,
-         //          lat: localization?.lat,
-         //          lon: localization?.lon,
-         //          city: localization?.address?.city
-         //       } as Penalties,
-         //       ["cp", "city", "lat", "lon"]
-         //    );
+            //   const localization =  await getLocation(true);
+            //    editInitialValues(
+            //       "penaltie",
+            //       {
+            //          cp: localization?.address?.postcode,
+            //          lat: localization?.lat,
+            //          lon: localization?.lon,
+            //          city: localization?.address?.city
+            //       } as Penalties,
+            //       ["cp", "city", "lat", "lon"]
+            //    );
             await loadData("penaltie");
 
             if (mounted) {
@@ -301,13 +308,7 @@ const PagePenalities = () => {
    // -----------------------------
    // Render del formulario memoizado
    // -----------------------------
-   const [duplicate, setDuplicate] = useState<{
-      duplicate: boolean;
-      value: string;
-   }>({
-      duplicate: false,
-      value: ""
-   });
+
    const renderStepContent = useMemo(() => {
       const Step0 = () => (
          <div className="space-y-2">
@@ -418,7 +419,6 @@ const PagePenalities = () => {
                      </>
                   )}
                   onBlur={(e, values) => {
-                     console.log("",e.target.value,values)
                      const probality = findMostSimilar(data as Penalties[], "name", values["name"]);
 
                      if (probality?.similarity > 50) {
@@ -467,19 +467,9 @@ const PagePenalities = () => {
       `
                         }).then((isConfirmed) => {
                            if (isConfirmed) {
-                              // Aquí va el código para aceptar la residencia
-                              // Por ejemplo: setFieldValue, guardar datos, etc.
-                              console.log("json",probality.item)
+                            
                               formikRef.current.setFieldValue("residence_folio", probality.item.id);
-                              // editInitialValues(
-                              //    "penaltie",
-                              //    {...initialFormValues,
-                              //       residence_folio: probality.item.id
-                              //    } as Penalties,
-                              //    ["residence_folio"]
-                              // );
-                                 
-                              
+                           
                               formikRef.current.setFieldValue("name", probality?.item?.name);
                               formikRef.current.setFieldValue("plate_number", probality?.item?.plate_number);
                               formikRef.current.setFieldValue("age", probality?.item?.age);
@@ -501,7 +491,7 @@ const PagePenalities = () => {
                      }
                   }}
                />
-              
+
                <FormikInput disabled value={location?.address?.postcode} label="Código postal" name="cp" responsive={RESPONSIVE_CONFIG} />
                <FormikInput disabled value={location?.address?.city} label="Lugar donde se encuentran" name="location" responsive={RESPONSIVE_CONFIG} />
                <FormikInput type="number" icon="cantidad" name="age" label="Edad" responsive={RESPONSIVE_CONFIG} />
@@ -550,11 +540,9 @@ const PagePenalities = () => {
       formikRef?.current?.values["name"]
    ]);
 
-   // Columnas de tabla memoizadas
 
    return (
       <>
-         {/* {LoadingCp && <Spinner message="cargando tu ubicación" size="sm" fixed={false} />} */}
 
          <CompositePage
             formDirection="modal"
@@ -601,174 +589,28 @@ const PagePenalities = () => {
                </div>
             )}
             table={() => (
-               <PermissionRoute requiredPermission={"multas_ver"}>
-                  <div className="absolute z-20 right-4 bottom-4">
-                     <PermissionRoute requiredPermission={"multas_crear"}>
-                        <FloatingActionButton onClick={() => setUiState((prev) => ({ ...prev, open: true }))} icon={<FaPlus />} color="primary" size="normal" />
-                     </PermissionRoute>
-                  </div>
-
-                  <CustomTable
-                     conditionExcel={"multas_exportar"}
-                     headerActions={() => (
-                        <>
-                           <PermissionRoute requiredPermission={"multas_crear"}>
-                              <Tooltip content="Agregar multa">
-                                 <CustomButton
-                                    onClick={() => {
-                                       resetInitialValues("penaltie");
-
-                                       setUiState((prev) => ({
-                                          ...prev,
-                                          open: true,
-                                          activeStep: 0
-                                       }));
-                                    }}
-                                 >
-                                    <VscDiffAdded />
-                                 </CustomButton>
-                              </Tooltip>
-                           </PermissionRoute>
-                           <Tooltip content="Refrescar">
-                              <CustomButton color="purple" onClick={() => loadData("penaltie")}>
-                                 <LuRefreshCcw />
-                              </CustomButton>
-                           </Tooltip>
-                        </>
-                     )}
-                     data={data as Penalties[]}
-                     paginate={[5, 10, 25, 50]}
-                     loading={loading}
-                     columns={[
-                        { field: "id", headerName: "Folio", visibility: "always" },
-                        { field: "name", headerName: "Nombre del detenido", visibility: "always" },
-                        { field: "detainee_released_to", headerName: "Persona que acudio", visibility: "always" },
-                        {
-                           field: "image_penaltie",
-                           visibility: "expanded",
-                           headerName: "Foto Multa",
-                           renderField: (value) => <PhotoZoom src={value} alt={value} />
-                        },
-                        {
-                           field: "images_evidences",
-                           headerName: "Foto evidencia del ciudadano",
-                           visibility: "expanded",
-                           renderField: (value) => <PhotoZoom src={value} alt={value} />
-                        },
-                        { field: "doctor", headerName: "Doctor", visibility: "expanded" },
-                        { field: "cedula", headerName: "Cedula del doctor", visibility: "expanded" },
-                        {
-                           field: "time",
-                           headerName: "Hora",
-                           visibility: "always",
-                           renderField: (v) => <>{formatDatetime(`2025-01-01 ${v}`, true, DateFormat.H_MM_SS_A)}</>,
-                           getFilterValue: (v) => formatDatetime(`2025-01-01 ${v}`, true, DateFormat.H_MM_SS_A)
-                        },
-                        {
-                           field: "date",
-                           headerName: "Fecha",
-                           visibility: "always",
-                           renderField: (v) => <>{formatDatetime(v, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)}</>,
-                           getFilterValue: (v) => formatDatetime(v, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)
-                        },
-                        { field: "person_contraloria", headerName: "Contraloría", visibility: "expanded" },
-                        { field: "oficial_payroll", headerName: "Nómina Oficial", visibility: "expanded" },
-                        { field: "person_oficial", headerName: "Oficial", visibility: "expanded" },
-                        { field: "vehicle_service_type", headerName: "Tipo de Servicio Vehicular", visibility: "expanded" },
-                        { field: "alcohol_concentration", headerName: "Concentración Alcohol", visibility: "expanded" },
-                        { field: "group", headerName: "Grupo", visibility: "expanded" },
-                        { field: "municipal_police", headerName: "Policía Municipal", visibility: "expanded" },
-                        { field: "civil_protection", headerName: "Protección Civil", visibility: "expanded" },
-                        { field: "command_vehicle", headerName: "Vehículo Comando", visibility: "expanded" },
-                        { field: "command_troops", headerName: "Tropa Comando", visibility: "expanded" },
-                        { field: "command_details", headerName: "Detalles Comando", visibility: "expanded" },
-                        { field: "filter_supervisor", headerName: "Supervisor Filtro", visibility: "expanded" },
-                        { field: "cp", headerName: "Código Postal", visibility: "always" },
-                        { field: "city", headerName: "Ciudad", visibility: "always" },
-                        { field: "age", headerName: "Edad", visibility: "expanded" },
-                        { field: "amountAlcohol", headerName: "Cantidad Alcohol", visibility: "expanded" },
-                        { field: "number_of_passengers", headerName: "Número de Pasajeros", visibility: "expanded" },
-                        { field: "plate_number", headerName: "Número de Placa", visibility: "expanded" },
-                        { field: "detainee_phone_number", headerName: "Teléfono del Detenido", visibility: "expanded" },
-                        { field: "curp", headerName: "CURP", visibility: "expanded" },
-                        { field: "observations", headerName: "Observaciones", visibility: "expanded" },
-                        { field: "created_by_name", headerName: "Creado Por", visibility: "expanded" },
-                        {
-                           field: "active",
-                           headerName: "Activo",
-                           renderField: (v) => (
-                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${v ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                                 {v ? "Activo" : "Desactivado"}
-                              </span>
-                           )
-                        }
-                     ]}
-                     // columns={tableColumns}
-                     actions={(row) => (
-                        <>
-                           <CustomButton
-                              size="sm"
-                              color="purple"
-                              onClick={() =>
-                                 setUiState((prev) => ({
-                                    ...prev,
-                                    pdfPenalties: { open: true, row }
-                                 }))
-                              }
-                           >
-                              <FaRegFilePdf />
-                           </CustomButton>
-                           {row.residencias && (
-                              <PermissionRoute requiredPermission={"multas_historial"}>
-                                 <Tooltip content="Historial">
-                                    <CustomButton
-                                       // badgeClassName=""
-                                       size="sm"
-                                       color="slate"
-                                       badge={row.residencias}
-                                       badgeVariant="solid" // Cambiado de "dot" a "solid"
-                                       badgeColor="green"
-                                    >
-                                       <BsClockHistory />
-                                    </CustomButton>
-                                 </Tooltip>
-                              </PermissionRoute>
-                           )}
-
-                           <PermissionRoute requiredPermission={"multas_actualizar"}>
-                              <Tooltip content="Editar">
-                                 <CustomButton
-                                    size="sm"
-                                    color="yellow"
-                                    onClick={() => {
-                                       setUiState((prev) => ({
-                                          ...prev,
-                                          // action:"edit",
-                                          open: true,
-                                          activeStep: 0
-                                       }));
-                                       handleEdit(row);
-                                    }}
-                                 >
-                                    <CiEdit />
-                                 </CustomButton>
-                              </Tooltip>
-                           </PermissionRoute>
-
-                           <PermissionRoute requiredPermission={"multas_eliminar"}>
-                              <Tooltip content="Eliminar">
-                                 <CustomButton size="sm" color="red" onClick={() => handleDelete(row)}>
-                                    <FaTrash />
-                                 </CustomButton>
-                              </Tooltip>
-                           </PermissionRoute>
-                        </>
-                     )}
-                  />
-               </PermissionRoute>
+              <TableAlcoholCases
+              handleEdit={handleEdit}
+              handleNext={handleNext}
+              loadData={loadData}
+              resetInitialValues={resetInitialValues}
+              setUiState={setUiState}
+              setHistory={setHistory}  
+              data={data as Penalties[]}
+              loading={loading}
+              />
             )}
          />
-
+         <CustomHistoryCase
+            open={history.open}
+            id={history.idSearch}
+            setOpen={() => {
+               setHistory({
+                  idSearch: null,
+                  open: false
+               });
+            }}
+         />
          <CustomModal
             isOpen={uiState.pdfPenalties.open}
             onClose={() =>
@@ -785,3 +627,5 @@ const PagePenalities = () => {
 };
 
 export default PagePenalities;
+
+

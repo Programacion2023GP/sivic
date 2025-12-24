@@ -6,7 +6,7 @@ import { useWindowSize } from "../../hooks/windossize";
 
 // FormikForm ahora es un componente de tipo React.FC que usa forwardRef
 const FormikForm = forwardRef<FormikProps<Record<string, any>>, FormikType>(
-   ({ onSubmit, initialValues, validationSchema, children, buttonMessage, handleActions, id }, ref) => {
+   ({ onSubmit, initialValues, validationSchema, children, buttonMessage, handleActions, id,handleButtonsSubmit }, ref) => {
       const { width } = useWindowSize();
 
       // Determinar si es dispositivo móvil o tablet
@@ -32,7 +32,7 @@ const FormikForm = forwardRef<FormikProps<Record<string, any>>, FormikType>(
                      {/* Botón responsivo */}
                      <div
                         className={`
-                        flex w-full
+                        
                         ${isMobile ? "justify-center sticky bottom-4" : "justify-end"}
                      `}
                      >
@@ -102,9 +102,9 @@ const FormikForm = forwardRef<FormikProps<Record<string, any>>, FormikType>(
                               {buttonMessage}
                            </button>
                         )}
+                        {handleButtonsSubmit}
                      </div>
 
-                     {/* Espacio adicional en móviles para evitar que el botón tape contenido */}
                      {isMobile && <div className="h-6"></div>}
                   </Form>
                );

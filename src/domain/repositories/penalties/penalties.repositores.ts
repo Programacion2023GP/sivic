@@ -7,5 +7,4 @@ export interface PenaltiesRepository {
 
    create(penaltie: Penalties): Promise<Result<Penalties>>;
    delete(penaltie: Penalties): Promise<Result<void>>;
-   showHistoryCurp(penaltie: Penalties): Promise<Result<Penalties>>;
 }

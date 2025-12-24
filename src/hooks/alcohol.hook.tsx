@@ -7,8 +7,10 @@ import { Penalties } from "../domain/models/penalties/penalties.model";
 import { Traffic } from "../domain/models/traffic/traffic";
 import { Public_Securrity } from "../domain/models/security/security";
 import dayjs from "dayjs";
-
+import { Await } from "react-router-dom";
+type section = "penaltie" | "traffic";
 export const useAlcohol = () => {
+   useEffect(() => {}, []);
    const auth_id = Number(localStorage.getItem("auth_id") || 0);
    const now = new Date();
 
@@ -31,6 +33,7 @@ export const useAlcohol = () => {
          }),
       []
    );
+
    const initialValuesPenalties = {
       doctor_id: null,
       active: true,
@@ -72,7 +75,8 @@ export const useAlcohol = () => {
       final_date: undefined,
       auth_id: 0,
       penalty_preload_data_id: 0,
-      residence_folio:null,
+      residence_folio: null,
+      vehicle_brand:null,
    };
    const usePenaltiesCase = useMemo(() => {
       // Crear valores iniciales una sola vez
@@ -90,7 +94,7 @@ export const useAlcohol = () => {
    }, [alcoholCaseStore, penaltieCaseStore]);
 
    const create = useCallback(
-      (data: Penalties) => {
+     async (data: Penalties,section:section) => {
          prefix();
 
          // Evitar crear objetos innecesarios
@@ -99,16 +103,14 @@ export const useAlcohol = () => {
             requires_confirmation: false,
             alcohol_level: String(data.alcohol_concentration || "")
          };
-         alcoholCaseStore.postItem(caseData, AlcoholApi, true, false);
-         loadData("penaltie");
+        await alcoholCaseStore.postItem(caseData, AlcoholApi, true, false);
+        await loadData(section);
       },
       [prefix, alcoholCaseStore]
    );
 
-
-
    const deleteRow = useCallback(
-      (data: Penalties) => {
+      (data: Penalties,section:section) => {
          prefix();
 
          // Evitar crear objetos innecesarios
@@ -119,28 +121,40 @@ export const useAlcohol = () => {
          };
 
          penaltieCaseStore.removeItemData(caseData, PenaltieApi);
-         loadData("penaltie");
+         loadData(section);
       },
       [prefix, penaltieCaseStore]
    );
-   const loadData = useCallback(
-      async (page: "penaltie") => {
-         prefix();
-         setState((prev) => ({ ...prev, dataSearch: page }));
+  const loadData = useCallback(
+   async (page: section) => {
+      prefix();
+      setState((prev: any) => ({ ...prev, dataSearch: page }));
 
-         try {
-            if (page === "penaltie") {
-               const fetchedData = await penaltieCaseStore.fetchData(PenaltieApi);
-               setState((prev) => ({ ...prev, data: fetchedData }));
-            }
-         } catch (error) {
-            console.error("Error loading data:", error);
+      try {
+         const fetchedData = await penaltieCaseStore.fetchData(PenaltieApi);
+         
+         // DEPURACIÓN
+         console.log("Datos completos de API:", fetchedData);
+         console.log("Página actual:", page);
+         
+         if (page === "penaltie") {
+            let items: Penalties[] = fetchedData.filter((it) => it.current_process_id == 1);
+            console.log("Items con process_id == 1:", items);
+            setState((prev) => ({ ...prev, data: items }));
+         } else if (page == "traffic") {
+            let items = fetchedData.filter((it) => it.current_process_id == 2);
+            console.log("Items con process_id == 2:", items);
+            console.log("Items con process_id == 3:", fetchedData.filter((it) => it.current_process_id == 3));
+            setState((prev) => ({ ...prev, data: items }));
          }
-      },
-      [prefix, penaltieCaseStore]
+      } catch (error) {
+         console.error("Error loading data:", error);
+      }
+   },
+   [prefix]
+
    );
    const resetInitialValues = (page: "penaltie") => {
-      console.log("reiniciando los valores")
       switch (page) {
          case "penaltie":
             const today = dayjs();
@@ -170,7 +184,6 @@ export const useAlcohol = () => {
                   auth_id: configTurn.auth_id,
                   penalty_preload_data_id: configTurn.penalty_preload_data_id
                } as Penalties);
-               console.log("ccccc",configTurn)
 
                return penaltieCaseStore.initialValues;
             } else {
@@ -183,7 +196,7 @@ export const useAlcohol = () => {
       }
    };
    // Memoizar cálculos costosos
-   
+
    const editInitialValues = (
       page: "penaltie",
       row: Penalties | Court | Traffic | Public_Securrity,
@@ -199,7 +212,7 @@ export const useAlcohol = () => {
                      partialUpdate[field] = row[field as keyof typeof row];
                   }
                });
-               console.log("aqui en data",row,specificFields,partialUpdate)
+               console.log("aqui en data", row, specificFields, partialUpdate);
                setInitialValues((prev) => ({
                   ...prev,
                   ...partialUpdate
@@ -213,7 +226,20 @@ export const useAlcohol = () => {
             break;
       }
    };
-
+   const nextProccess = async(row: {},section:section) => {
+      try {
+        await alcoholCaseStore.request(
+            {
+               data: row,
+               method: "POST",
+               url: "alcohol_cases/advance",
+               formData: true
+            },
+            AlcoholApi
+         );
+        await loadData(section);
+      } catch (error) {}
+   };
    return {
       create,
       loadData,
@@ -222,6 +248,7 @@ export const useAlcohol = () => {
       initialValues,
       editInitialValues,
       resetInitialValues,
-      deleteRow
+      deleteRow,
+      nextProccess
    };
 };
