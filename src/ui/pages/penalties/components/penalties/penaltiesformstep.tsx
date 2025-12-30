@@ -7,7 +7,7 @@ interface StepProps {
    RESPONSIVE_CONFIG: Record<string, number>;
    contraloria: any;
    doctor: any;
-   section?:"penaltie"|"traffic"
+   section?: "penaltie" | "traffic" | "securrity" | "courts";
    proteccionCivil: any;
    oficiales: any;
    handleOficialChange: (name: string, value: any) => void;
@@ -24,8 +24,7 @@ export const Step0 = ({
    RESPONSIVE_CONFIG,
    contraloria,
    doctor,
-   proteccionCivil,
-
+   proteccionCivil
 }: Pick<StepProps, "RESPONSIVE_CONFIG" | "contraloria" | "doctor" | "proteccionCivil">) => (
    <div className="space-y-2">
       <FormikNativeTimeInput icon="date" label="Inicio del turno" name="init_date" type="datetime-local" responsive={RESPONSIVE_CONFIG} />
@@ -87,10 +86,9 @@ export const Step1 = ({
    duplicate,
    location,
    onNameBlur,
-   section,
-}: Pick<StepProps, "RESPONSIVE_CONFIG" | "oficiales" | "handleOficialChange" | "duplicate" | "location" | "onNameBlur"|"section">) => {
-   useEffect(()=>{
-   },[section])
+   section
+}: Pick<StepProps, "RESPONSIVE_CONFIG" | "oficiales" | "handleOficialChange" | "duplicate" | "location" | "onNameBlur" | "section">) => {
+   useEffect(() => {}, [section]);
    return (
       <div className="space-y-2">
          {/* Información del Operativo */}
@@ -180,6 +178,19 @@ export const Step1 = ({
 
          <FormikInput name="plate_number" icon="cantidad" label="Número de placa" responsive={RESPONSIVE_CONFIG} />
          {section == "traffic" && <FormikInput icon="user" name="vehicle_brand" label="Marca Vehiculo" responsive={RESPONSIVE_CONFIG} />}
+         {section == "securrity" && (
+            <>
+               <FormikInput label="N° de patrulla" name="patrol_unit_number" responsive={RESPONSIVE_CONFIG} />
+               <FormikInput label="Motivo de detención" name="detention_reason" responsive={RESPONSIVE_CONFIG} />
+            </>
+         )}
+         {section == "courts" && (
+            <>
+               <FormikInput name="exit_reason" label="Causa de salida" />
+               <FormikInput name="fine_amount" label="Multa" type="number" />
+            </>
+         )}
+
          <FormikInput icon="user" name="detainee_released_to" label="Nombre de la persona que acudió" responsive={RESPONSIVE_CONFIG} />
 
          <FormikInput maskType="phone" name="detainee_phone_number" mask="phone" label="Teléfono del detenido" icon="phone" responsive={RESPONSIVE_CONFIG} />

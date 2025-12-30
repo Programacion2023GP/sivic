@@ -22,7 +22,7 @@ import { Step0, Step1, Step2 } from "./components/penalties/penaltiesformstep";
 import { useCityData, usePenaltiesForm, usePenaltiesHandlers } from "./hook/penalties.hook";
 import { Public_Securrity } from "../../../domain/models/security/security";
 import { Traffic } from "../../../domain/models/traffic/traffic";
-type section = "penaltie" | "traffic";
+type section = "penaltie" | "traffic" | "securrity" | "courts";
 
 const PagePenalities = ({ section }: { section: section }) => {
    // Estados personalizados
@@ -36,8 +36,8 @@ const PagePenalities = ({ section }: { section: section }) => {
    const { location, address, getLocation, loading: LoadingCp } = useLocation();
 
    // Store principal
-   const { data, loading, loadData, create, initialValues, editInitialValues, resetInitialValues, deleteRow, nextProccess } = useAlcohol();
-   // Store doctor   
+   const { data,allData, loading, loadData, create, initialValues, editInitialValues, resetInitialValues, deleteRow, nextProccess } = useAlcohol();
+   // Store doctor
    const { doctor, fetchDoctor, loading: doctorLoading } = useDoctorStore();
    const apiDoc = useMemo(() => new DoctorApi(), []);
    const [itemsData, setItemsData] = useState<Penalties[] | Court[] | Traffic[] | Public_Securrity[]>();
@@ -77,20 +77,28 @@ const PagePenalities = ({ section }: { section: section }) => {
             municipal_police: Yup.string().required("Campo obligatorio"),
 
             image_penaltie: Yup.string().required("Campo obligatorio")
+         }),
+      securrity: () =>
+         Yup.object({
+            detention_reason: Yup.string().required("Campo obligatorio").min(1, "El motivo es requerida"),
+            patrol_unit_number: Yup.string().required("Campo obligatorio").min(1, "El numero de patrulla es requerida")
+         }),
+      courts: () =>
+         Yup.object({
+            exit_reason: Yup.string().required("Campo obligatorio").min(1, "El motivo de salida es requerido"),
+            fine_amount: Yup.string().required("Campo obligatorio").min(1, "La cantidad es requerida")
          })
    };
 
    const validationSchema = useMemo(() => {
-    
       const schema = validations[section]?.();
-     
-      
+
       return schema;
    }, [section]);
    const initialFormValues = useMemo(() => initialValues, [initialValues]);
 
    // Handlers del componente principal
-   const { handleOficialChange, handleNameBlur } = usePenaltiesHandlers(formikRef, oficiales, data as Penalties[], setDuplicate);
+   const { handleOficialChange, handleNameBlur } = usePenaltiesHandlers(formikRef, oficiales, allData as Penalties[], setDuplicate);
 
    const handleStepNavigation = useCallback((direction: "next" | "prev") => {
       setUiState((prev) => ({
@@ -101,14 +109,14 @@ const PagePenalities = ({ section }: { section: section }) => {
 
    const handleSubmit = useCallback(
       async (values: FormikValues) => {
-         console.log("aca")
+         console.log("aca");
          if (uiState.activeStep < steps.length - 1) {
             handleStepNavigation("next");
             return;
          }
 
          try {
-            await create(values as Penalties,section);
+            await create(values as Penalties, section);
             setDuplicate({
                duplicate: false,
                value: null
@@ -118,9 +126,7 @@ const PagePenalities = ({ section }: { section: section }) => {
                open: false,
                activeStep: 0
             }));
-               await loadData(section);
-               
-       
+            await loadData(section);
          } catch (error) {
             console.error("Error al crear multa:", error);
             showToast("Error al crear la multa", "error");
@@ -135,7 +141,7 @@ const PagePenalities = ({ section }: { section: section }) => {
             text: "Se eliminará la multa"
          }).then((isConfirmed) => {
             if (isConfirmed) {
-               deleteRow(row,section);
+               deleteRow(row, section);
             } else {
                showToast("La acción fue cancelada.", "error");
             }
@@ -150,7 +156,7 @@ const PagePenalities = ({ section }: { section: section }) => {
             text: "Al aceptar, se dará continuidad a su proceso."
          }).then((isConfirmed) => {
             if (isConfirmed) {
-               nextProccess(row,section);
+               nextProccess(row, section);
             } else {
                showToast("La acción fue cancelada.", "error");
             }
@@ -182,7 +188,6 @@ const PagePenalities = ({ section }: { section: section }) => {
          }
       };
 
-
       initializeData();
 
       return () => {
@@ -190,12 +195,12 @@ const PagePenalities = ({ section }: { section: section }) => {
       };
    }, []);
    useEffect(() => {
-      loadData(section)
+      loadData(section);
       // initializeData();
    }, [section]);
    // Render de steps
    const renderStepContent = useCallback(
-      (section: "penaltie" | "traffic") => {
+      (section: "penaltie" | "traffic" | "securrity" | "courts") => {
          switch (uiState.activeStep) {
             case 0:
                return <Step0 RESPONSIVE_CONFIG={RESPONSIVE_CONFIG} contraloria={contraloria} doctor={doctor} proteccionCivil={proteccionCivil} />;
@@ -232,7 +237,7 @@ const PagePenalities = ({ section }: { section: section }) => {
          section
       ]
    );
-  
+
    return (
       <>
          <CompositePage
@@ -252,7 +257,7 @@ const PagePenalities = ({ section }: { section: section }) => {
                   <FormikForm ref={formikRef} validationSchema={validationSchema} initialValues={initialFormValues} onSubmit={handleSubmit}>
                      {(vakues) => (
                         <div className="w-full space-y-2">
-                           {JSON.stringify(vakues)}
+                           {/* {JSON.stringify(vakues)} */}
                            <PenaltiesStepper
                               steps={steps}
                               activeStep={uiState.activeStep}

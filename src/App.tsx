@@ -287,7 +287,7 @@ function App() {
                path="juzgados"
                element={
                   <Suspense fallback={<Spinner />}>
-                     <PageCourts />
+                     <PagePenalities section="courts" />
                   </Suspense>
                }
             />
@@ -295,7 +295,7 @@ function App() {
                path="seguridad-publica"
                element={
                   <Suspense fallback={<Spinner />}>
-                     <PagePublicSecurity />
+                     <PagePenalities section="securrity"/>
                   </Suspense>
                }
             />

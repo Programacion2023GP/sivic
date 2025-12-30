@@ -8,7 +8,7 @@ import { Traffic } from "../domain/models/traffic/traffic";
 import { Public_Securrity } from "../domain/models/security/security";
 import dayjs from "dayjs";
 import { Await } from "react-router-dom";
-type section = "penaltie" | "traffic";
+type section = "penaltie" | "traffic" | "securrity"|"courts";
 export const useAlcohol = () => {
    useEffect(() => {}, []);
    const auth_id = Number(localStorage.getItem("auth_id") || 0);
@@ -21,7 +21,8 @@ export const useAlcohol = () => {
    // Consolidar estados relacionados
    const [state, setState] = useState({
       data: [] as Penalties[] | Court[] | Traffic[] | Public_Securrity[],
-      dataSearch: null as "penaltie" | null
+      dataSearch: null as "penaltie" | null,
+      allData:[]
    });
    const [initialValues, setInitialValues] = useState<Penalties | Court | Traffic | Public_Securrity>();
    // Stores optimizadas - evitar recreación en cada render
@@ -77,6 +78,8 @@ export const useAlcohol = () => {
       penalty_preload_data_id: 0,
       residence_folio: null,
       vehicle_brand:null,
+      detention_reason:null,
+      patrol_unit_number:null
    };
    const usePenaltiesCase = useMemo(() => {
       // Crear valores iniciales una sola vez
@@ -139,13 +142,18 @@ export const useAlcohol = () => {
          
          if (page === "penaltie") {
             let items: Penalties[] = fetchedData.filter((it) => it.current_process_id == 1);
-            console.log("Items con process_id == 1:", items);
-            setState((prev) => ({ ...prev, data: items }));
+            setState((prev) => ({ ...prev, data: items,allData:fetchedData}));
          } else if (page == "traffic") {
             let items = fetchedData.filter((it) => it.current_process_id == 2);
-            console.log("Items con process_id == 2:", items);
-            console.log("Items con process_id == 3:", fetchedData.filter((it) => it.current_process_id == 3));
-            setState((prev) => ({ ...prev, data: items }));
+            setState((prev) => ({ ...prev, data: items ,allData:fetchedData}));
+         }
+         else if (page =="securrity") {
+             let items = fetchedData.filter((it) => it.current_process_id == 3);
+            setState((prev) => ({ ...prev, data: items ,allData:fetchedData}));
+         }
+           else if (page =="courts") {
+             let items = fetchedData.filter((it) => it.current_process_id == 4);
+            setState((prev) => ({ ...prev, data: items ,allData:fetchedData}));
          }
       } catch (error) {
          console.error("Error loading data:", error);
@@ -249,6 +257,7 @@ export const useAlcohol = () => {
       editInitialValues,
       resetInitialValues,
       deleteRow,
-      nextProccess
+      nextProccess,
+      allData: state.allData,
    };
 };

@@ -17,7 +17,7 @@ import { Dispatch, ReactNode, SetStateAction } from "react";
 import { Traffic } from "../../../domain/models/traffic/traffic";
 import { Public_Securrity } from "../../../domain/models/security/security";
 
-type section  ="penaltie"|"traffic"
+type section  ="penaltie"|"traffic"|"securrity"|"courts"
 interface AlcoholProps {
    setUiState?: (callback: (prev: any) => any) => void;
    resetInitialValues?: (type: string) => void;
@@ -117,10 +117,11 @@ const typeData = (section: section, row: Penalties): ReactNode => {
          );
 
       case "traffic":
+      case "securrity":
          // Aquí deberías retornar JSX para el caso "traffic"
          return (
             <>
-               <PermissionRoute requiredPermission={"multas_actualizar"}>
+               <PermissionRoute requiredPermission={["multas_actualizar","seguridad_publica_editar","seguridad_publica_actualizar"]}>
                   <Tooltip content="Editar">
                      <CustomButton
                         size="sm"
