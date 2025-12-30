@@ -177,8 +177,8 @@ export const Step1 = ({
          <FormikInput type="number" icon="cantidad" name="number_of_passengers" label="Número de pasajeros" responsive={RESPONSIVE_CONFIG} />
 
          <FormikInput name="plate_number" icon="cantidad" label="Número de placa" responsive={RESPONSIVE_CONFIG} />
-         {section == "traffic" && <FormikInput icon="user" name="vehicle_brand" label="Marca Vehiculo" responsive={RESPONSIVE_CONFIG} />}
-         {section == "securrity" && (
+         {["traffic","securrity","courts"].includes(section)  && <FormikInput icon="user" name="vehicle_brand" label="Marca Vehiculo" responsive={RESPONSIVE_CONFIG} />}
+         {["securrity","courts"].includes(section)  && (
             <>
                <FormikInput label="N° de patrulla" name="patrol_unit_number" responsive={RESPONSIVE_CONFIG} />
                <FormikInput label="Motivo de detención" name="detention_reason" responsive={RESPONSIVE_CONFIG} />

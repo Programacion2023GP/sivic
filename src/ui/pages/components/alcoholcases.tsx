@@ -118,10 +118,12 @@ const typeData = (section: section, row: Penalties): ReactNode => {
 
       case "traffic":
       case "securrity":
+      case "courts":
+
          // Aquí deberías retornar JSX para el caso "traffic"
          return (
             <>
-               <PermissionRoute requiredPermission={["multas_actualizar","seguridad_publica_editar","seguridad_publica_actualizar"]}>
+               <PermissionRoute requiredPermission={["multas_actualizar","seguridad_publica_editar","seguridad_publica_actualizar","juzgados_actualizar"]}>
                   <Tooltip content="Editar">
                      <CustomButton
                         size="sm"
