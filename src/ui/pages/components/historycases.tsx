@@ -18,6 +18,11 @@ const CustomHistoryCase = ({ id, open, setOpen }: { id: AlcoholCase["id"]; open:
       }));
 
       try {
+      
+
+       if (id== null) {
+          return;
+       }
          const res = await GetAxios(`penalties/historial/${id}`);
 
          setHistory((prev) => ({

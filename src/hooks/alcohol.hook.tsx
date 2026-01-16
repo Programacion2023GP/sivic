@@ -8,7 +8,8 @@ import { Traffic } from "../domain/models/traffic/traffic";
 import { Public_Securrity } from "../domain/models/security/security";
 import dayjs from "dayjs";
 import { Await } from "react-router-dom";
-type section = "penaltie" | "traffic" | "securrity"|"courts";
+import { Seguimiento } from "../domain/models/seguimiento/seguimineto";
+type section = "penaltie" | "traffic" | "securrity" | "courts" | "general";
 export const useAlcohol = () => {
    useEffect(() => {}, []);
    const auth_id = Number(localStorage.getItem("auth_id") || 0);
@@ -17,15 +18,19 @@ export const useAlcohol = () => {
    // Mover las APIs fuera de useMemo - son constantes
    const AlcoholApi = new GenericApi<AlcoholCase>();
    const PenaltieApi = new GenericApi<Penalties>();
+   const SeguimientoApi = new GenericApi<Seguimiento>();
 
    // Consolidar estados relacionados
    const [state, setState] = useState({
       data: [] as Penalties[] | Court[] | Traffic[] | Public_Securrity[],
       dataSearch: null as "penaltie" | null,
-      allData:[]
+      allData: [],
+      loading: false, // ← Añadir loading aquí
+      submitting: false // ← Para operaciones de submit
    });
    const [initialValues, setInitialValues] = useState<Penalties | Court | Traffic | Public_Securrity>();
    // Stores optimizadas - evitar recreación en cada render
+   const [open,setOpen] = useState<boolean>(false)
    const useAlcoholCase = useMemo(
       () =>
          useGenericStore<AlcoholCase>({
@@ -34,7 +39,16 @@ export const useAlcohol = () => {
          }),
       []
    );
-
+  const useSeguimientoAlcohol = useMemo(
+     () =>
+        useGenericStore<Seguimiento>({
+           id: 0,
+           nombre: "",
+           proceso: "",
+           estatus: ""
+        }),
+     []
+  );
    const initialValuesPenalties = {
       doctor_id: null,
       active: true,
@@ -48,7 +62,7 @@ export const useAlcohol = () => {
       time: now.toLocaleTimeString("en-US", {
          hour: "2-digit",
          minute: "2-digit",
-         hour12: true
+         hour12: false
       }),
       date: new Date().toLocaleDateString("en-CA"),
       person_contraloria: localStorage.getItem("name"),
@@ -89,16 +103,24 @@ export const useAlcohol = () => {
 
    const alcoholCaseStore = useAlcoholCase();
    const penaltieCaseStore = usePenaltiesCase();
+   const segumientoCaseStore = useSeguimientoAlcohol();
 
    // Usar useCallback con dependencias apropiadas
    const prefix = useCallback(() => {
       alcoholCaseStore.setPrefix("alcohol_cases");
       penaltieCaseStore.setPrefix("penalties");
+      segumientoCaseStore.setPrefix("seguimiento");
+
    }, [alcoholCaseStore, penaltieCaseStore]);
 
    const create = useCallback(
      async (data: Penalties,section:section) => {
-         prefix();
+      setState((prev)=>({
+         ...prev,
+         loading:true,
+         submitting:true,
+      }));
+      prefix();
 
          // Evitar crear objetos innecesarios
          const caseData = {
@@ -108,6 +130,11 @@ export const useAlcohol = () => {
          };
         await alcoholCaseStore.postItem(caseData, AlcoholApi, true, false);
         await loadData(section);
+         setState((prev) => ({
+            ...prev,
+            loading: false,
+            submitting: false
+         }));
       },
       [prefix, alcoholCaseStore]
    );
@@ -130,34 +157,43 @@ export const useAlcohol = () => {
    );
   const loadData = useCallback(
    async (page: section) => {
+          setState((prev) => ({
+             ...prev,
+             loading: true,
+             submitting: true
+          }));
       prefix();
       setState((prev: any) => ({ ...prev, dataSearch: page }));
 
       try {
          const fetchedData = await penaltieCaseStore.fetchData(PenaltieApi);
-         
+         console.log(fetchedData)
          // DEPURACIÓN
-         console.log("Datos completos de API:", fetchedData);
-         console.log("Página actual:", page);
          
          if (page === "penaltie") {
             let items: Penalties[] = fetchedData.filter((it) => it.current_process_id == 1);
-            setState((prev) => ({ ...prev, data: items,allData:fetchedData}));
+            setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
          } else if (page == "traffic") {
             let items = fetchedData.filter((it) => it.current_process_id == 2);
-            setState((prev) => ({ ...prev, data: items ,allData:fetchedData}));
-         }
-         else if (page =="securrity") {
-             let items = fetchedData.filter((it) => it.current_process_id == 3);
-            setState((prev) => ({ ...prev, data: items ,allData:fetchedData}));
-         }
-           else if (page =="courts") {
-             let items = fetchedData.filter((it) => it.current_process_id == 4);
-            setState((prev) => ({ ...prev, data: items ,allData:fetchedData}));
+            setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
+         } else if (page == "securrity") {
+            let items = fetchedData.filter((it) => it.current_process_id == 3);
+            setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
+         } else if (page == "courts") {
+            let items = fetchedData.filter((it) => it.current_process_id == 4);
+            setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
+         } else if (page == "general") {
+            let items = fetchedData;
+            setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
          }
       } catch (error) {
          console.error("Error loading data:", error);
       }
+        setState((prev) => ({
+           ...prev,
+           loading: false,
+           submitting: false
+        }));
    },
    [prefix]
 
@@ -236,6 +272,11 @@ export const useAlcohol = () => {
    };
    const nextProccess = async(row: {},section:section) => {
       try {
+           setState((prev) => ({
+              ...prev,
+              loading: true,
+              submitting: true
+           }));
         await alcoholCaseStore.request(
             {
                data: row,
@@ -247,17 +288,52 @@ export const useAlcohol = () => {
          );
         await loadData(section);
       } catch (error) {}
+        setState((prev) => ({
+           ...prev,
+           loading: false,
+           submitting: false
+        }));
    };
+   const seguimiento = async(case_id:number)=>{
+
+      try {
+        setState((prev) => ({
+           ...prev,
+           loading: true,
+        }));
+         const report =  await segumientoCaseStore.request(
+            {
+               data: {
+                  case_id:case_id
+               },
+               method: "POST",
+               url: "seguimiento/seguimiento",
+               formData: false
+            },
+            SeguimientoApi
+         );
+         setOpen(true)
+         return report;
+      } catch (error) {}
+         setState((prev) => ({
+            ...prev,
+            loading: false
+         }));
+   }
    return {
       create,
       loadData,
       data: state.data,
-      loading: penaltieCaseStore.loading,
+      loading: state.loading,
+      submitting: state.submitting,
       initialValues,
       editInitialValues,
       resetInitialValues,
       deleteRow,
       nextProccess,
       allData: state.allData,
+      seguimiento,
+      open,
+      setClose: () => setOpen(false)
    };
 };

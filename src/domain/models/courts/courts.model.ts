@@ -1,4 +1,4 @@
-interface Court {
+export interface Court {
    id: number; //folio
    date: string;
    referring_agency: string; // remite
@@ -11,7 +11,6 @@ interface Court {
    image_court:string,
    // Campos adicionales comunes
    created_at: string;
-   penalties_id?: number;
    updated_at: string;
    active?: boolean;
 }

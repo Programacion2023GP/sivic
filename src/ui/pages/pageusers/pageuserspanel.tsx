@@ -262,6 +262,10 @@ const PageUsersPanel = () => {
                               headerName: "Nombre Completo"
                            },
                            {
+                              field: "departament",
+                              headerName: "Departamento"
+                           },
+                           {
                               field: "active",
                               headerName: "Usuario funcionando",
                               renderField: (v) => (

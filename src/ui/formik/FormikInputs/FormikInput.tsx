@@ -24,7 +24,7 @@ type InputWithLabelProps = {
    padding?: boolean;
    value?: any;
    hidden?: boolean;
-   render?: () => React.ReactNode;
+   render?: React.ReactNode;
    handleModified?: (values: Record<string, any>, setFieldValue: (name: string, value: any, shouldValidate?: boolean) => void) => void;
    onBlur?: (e: React.FocusEvent<HTMLInputElement>, values: Record<string, any>) => void;
    maskType?: "phone" | "curp" | "cp" | "plate" | "email" | "date" | "time" | "money" | "percentage" | "onlyLetters" | "onlyNumbers" | "alphanumeric" | "rfc";
@@ -534,7 +534,7 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
                         </motion.div>
                      ) : null}
 
-                     {render ? render() : null}
+                     {render }
 
                      {/* Contador de caracteres (opcional) */}
                      {hasValue && type === "text" ? (
@@ -954,6 +954,8 @@ export const FormikCheckbox: React.FC<CheckboxWithLabelProps> = ({
    );
 };
 
+
+
 interface FormikImageInputProps {
    label: string;
    name: string;
@@ -963,10 +965,13 @@ interface FormikImageInputProps {
    maxFiles?: number;
 }
 
-interface UploadingFile {
-   file: File;
+interface UploadItem {
+   id: string;
    preview: string;
+   isExisting: boolean;
+   file?: File;
    progress: number;
+   loaded: boolean;
 }
 
 export const FormikImageInput: React.FC<FormikImageInputProps> = ({
@@ -977,12 +982,70 @@ export const FormikImageInput: React.FC<FormikImageInputProps> = ({
    multiple = false,
    maxFiles = 5
 }) => {
-   const { setFieldValue, errors, touched } = useFormikContext<any>();
-   const [uploads, setUploads] = useState<UploadingFile[]>([]);
+   const { setFieldValue, values, errors, touched } = useFormikContext<any>();
+   const [uploads, setUploads] = useState<UploadItem[]>([]);
    const [previewModal, setPreviewModal] = useState<string | null>(null);
    const fileInputRef = useRef<HTMLInputElement | null>(null);
    const [isMobile, setIsMobile] = useState(false);
    const [useCamera, setUseCamera] = useState(true);
+
+   useEffect(() => {
+      const currentValue = values[name];
+      const existingUrls: string[] = [];
+      const newFiles: File[] = [];
+
+      if (currentValue) {
+         if (multiple && Array.isArray(currentValue)) {
+            currentValue.forEach((item) => {
+               if (typeof item === "string") {
+                  existingUrls.push(item);
+               } else if (item instanceof File) {
+                  newFiles.push(item);
+               }
+            });
+         } else if (!multiple) {
+            if (typeof currentValue === "string") {
+               existingUrls.push(currentValue);
+            } else if (currentValue instanceof File) {
+               newFiles.push(currentValue);
+            }
+         }
+      }
+
+      const newUploads: UploadItem[] = [];
+
+      existingUrls.forEach((url, index) => {
+         newUploads.push({
+            id: `existing_${index}_${Date.now()}`,
+            preview: url,
+            isExisting: true,
+            progress: 100,
+            loaded: false
+         });
+      });
+
+      newFiles.forEach((file, index) => {
+         const preview = URL.createObjectURL(file);
+         newUploads.push({
+            id: `new_${index}_${Date.now()}`,
+            preview,
+            isExisting: false,
+            file,
+            progress: 100,
+            loaded: false
+         });
+      });
+
+      setUploads(newUploads);
+
+      return () => {
+         newUploads.forEach((item) => {
+            if (!item.isExisting && item.preview.startsWith("blob:")) {
+               URL.revokeObjectURL(item.preview);
+            }
+         });
+      };
+   }, [values[name], multiple, name]);
 
    useEffect(() => {
       if (typeof window !== "undefined") {
@@ -990,6 +1053,10 @@ export const FormikImageInput: React.FC<FormikImageInputProps> = ({
          setIsMobile(mobileCheck);
       }
    }, []);
+
+   const handleImageLoad = (id: string) => {
+      setUploads((prev) => prev.map((item) => (item.id === id ? { ...item, loaded: true } : item)));
+   };
 
    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       const selectedFiles = event.target.files ? Array.from(event.target.files) : [];
@@ -1000,25 +1067,56 @@ export const FormikImageInput: React.FC<FormikImageInputProps> = ({
          newFiles = newFiles.slice(0, maxFiles - uploads.length);
       }
 
-      const newUploads = newFiles.map((file) => ({
-         file: new File([file], file.name),
+      const newUploads: UploadItem[] = newFiles.map((file, index) => ({
+         id: `new_${uploads.length + index}_${Date.now()}`,
          preview: URL.createObjectURL(file),
-         progress: 0
+         isExisting: false,
+         file,
+         progress: 0,
+         loaded: false
       }));
 
-      setUploads((prev) => [...prev, ...newUploads]);
-      setFieldValue(name, multiple ? [...uploads.map((u) => u.file), ...newUploads.map((u) => u.file)] : newUploads[0].file);
+      let updatedUploads: UploadItem[];
+      if (!multiple) {
+         // Limpiar URLs anteriores antes de reemplazar
+         uploads.forEach((item) => {
+            if (!item.isExisting && item.preview.startsWith("blob:")) {
+               URL.revokeObjectURL(item.preview);
+            }
+         });
+         updatedUploads = [...newUploads];
+      } else {
+         updatedUploads = [...uploads, ...newUploads];
+      }
 
-      // Simular progreso de carga
+      setUploads(updatedUploads);
+
+      const filesToSet: File[] = [];
+      updatedUploads.forEach((item) => {
+         if (!item.isExisting && item.file) {
+            filesToSet.push(item.file);
+         }
+      });
+
+      const existingUrls = updatedUploads.filter((item) => item.isExisting).map((item) => item.preview);
+
+      if (multiple) {
+         setFieldValue(name, filesToSet);
+         setFieldValue(`${name}_existing`, existingUrls);
+      } else {
+         const value = filesToSet.length > 0 ? filesToSet[0] : null;
+         setFieldValue(name, value);
+         setFieldValue(`${name}_existing`, existingUrls.length > 0 ? existingUrls[0] : "");
+      }
+
       newUploads.forEach((u) => {
          const interval = setInterval(() => {
-            setUploads((prev) => prev.map((p) => (p.preview === u.preview ? { ...p, progress: Math.min(p.progress + 10, 100) } : p)));
+            setUploads((prev) => prev.map((p) => (p.id === u.id ? { ...p, progress: Math.min(p.progress + 10, 100) } : p)));
          }, 100);
 
          setTimeout(() => clearInterval(interval), 1100);
       });
 
-      // Limpiar input
       if (fileInputRef.current) {
          fileInputRef.current.value = "";
       }
@@ -1031,124 +1129,210 @@ export const FormikImageInput: React.FC<FormikImageInputProps> = ({
    };
 
    const handleRemove = (index: number) => {
+      const uploadToRemove = uploads[index];
+
       const updatedUploads = uploads.filter((_, i) => i !== index);
       setUploads(updatedUploads);
-      setFieldValue(name, multiple ? updatedUploads.map((u) => u.file) : updatedUploads[0]?.file || null);
+
+      if (uploadToRemove.isExisting) {
+         setFieldValue(`${name}_delete`, true);
+      }
+
+      const filesToSet: File[] = [];
+      updatedUploads.forEach((item) => {
+         if (!item.isExisting && item.file) {
+            filesToSet.push(item.file);
+         }
+      });
+
+      const existingUrls = updatedUploads.filter((item) => item.isExisting).map((item) => item.preview);
+
+      if (multiple) {
+         setFieldValue(name, filesToSet);
+         setFieldValue(`${name}_existing`, existingUrls);
+      } else {
+         const value = filesToSet.length > 0 ? filesToSet[0] : null;
+         setFieldValue(name, value);
+         setFieldValue(`${name}_existing`, existingUrls.length > 0 ? existingUrls[0] : "");
+      }
+
+      if (!uploadToRemove.isExisting && uploadToRemove.preview.startsWith("blob:")) {
+         URL.revokeObjectURL(uploadToRemove.preview);
+      }
+
+      if (updatedUploads.length === 0) {
+         setFieldValue(`${name}_delete`, false);
+      }
    };
 
-   // CORRECCIÓN: Tipo correcto para capture
    const getCaptureAttribute = (): boolean | "user" | "environment" | undefined => {
       if (!isMobile || !useCamera) return undefined;
-      return "environment"; // Cámara trasera por defecto
+      return "environment";
    };
 
    const getInputAccept = () => {
       if (isMobile && useCamera) {
-         return "image/*;capture=camera";
+         return "image/*";
       }
       return acceptedFileTypes;
    };
 
    return (
-      <div className="relative w-full mb-5">
-         <label className="block mb-2 text-sm font-medium text-gray-600">{label}</label>
+      <div className="relative w-full mb-6">
+         <label className="block mb-3 text-base font-semibold text-gray-800">{label}</label>
 
-         {/* Switch para móviles */}
+         {/* Switch para móviles - Diseño moderno */}
          {isMobile && (
-            <div className="p-3 mb-4 border border-blue-200 rounded-lg bg-blue-50">
-               <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Modo de entrada:</span>
-                  <div className="flex items-center space-x-3">
+            <div className="relative p-4 mb-5 overflow-hidden border border-indigo-100 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 shadow-sm">
+               <div className="flex flex-col space-y-3">
+                  <span className="text-sm font-semibold text-gray-800">Modo de captura</span>
+                  <div className="flex gap-3">
                      <button
                         type="button"
                         onClick={() => setUseCamera(true)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                           useCamera ? "bg-blue-600 text-white shadow-md" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                           useCamera
+                              ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-lg shadow-indigo-200 scale-105"
+                              : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                         }`}
                      >
-                        📷 Tomar Foto
+                        <span className="text-lg">📷</span>
+                        <span>Cámara</span>
                      </button>
                      <button
                         type="button"
                         onClick={() => setUseCamera(false)}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                           !useCamera ? "bg-blue-600 text-white shadow-md" : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-300 ${
+                           !useCamera
+                              ? "bg-gradient-to-r from-indigo-600 to-blue-600 text-white shadow-lg shadow-indigo-200 scale-105"
+                              : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
                         }`}
                      >
-                        📁 Subir Imagen
+                        <span className="text-lg">🖼️</span>
+                        <span>Galería</span>
                      </button>
                   </div>
                </div>
-               <p className="mt-2 text-xs text-blue-600">
-                  {useCamera ? "Se abrirá la cámara para tomar una foto directamente" : "Se abrirá la galería para seleccionar una imagen existente"}
-               </p>
             </div>
          )}
 
          <div className="flex flex-wrap gap-4">
-            <AnimatePresence>
+            <AnimatePresence mode="popLayout">
                {uploads.map((upload, index) => (
                   <motion.div
-                     key={upload.preview + index}
-                     initial={{ opacity: 0, scale: 0.9 }}
-                     animate={{ opacity: 1, scale: 1 }}
-                     exit={{ opacity: 0, scale: 0.9 }}
-                     transition={{ duration: 0.2 }}
-                     className="relative w-32 h-32 overflow-hidden border border-gray-200 rounded-lg shadow-lg"
+                     key={upload.id}
+                     initial={{ opacity: 0, scale: 0.8, y: 20 }}
+                     animate={{ opacity: 1, scale: 1, y: 0 }}
+                     exit={{ opacity: 0, scale: 0.8, y: -20 }}
+                     transition={{ duration: 0.3, ease: "easeOut" }}
+                     className="relative w-36 h-36 overflow-hidden rounded-2xl shadow-lg group bg-gradient-to-br from-gray-100 to-gray-200"
                   >
-                     <img
-                        src={upload.preview}
-                        alt={`Preview ${index}`}
-                        className="object-cover w-full h-full transition-transform duration-300 cursor-pointer hover:scale-105"
-                        onClick={() => setPreviewModal(upload.preview)}
-                     />
+                     {/* Skeleton loader mientras carga */}
+                     {!upload.loaded && <div className="absolute inset-0 bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse" />}
 
+                     {/* Imagen */}
+                     <div className="relative w-full h-full">
+                        <img
+                           src={upload.preview}
+                           alt={`Preview ${index}`}
+                           className={`object-cover w-full h-full transition-all duration-500 cursor-pointer ${
+                              upload.loaded ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                           }`}
+                           onLoad={() => handleImageLoad(upload.id)}
+                           onClick={() => upload.loaded && setPreviewModal(upload.preview)}
+                           onError={(e) => {
+                              console.error("Error loading image:", upload.preview);
+                              handleImageLoad(upload.id);
+                              e.currentTarget.src =
+                                 "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Crect fill='%23f3f4f6' width='200' height='200'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='monospace' font-size='16' fill='%239ca3af'%3EError%3C/text%3E%3C/svg%3E";
+                           }}
+                        />
+
+                        {/* Overlay gradiente en hover */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+                        {/* Info en hover */}
+                        <div className="absolute bottom-0 left-0 right-0 p-3 text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                           <p className="text-xs font-semibold">{upload.isExisting ? "Imagen guardada" : "Nueva imagen"}</p>
+                           <p className="text-[10px] opacity-80">Click para ampliar</p>
+                        </div>
+                     </div>
+
+                     {/* Indicador de progreso */}
                      {upload.progress < 100 && (
-                        <div className="absolute inset-0 flex items-center justify-center font-semibold text-white bg-black bg-opacity-30">{upload.progress}%</div>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
+                           <div className="w-16 h-16 border-4 border-white/30 border-t-white rounded-full animate-spin mb-2" />
+                           <span className="text-white font-bold text-sm">{upload.progress}%</span>
+                        </div>
                      )}
 
-                     {/* Botones de acciones */}
-                     <div className="absolute flex space-x-1 top-1 right-1">
-                        <button type="button" onClick={() => handleRemove(index)} className="p-1 text-white bg-red-500 rounded-full shadow-md hover:bg-red-600">
-                           <AiOutlineClose size={16} />
-                        </button>
-                        <button
-                           type="button"
-                           onClick={() => setPreviewModal(upload.preview)}
-                           className="p-1 text-white bg-blue-500 rounded-full shadow-md hover:bg-blue-600"
-                        >
-                           <AiOutlineEye size={16} />
-                        </button>
-                     </div>
+                     {/* Badge de imagen existente */}
+                     {upload.isExisting && upload.loaded && (
+                        <div className="absolute top-2 left-2 px-2.5 py-1 text-[10px] font-bold text-white bg-gradient-to-r from-emerald-500 to-green-500 rounded-full shadow-lg flex items-center gap-1">
+                           <span>✓</span>
+                           <span>Guardada</span>
+                        </div>
+                     )}
+
+                     {/* Botones de acciones - Diseño moderno flotante */}
+                     {upload.loaded && (
+                        <div className="absolute flex gap-2 top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                           <button
+                              type="button"
+                              onClick={(e) => {
+                                 e.stopPropagation();
+                                 setPreviewModal(upload.preview);
+                              }}
+                              className="p-2 text-white bg-blue-600 rounded-xl shadow-lg hover:bg-blue-700 hover:scale-110 transition-all backdrop-blur-sm"
+                              title="Ver imagen"
+                           >
+                              <AiOutlineEye size={16} />
+                           </button>
+                           <button
+                              type="button"
+                              onClick={(e) => {
+                                 e.stopPropagation();
+                                 handleRemove(index);
+                              }}
+                              className="p-2 text-white bg-red-600 rounded-xl shadow-lg hover:bg-red-700 hover:scale-110 transition-all backdrop-blur-sm"
+                              title="Eliminar"
+                           >
+                              <AiOutlineClose size={16} />
+                           </button>
+                        </div>
+                     )}
                   </motion.div>
                ))}
             </AnimatePresence>
 
-            {!disabled && uploads.length < maxFiles && (
-               <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="relative">
+            {/* Botón para agregar imágenes - Diseño moderno */}
+            {!disabled && (multiple || uploads.length === 0) && (
+               <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.1 }} className="relative">
                   <div
-                     className="flex flex-col items-center justify-center w-32 h-32 transition-colors duration-300 border-4 border-gray-300 border-dashed rounded-lg cursor-pointer hover:bg-gray-100"
+                     className="flex flex-col items-center justify-center w-36 h-36 transition-all duration-300 border-2 border-dashed border-gray-300 rounded-2xl cursor-pointer hover:border-indigo-500 hover:bg-gradient-to-br hover:from-indigo-50 hover:to-blue-50 hover:shadow-lg hover:scale-105 group bg-gray-50"
                      onClick={handleImageClick}
                   >
-                     {isMobile ? (
-                        <>
-                           <div className="mb-2 text-2xl">{useCamera ? "📷" : "📁"}</div>
-                           <span className="px-2 text-xs text-center text-gray-600">{useCamera ? "Tomar Foto" : "Subir Imagen"}</span>
-                        </>
-                     ) : (
-                        <>
-                           <AiOutlineCamera className="mb-2 text-3xl text-gray-500" />
-                           <span className="text-xs text-gray-600">Subir Imagen</span>
-                        </>
-                     )}
-                  </div>
-
-                  {/* Indicador del modo actual para móviles */}
-                  {isMobile && (
-                     <div className="absolute flex items-center justify-center w-6 h-6 text-xs text-white bg-blue-500 rounded-full -top-2 -right-2">
-                        {useCamera ? "📷" : "📁"}
+                     <div className="flex flex-col items-center">
+                        {isMobile ? (
+                           <>
+                              <div className="mb-2 text-4xl transform group-hover:scale-110 transition-transform duration-300">{useCamera ? "📷" : "🖼️"}</div>
+                              <span className="text-xs font-semibold text-gray-600 group-hover:text-indigo-600 transition-colors">
+                                 {uploads.length === 0 ? (useCamera ? "Tomar foto" : "Subir imagen") : "Agregar más"}
+                              </span>
+                           </>
+                        ) : (
+                           <>
+                              <div className="mb-3 p-3 bg-gradient-to-br from-indigo-100 to-blue-100 rounded-2xl group-hover:from-indigo-200 group-hover:to-blue-200 transition-all">
+                                 <AiOutlineCamera className="text-3xl text-indigo-600" />
+                              </div>
+                              <span className="text-xs font-semibold text-gray-600 group-hover:text-indigo-600 transition-colors">
+                                 {uploads.length === 0 ? "Subir imagen" : "Agregar más"}
+                              </span>
+                           </>
+                        )}
+                        {!multiple && uploads.length > 0 && <span className="mt-1 text-[10px] text-gray-400">(Reemplazar)</span>}
                      </div>
-                  )}
+                  </div>
                </motion.div>
             )}
          </div>
@@ -1165,42 +1349,77 @@ export const FormikImageInput: React.FC<FormikImageInputProps> = ({
             capture={getCaptureAttribute()}
          />
 
+         {/* Error message */}
          {touched && errors && (touched as Record<string, any>)[name] && (errors as Record<string, any>)[name] && (
-            <div className="mt-2 text-sm font-semibold text-red-600">{(errors as Record<string, any>)[name]}</div>
+            <motion.div
+               initial={{ opacity: 0, y: -10 }}
+               animate={{ opacity: 1, y: 0 }}
+               className="mt-3 px-4 py-2 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-xl"
+            >
+               {(errors as Record<string, any>)[name]}
+            </motion.div>
          )}
 
-         <div className="mt-2 space-y-1">
-            <span className="block text-xs text-gray-500">{`Formatos aceptados: ${acceptedFileTypes.replace("image/", "").split(",").join(", ")}`}</span>
+         {/* Info adicional */}
+         <div className="mt-4 space-y-2 p-3 bg-gray-50 rounded-xl border border-gray-100">
+            <div className="flex items-start gap-2 text-xs text-gray-600">
+               <span className="text-sm">ℹ️</span>
+               <span>Formatos: {acceptedFileTypes.replace("image/", "").split(",").join(", ")}</span>
+            </div>
             {multiple && maxFiles && (
-               <span className="block text-xs text-gray-500">{`Máximo de imágenes: ${maxFiles} (${uploads.length}/${maxFiles} utilizadas)`}</span>
+               <div className="flex items-start gap-2 text-xs text-gray-600">
+                  <span className="text-sm">📊</span>
+                  <span>
+                     Imágenes: {uploads.length}/{maxFiles}
+                  </span>
+               </div>
             )}
-            {isMobile && (
-               <span className="block text-xs text-blue-600">
-                  {useCamera ? "✅ Modo cámara: Toma fotos directamente" : "✅ Modo galería: Selecciona imágenes existentes"}
-               </span>
+            {uploads.some((u) => u.isExisting) && (
+               <div className="flex items-start gap-2 text-xs text-emerald-600 font-medium">
+                  <span className="text-sm">✅</span>
+                  <span>{uploads.filter((u) => u.isExisting).length} imagen(es) guardada(s)</span>
+               </div>
             )}
          </div>
 
-         {/* Modal de previsualización */}
-         {previewModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-70" onClick={() => setPreviewModal(null)}>
+         {/* Modal de previsualización - Diseño moderno */}
+         <AnimatePresence>
+            {previewModal && (
                <motion.div
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="relative max-w-4xl max-h-full p-4"
-                  onClick={(e) => e.stopPropagation()}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
+                  onClick={() => setPreviewModal(null)}
                >
-                  <img src={previewModal} alt="Preview large" className="object-contain max-w-full max-h-full rounded-lg shadow-2xl" />
-                  <button
-                     onClick={() => setPreviewModal(null)}
-                     className="absolute p-2 text-white transition bg-gray-800 bg-opacity-50 rounded-full top-4 right-4 hover:bg-opacity-80"
+                  <motion.div
+                     initial={{ opacity: 0, scale: 0.9, y: 20 }}
+                     animate={{ opacity: 1, scale: 1, y: 0 }}
+                     exit={{ opacity: 0, scale: 0.9, y: 20 }}
+                     transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                     className="relative max-w-5xl max-h-[90vh] w-full"
+                     onClick={(e) => e.stopPropagation()}
                   >
-                     ✕
-                  </button>
+                     <img
+                        src={previewModal}
+                        alt="Vista previa"
+                        className="object-contain w-full h-full rounded-2xl shadow-2xl"
+                        onError={(e) => {
+                           console.error("Error loading modal image:", previewModal);
+                           e.currentTarget.src =
+                              "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='400' height='300'%3E%3Crect fill='%23f3f4f6' width='400' height='300'/%3E%3Ctext x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='20' fill='%239ca3af'%3EError al cargar imagen%3C/text%3E%3C/svg%3E";
+                        }}
+                     />
+                     <button
+                        onClick={() => setPreviewModal(null)}
+                        className="absolute p-3 text-white transition-all bg-red-600 rounded-full shadow-xl -top-4 -right-4 hover:bg-red-700 hover:scale-110"
+                     >
+                        <AiOutlineClose size={20} />
+                     </button>
+                  </motion.div>
                </motion.div>
-            </div>
-         )}
+            )}
+         </AnimatePresence>
       </div>
    );
 };

@@ -3,49 +3,60 @@ import { usePenaltiesStore } from "../../../../store/penalties/penalties.store";
 import { PenaltiesApi } from "../../../../infrastructure/penalties/penalties.infra";
 import AdvancedAnalyticsDashboard from "../../../components/dashboard/dashboard";
 const PENALTIES_DICTIONARY = {
-   // IDs y fechas
    id: "Folio",
    time: "Hora",
-   // date: "Fecha",
+   date: "Fecha de creación",
    has_history: "Tiene Historial",
 
-   // Paso 1 - Información del operativo
+   // lat: "Latitud",
+   // lon: "Longitud",
+   cp: "Código Postal",
+   city: "Ciudad",
+
    person_contraloria: "Persona de Contraloría",
    oficial_payroll: "Nómina del Oficial",
    person_oficial: "Persona Oficial",
    vehicle_service_type: "Tipo de Servicio del Vehículo",
-   alcohol_concentration: "Concentración de Alcohol",
-   group: "Grupo",
-   detainee_released_to: "Detenido Liberado a",
+   vehicle_brand: "Marca del Vehículo",
 
-   // Paso 2 - Autoridades participantes
+   alcohol_concentration: "Grado de Alcohol",
+   amountAlcohol: "Cantidad de Alcohol",
+   number_of_passengers: "Número de Pasajeros",
+
+   detainee_released_to: "Detenido Liberado a",
+   detainee_phone_number: "Teléfono del Detenido",
+   // curp: "CURP",
+
    municipal_police: "Policía Municipal",
    civil_protection: "Protección Civil",
 
-   // Paso 3 - Comando y supervisión
    command_vehicle: "Vehículo de Comando",
    command_troops: "Tropas de Comando",
    command_details: "Detalles del Comando",
    filter_supervisor: "Supervisor de Filtro",
 
-   // Paso 4 - Información del infractor
-   name: "Nombre",
-   cp: "Código Postal",
-   city: "Ciudad",
-   age: "Edad",
-   amountAlcohol: "Cantidad de Alcohol",
-   number_of_passengers: "Número de Pasajeros",
-   plate_number: "Número de Placa",
-   detainee_phone_number: "Teléfono del Detenido",
-   curp: "CURP",
+   detention_reason: "Motivo de Detención",
+   fine_amount: "Monto de la Multa",
+   exit_reason: "Motivo de Salida",
+   patrol_unit_number: "Número de Unidad",
+
+   image_penaltie: "Imagen de la Infracción",
+   images_evidences: "Evidencias",
+   images_evidences_car: "Evidencias del Vehículo",
+
+   doctor: "Doctor",
+   cedula: "Cédula Profesional",
+
    observations: "Observaciones",
+   finish: "Finalizado",
+   // active: "Activo",
 
-   // Paso 5 - Evidencias
-
-   // Campos adicionales comunes
-   created_at: "Fecha de creación",
-   created_by: "Creado Por"
+   // created_at: "Fecha de Creación",
+   // updated_at: "Última Actualización",
+   created_by: "Creado Por",
+   created_by_name: "Nombre del Creador"
 };
+
 
 // También puedes crear un tipo para las opciones del diccionario
 export type PenaltiesField = keyof typeof PENALTIES_DICTIONARY;

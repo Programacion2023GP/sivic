@@ -1,27 +1,53 @@
 import { memo, useMemo } from "react";
 import { useFormikContext } from "formik";
+type section = "penaltie" | "traffic" | "securrity" | "courts" | "general";
+import { getIn } from "formik";
 
 interface StepperProps {
+   section: section;
    steps: string[];
    activeStep: number;
    setActiveStep: (i: number) => void;
 }
 
-const PenaltiesStepper = memo(({ steps, activeStep, setActiveStep }: StepperProps) => {
+const PenaltiesStepper = ({ section,steps, activeStep, setActiveStep }: StepperProps) => {
    const { errors, touched } = useFormikContext<any>();
+const stepFields: Record<string, Record<number, string[]>> = {
+   penaltie: {
+      0: ["init_date", "final_date"],
+      1: ["time", "date", "person_oficial", "alcohol_concentration"],
+      2: ["name", "cp", "city"]
+   },
+   traffic: {
+      0: ["date", "time"],
+      1: ["age", "vehicle_brand", "name", "plate_number", "time", "municipal_police"],
+      2: ["name", "city", "image_penaltie"]
+   },
+   securrity: {
+      0: ["init_date", "final_date"],
+      1: ["detention_reason", "patrol_unit_number"],
+      2: ["name", "cp", "city"]
+   },
+   courts: {
+      0: ["init_date", "final_date"],
+      1: ["exit_reason", "fine_amount", "person_oficial", "alcohol_concentration"],
+      2: ["name", "cp", "city"]
+   }
+};
 
-   const hasStepError = useMemo(() => {
-      const stepFields: Record<number, string[]> = {
-         0: ["init_date", "final_date"],
-         1: ["time", "date", "person_oficial", "alcohol_concentration"],
-         2: ["name", "cp", "city"]
-      };
+const hasStepError = useMemo(() => {
+   return (stepIndex: number) => {
+      const fields = stepFields[section]?.[stepIndex] ?? [];
 
-      return (stepIndex: number) => {
-         const fields = stepFields[stepIndex] || [];
-         return fields.some((field) => touched[field] && errors[field]);
-      };
-   }, [errors, touched]);
+      return fields.some((field) => {
+         const fieldTouched = getIn(touched, field);
+         const fieldError = getIn(errors, field);
+         return Boolean(fieldError && fieldTouched);
+      });
+   };
+}, [section, errors, touched, stepFields]);
+
+
 
    return (
       <div className="w-full p-4 mb-6 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl">
@@ -81,7 +107,7 @@ const PenaltiesStepper = memo(({ steps, activeStep, setActiveStep }: StepperProp
          </div>
       </div>
    );
-});
+};
 
 PenaltiesStepper.displayName = "PenaltiesStepper";
 

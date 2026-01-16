@@ -140,6 +140,7 @@ export const useUsersState = create<UsersState>((set, get) => ({
             localStorage.setItem("permisos", JSON.stringify((data.data as any).permisos));
             localStorage.setItem("name", (data.data as any).user.fullName);
             localStorage.setItem("auth_id", (data.data as any).user.id);
+            
              for (const module of MODULE_ORDER) {
                 if ((data.data as any).permisos.includes(module.permission)) {
                    window.location.href = module.route;

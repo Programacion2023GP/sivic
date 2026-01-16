@@ -54,6 +54,13 @@ export const userMovilView: DataDisplayConfig = {
          type: "number",
          icon: <FiUser className="text-green-600 text-lg" />,
          color: "bg-green-50 border border-green-100"
+      },
+       {
+         key: "departament",
+         label: "Departamento",
+         type: "text",
+         icon: <FiUser className="text-green-600 text-lg" />,
+         color: "bg-green-50 border border-green-100"
       }
    ],
 
@@ -61,7 +68,7 @@ export const userMovilView: DataDisplayConfig = {
       {
          title: "Detalles de la persona",
          icon: <FiFileText className="text-gray-600" />,
-         fields: ["id", "firstName", "paternalSurname", "maternalSurname", "fullName", "role"]
+         fields: ["id", "firstName", "paternalSurname", "maternalSurname", "fullName", "role","departament"]
       }
    ]
 };

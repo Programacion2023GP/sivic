@@ -244,7 +244,17 @@ export default function MultaPDF({ data }: { data: any }) {
       ),
       [data.municipal_police, data.civil_protection, data.command_vehicle, data.command_troops]
    );
-
+const exitDataSection = useMemo(
+   () => (
+      <Section title="Liberación">
+         <TwoCols>
+            <InfoField label="Monto de la multa" value={safeValue(data.fine_amount)} compact />
+            <InfoField label="Motivo de la salida" value={safeValue(data.exit_reason)} compact />
+         </TwoCols>
+      </Section>
+   ),
+   [data.fine_amount, data.exit_reason]
+);
    return (
       <Document>
          <Page size="A4" style={tw("px-6 py-4 font-sans bg-white relative")}>
@@ -266,7 +276,7 @@ export default function MultaPDF({ data }: { data: any }) {
             {personalInfo}
             {operationalData}
             {resourcesData}
-
+            {exitDataSection}
             {/* Footer más pequeño */}
             <View style={footerStyle}>
                <Image src={Greca} style={grecaStyle} />

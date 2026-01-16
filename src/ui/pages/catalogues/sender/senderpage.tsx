@@ -3,7 +3,7 @@ import { CustomButton } from "../../../components/button/custombuttom";
 import CompositePage from "../../../components/compositecustoms/compositePage";
 import CustomTable from "../../../components/table/customtable";
 import FormikForm from "../../../formik/Formik";
-import { FormikInput } from "../../../formik/FormikInputs/FormikInput";
+import {  FormikInput } from "../../../formik/FormikInputs/FormikInput";
 import { CiEdit } from "react-icons/ci";
 import { VscDiffAdded } from "react-icons/vsc";
 import { FaPlus, FaTrash } from "react-icons/fa";
@@ -19,27 +19,26 @@ import { FiEdit, FiTrash2 } from "react-icons/fi";
 import CustomDataDisplay from "../../../components/movil/view/customviewmovil";
 import { senderMovilView } from "./infomovilsender";
 import { FloatingActionButton } from "../../../components/movil/button/custombuttommovil";
-import { causeOfDetention } from "../../../../domain/models/causeofdetention/cause_of_detention";
 
-const PageCauseOfDetention = () => {
-   const useSenders = useMemo(
-      () =>
-         useGenericStore<causeOfDetention>({
-            id: 0,
-            name: "",
-            active: true
-         }),
-      []
-   );
-   const { fetchData, items, loading, setPrefix, request, open, setOpen, initialValues, postItem, removeItemData, handleChangeItem } = useSenders();
+const PageSender = () => {
+      const useSenders = useMemo(
+          () =>
+             useGenericStore<Senders>({
+                id: 0,
+                name:"",
+                active:true
+             }),
+          []
+       );
+   const { fetchData, items, loading, setPrefix, request,open,setOpen,initialValues,postItem,removeItemData,handleChangeItem } = useSenders();
 
-   const CauseApi = new GenericApi<causeOfDetention>();
+   const SendersApi = new GenericApi<Senders>();
    useEffect(() => {
-      setPrefix("causeOfDetention");
-      fetchData(CauseApi);
+      setPrefix("sender");
+      fetchData(SendersApi);
    }, []);
    const validationSchema = Yup.object({
-      name: Yup.string().required("Motivo de detención es requerido")
+      name: Yup.string().required("remitente es requerido"),
    });
    const responsive = {
       "2xl": 12,
@@ -48,13 +47,14 @@ const PageCauseOfDetention = () => {
       md: 12,
       sm: 12
    };
-
+ 
+ 
    return (
       <CompositePage
          formDirection="modal"
          onClose={setOpen}
          isOpen={open}
-         modalTitle="Motivo de detención"
+         modalTitle="Remitente"
          // tableDirection="izq"
          form={() => (
             <div className="pt-4">
@@ -69,27 +69,27 @@ const PageCauseOfDetention = () => {
                      </>
                   )}
                   onSubmit={(values) => {
-                     postItem(values as causeOfDetention, CauseApi);
+                     postItem(values as Senders, SendersApi);
                   }}
                />
             </div>
          )}
          table={() => (
             <>
-               <div className="absolute z-20 right-2 bottom-2">
-                  <FloatingActionButton
-                     onClick={() => {
-                        setOpen();
-                     }}
-                     icon={<FaPlus />}
-                     color="primary"
-                     size="normal"
-                  />
-               </div>
+            <div className="absolute z-20 right-2 bottom-2">
+                              <FloatingActionButton
+                                 onClick={() => {
+                                    setOpen();
+                                 }}
+                                 icon={<FaPlus />}
+                                 color="primary"
+                                 size="normal"
+                              />
+                           </div>
                <CustomTable
                   headerActions={() => (
                      <>
-                        <PermissionRoute requiredPermission={"catalogo_motivo_detencion_crear"}>
+                        <PermissionRoute requiredPermission={"catalogo_remitente_crear"}>
                            <CustomButton onClick={setOpen}>
                               {" "}
                               <VscDiffAdded />
@@ -99,7 +99,7 @@ const PageCauseOfDetention = () => {
                         <CustomButton
                            color="purple"
                            onClick={() => {
-                              fetchData(CauseApi);
+                              fetchData(SendersApi);
                            }}
                         >
                            {" "}
@@ -109,7 +109,7 @@ const PageCauseOfDetention = () => {
                   )}
                   data={items}
                   paginate={[10, 25, 50]}
-                  conditionExcel={"catalogo_motivo_detencion_exportar"}
+                  conditionExcel={"catalogo_remitente_exportar"}
                   loading={loading}
                   columns={[
                      {
@@ -119,7 +119,7 @@ const PageCauseOfDetention = () => {
                   ]}
                   actions={(row) => (
                      <>
-                        <PermissionRoute requiredPermission={"catalogo_motivo_detencion_actualizar"}>
+                        <PermissionRoute requiredPermission={"catalogo_remitente_actualizar"}>
                            <CustomButton
                               size="sm"
                               color="yellow"
@@ -132,14 +132,14 @@ const PageCauseOfDetention = () => {
                               <CiEdit />
                            </CustomButton>
                         </PermissionRoute>
-                        <PermissionRoute requiredPermission={"catalogo_motivo_detencion_eliminar"}>
+                        <PermissionRoute requiredPermission={"catalogo_remitente_eliminar"}>
                            <CustomButton
                               size="sm"
                               color="red"
                               onClick={() => {
-                                 showConfirmationAlert(`Eliminar `, { text: "Se eliminara el motivo de detención" }).then((isConfirmed) => {
+                                 showConfirmationAlert(`Eliminar `, { text: "Se eliminara el remitente" }).then((isConfirmed) => {
                                     if (isConfirmed) {
-                                       removeItemData(row, CauseApi);
+                                       removeItemData(row, SendersApi);
                                     } else {
                                        showToast("La acción fue cancelada.", "error");
                                     }
@@ -167,15 +167,15 @@ const PageCauseOfDetention = () => {
                               icon: <FiTrash2 size={18} />,
                               color: "bg-red-500",
                               action: (row) => {
-                                 showConfirmationAlert(`Eliminar`, { text: "Se eliminará el motivo de detención" }).then((isConfirmed) => {
+                                 showConfirmationAlert(`Eliminar`, { text: "Se eliminará el remitente" }).then((isConfirmed) => {
                                     if (isConfirmed) {
-                                       removeItemData(row, CauseApi);
+                                       removeItemData(row, SendersApi);
                                     } else {
                                        showToast("La acción fue cancelada.", "error");
                                     }
                                  });
                               },
-                              hasPermission: "catalogo_motivo_detencion_eliminar"
+                              hasPermission: "catalogo_remitente_eliminar"
                            }
                         ],
                         right: [
@@ -183,10 +183,10 @@ const PageCauseOfDetention = () => {
                               icon: <FiEdit size={18} />,
                               color: "bg-blue-500",
                               action: (row) => {
-                                 setOpen();
+                                  setOpen();
                                  handleChangeItem(row);
                               },
-                              hasPermission: "catalogo_motivo_detencion_actualizar"
+                              hasPermission: "catalogo_remitente_actualizar"
                            }
                         ]
                      },
@@ -203,4 +203,4 @@ const PageCauseOfDetention = () => {
    );
 };
 
-export default PageCauseOfDetention;
+export default PageSender;

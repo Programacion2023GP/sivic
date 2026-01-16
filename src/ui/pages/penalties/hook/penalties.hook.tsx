@@ -109,7 +109,21 @@ export const usePenaltiesHandlers = (
          if (probality?.similarity > 50) {
             showConfirmationAlert(``, {
                html: `
-                  <div class="p-4 text-center">
+      ${
+         probality.item.image_penaltie || probality.item.images_evidences_car
+            ? `
+      <div class="p-4 text-center">
+        <img 
+          src="${probality.item.image_penaltie ?? probality.item.images_evidences_car}"
+          alt="Evidencia"
+          class="w-full h-48 object-cover rounded-lg"
+        />
+      </div>
+    `
+            : ""
+      }
+
+
                      <!-- Icono de residencia -->
                      <div class="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
                         <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,6 +184,7 @@ export const usePenaltiesHandlers = (
                      duplicate: false,
                      value: null
                   });
+                  formikRef.current.setFieldValue("residence_folio", null);
 
                   showToast("Registro de residencia cancelado.", "error");
                }

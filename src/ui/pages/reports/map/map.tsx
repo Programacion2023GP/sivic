@@ -67,22 +67,22 @@ const PageReportMap = () => {
          return;
       }
 
-      // Formatear selectedDate a YYYY-MM-DD en zona local
-      const nextDate = new Date(selectedDate);
-      nextDate.setDate(nextDate.getDate() + 1);
+      // Formatear selectedDate a YYYY-MM-DD en zona local (sin hora)
+      const formatDateToLocalYYYYMMDD = (date: Date) => {
+         const year = date.getFullYear();
+         const month = String(date.getMonth() + 1).padStart(2, "0");
+         const day = String(date.getDate()).padStart(2, "0");
+         return `${year}-${month}-${day}`;
+      };
 
-      const year = nextDate.getFullYear();
-      const month = String(nextDate.getMonth() + 1).padStart(2, "0");
-      const day = String(nextDate.getDate()).padStart(2, "0");
-      const selectedDateStr = `${year}-${month}-${day}`;
-
-      console.log("Fecha original:", selectedDate);
-      console.log("Fecha +1 día:", selectedDateStr);
+      const selectedDateStr = formatDateToLocalYYYYMMDD(selectedDate);
 
       const filtered = limitedPenalties.filter((p) => {
-         console.log(p.id, p.date, selectedDateStr, p.date == selectedDateStr);
-         return p.date == selectedDateStr;
+         // Comparar solo la parte de fecha (sin hora)
+         const penaltyDate = p.date ? p.date.split("T")[0] : "";
+         return penaltyDate === selectedDateStr;
       });
+
       setFilteredPenalties(filtered);
    }, [selectedDate, limitedPenalties]);
 
@@ -106,13 +106,19 @@ const PageReportMap = () => {
                   className={`px-3 py-2 rounded-xl border shadow-sm text-gray-700 
                      focus:ring-2 focus:ring-cyan-500 focus:outline-none
                      ${selectedDate === "ALL" ? "bg-gray-200 cursor-not-allowed" : ""}`}
-                  value={selectedDate && selectedDate !== "ALL" ? selectedDate.toISOString().split("T")[0] : ""}
+                  value={selectedDate && selectedDate !== "ALL" ? formatDateToInputValue(selectedDate) : ""}
                   onChange={(e) => {
                      if (!e.target.value) {
                         setSelectedDate(null);
                         return;
                      }
-                     setSelectedDate(new Date(e.target.value));
+                     // Crear fecha en zona local (no UTC)
+                     const dateString = e.target.value; // Formato YYYY-MM-DD
+                     const [year, month, day] = dateString.split("-").map(Number);
+
+                     // Crear fecha en hora local, sin ajustes de zona horaria
+                     const localDate = new Date(year, month - 1, day);
+                     setSelectedDate(localDate);
                   }}
                />
             </div>
@@ -121,7 +127,12 @@ const PageReportMap = () => {
             <button
                className="px-4 h-10 mt-6 rounded-xl shadow bg-cyan-600 hover:bg-cyan-700 
                           text-white font-medium"
-               onClick={() => setSelectedDate(today)}
+               onClick={() => {
+                  // Establecer la fecha de hoy a medianoche en hora local
+                  const now = new Date();
+                  const todayAtMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                  setSelectedDate(todayAtMidnight);
+               }}
             >
                Hoy
             </button>
@@ -166,6 +177,14 @@ const PageReportMap = () => {
          </CustomModal>
       </>
    );
+};
+
+// Función auxiliar para formatear fecha a valor de input
+const formatDateToInputValue = (date: Date): string => {
+   const year = date.getFullYear();
+   const month = String(date.getMonth() + 1).padStart(2, "0");
+   const day = String(date.getDate()).padStart(2, "0");
+   return `${year}-${month}-${day}`;
 };
 
 export default PageReportMap;

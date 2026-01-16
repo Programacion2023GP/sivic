@@ -5,12 +5,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useUsersState } from "../../../store/storeusers/users.store";
 import { ApiUsers } from "../../../infrastructure/infrastructureusers/inftrastructureusers";
 import Spinner from "../../components/loading/loading";
+import { useNavigate } from "react-router-dom";
 
 const PageLoginMorena = () => {
    const { login, loading } = useUsersState();
+   const [starting,setStarting] = useState<boolean>(true);
    const api = new ApiUsers();
    const [isMobile, setIsMobile] = useState(false);
-
+   const navigate = useNavigate()
    useEffect(() => {
       const checkMobile = () => {
          setIsMobile(window.innerWidth < 768);
@@ -18,7 +20,7 @@ const PageLoginMorena = () => {
 
       checkMobile();
       window.addEventListener("resize", checkMobile);
-
+      
       return () => window.removeEventListener("resize", checkMobile);
    }, []);
 

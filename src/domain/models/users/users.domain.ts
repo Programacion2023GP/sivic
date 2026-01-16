@@ -1,15 +1,16 @@
 export interface Users {
    id: number;
-   role:string,
+   role: string;
    firstName: string;
    paternalSurname: string;
    maternalSurname: string;
    fullName: string;
    password: string;
-   dependence_id:number  | null;
+   dependence_id: number | null;
    active: boolean;
    payroll: number;
    permissions: number[];
+   departament?:string;
 }     
 export type Result<T> =
   | { ok: true; data: T,message:string }

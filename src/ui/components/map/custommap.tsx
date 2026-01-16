@@ -37,7 +37,9 @@ interface Penalty {
    vehicleType?: string;
    licensePlate?: string;
    officer?: string;
-   status?: "pending" | "processed" | "appealed";
+   current_process_id: number;
+   finish: number; // 0 = en proceso, 1 = finalizado
+   [key: string]: any;
 }
 
 interface LocationGroup {
@@ -50,10 +52,13 @@ interface LocationGroup {
    };
    stats: {
       total: number;
-      highRisk: number;
-      mediumRisk: number;
-      lowRisk: number;
-      avgAlcohol: number;
+      contraloria: number;
+      transito: number;
+      seguridad: number;
+      juzgados: number;
+      desconocido: number;
+      enProceso: number;
+      finalizados: number;
    };
 }
 
@@ -61,6 +66,72 @@ interface CustomMapProps {
    penaltiesData: Penalty[];
    onCaseSelect?: (penalty: Penalty) => void;
 }
+
+// Función para determinar el nivel basado en current_process_id
+const getRiskLevel = (current_process_id: number, finish?: number) => {
+   let baseConfig;
+
+   if (current_process_id === 1)
+      baseConfig = {
+         level: "Contraloría",
+         color: "red",
+         bgColor: "bg-red-500/20",
+         textColor: "text-red-400",
+         markerColor: "#ef4444",
+         gradientColor: "#fca5a5" // Rojo claro para gradiente
+      };
+   else if (current_process_id === 2)
+      baseConfig = {
+         level: "Tránsito y Vialidad",
+         color: "amber",
+         bgColor: "bg-amber-500/20",
+         textColor: "text-amber-400",
+         markerColor: "#f59e0b",
+         gradientColor: "#fde68a" // Ámbar claro para gradiente
+      };
+   else if (current_process_id === 3)
+      baseConfig = {
+         level: "Seguridad Pública",
+         color: "blue",
+         bgColor: "bg-blue-500/20",
+         textColor: "text-blue-400",
+         markerColor: "#3b82f6",
+         gradientColor: "#93c5fd" // Azul claro para gradiente
+      };
+   else if (current_process_id === 4)
+      baseConfig = {
+         level: "Juzgados",
+         color: "purple",
+         bgColor: "bg-purple-500/20",
+         textColor: "text-purple-400",
+         markerColor: "#8b5cf6",
+         gradientColor: "#c4b5fd" // Púrpura claro para gradiente
+      };
+   else
+      baseConfig = {
+         level: "Desconocido",
+         color: "gray",
+         bgColor: "bg-gray-500/20",
+         textColor: "text-gray-400",
+         markerColor: "#6b7280",
+         gradientColor: "#9ca3af" // Gris claro para gradiente
+      };
+
+   // Si está en proceso (finish === 0), añadimos indicador
+   if (finish === 0) {
+      return {
+         ...baseConfig,
+         level: `${baseConfig.level} (En proceso)`,
+         bgColor: `${baseConfig.bgColor} border border-dashed ${baseConfig.textColor.replace("text-", "border-")}`,
+         isInProcess: true
+      };
+   }
+
+   return {
+      ...baseConfig,
+      isInProcess: false
+   };
+};
 
 const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
    const [selectedLocation, setSelectedLocation] = useState<LocationGroup | null>(null);
@@ -100,10 +171,13 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
                center: { lat: penalty.lat, lon: penalty.lon },
                stats: {
                   total: 0,
-                  highRisk: 0,
-                  mediumRisk: 0,
-                  lowRisk: 0,
-                  avgAlcohol: 0
+                  contraloria: 0,
+                  transito: 0,
+                  seguridad: 0,
+                  juzgados: 0,
+                  desconocido: 0,
+                  enProceso: 0,
+                  finalizados: 0
                }
             };
          }
@@ -114,20 +188,20 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
       // Calcular estadísticas para cada grupo
       return Object.values(grouped).map((location) => {
          const penalties = location.penalties;
-         const highRisk = penalties.filter((p) => p.amountAlcohol > 3).length;
-         const mediumRisk = penalties.filter((p) => p.amountAlcohol >= 1 && p.amountAlcohol <= 3).length;
-         const lowRisk = penalties.filter((p) => p.amountAlcohol < 1).length;
-         const avgAlcohol = penalties.reduce((sum, p) => sum + p.amountAlcohol, 0) / penalties.length;
+         const stats = {
+            total: penalties.length,
+            contraloria: penalties.filter((p) => p.current_process_id === 1).length,
+            transito: penalties.filter((p) => p.current_process_id === 2).length,
+            seguridad: penalties.filter((p) => p.current_process_id === 3).length,
+            juzgados: penalties.filter((p) => p.current_process_id === 4).length,
+            desconocido: penalties.filter((p) => ![1, 2, 3, 4].includes(p.current_process_id)).length,
+            enProceso: penalties.filter((p) => p.finish === 0).length,
+            finalizados: penalties.filter((p) => p.finish === 1).length
+         };
 
          return {
             ...location,
-            stats: {
-               total: penalties.length,
-               highRisk,
-               mediumRisk,
-               lowRisk,
-               avgAlcohol: Number(avgAlcohol.toFixed(2))
-            }
+            stats
          };
       });
    }, [penaltiesData]);
@@ -142,6 +216,29 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
             location.penalties.some((p) => p.name.toLowerCase().includes(searchTerm.toLowerCase()) || p.id.includes(searchTerm))
       );
    }, [locationGroups, searchTerm]);
+
+   // Función para determinar el color del marcador basado en la distribución de procesos
+   const getLocationColor = (location: LocationGroup) => {
+      // Prioridad de colores según los procesos más importantes en la ubicación
+      if (location.stats.contraloria > 0) return "#ef4444"; // Rojo para Contraloría
+      if (location.stats.transito > 0) return "#f59e0b"; // Ámbar para Tránsito
+      if (location.stats.seguridad > 0) return "#3b82f6"; // Azul para Seguridad
+      if (location.stats.juzgados > 0) return "#8b5cf6"; // Púrpura para Juzgados
+      return "#10b981"; // Verde para otros casos
+   };
+
+   // Función para obtener el gradiente del marcador
+   const getMarkerGradient = (penalty: Penalty) => {
+      const risk = getRiskLevel(penalty.current_process_id, penalty.finish);
+
+      if (penalty.finish === 0) {
+         // En proceso: degradado del color principal al color claro
+         return `linear-gradient(135deg, ${risk.markerColor} 0%, ${risk.gradientColor || "#fbbf24"} 100%)`;
+      }
+
+      // Finalizado: color sólido
+      return risk.markerColor;
+   };
 
    // Mover el mapa a una ubicación específica
    const flyToLocation = useCallback((location: LocationGroup) => {
@@ -193,19 +290,6 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
    const handleCloseMobilePanel = () => {
       setMobilePanelOpen(false);
       setSelectedLocation(null);
-   };
-
-   // Función para determinar el color basado en el nivel máximo de alcohol en un grupo
-   const getLocationColor = (location: LocationGroup) => {
-      if (location.stats.highRisk > 0) return "#ef4444";
-      if (location.stats.mediumRisk > 0) return "#f59e0b";
-      return "#10b981";
-   };
-
-   const getRiskLevel = (alcohol: number) => {
-      if (alcohol > 3) return { level: "Alto", color: "red", bgColor: "bg-red-500/20", textColor: "text-red-300" };
-      if (alcohol >= 1) return { level: "Medio", color: "yellow", bgColor: "bg-yellow-500/20", textColor: "text-yellow-300" };
-      return { level: "Bajo", color: "green", bgColor: "bg-green-500/20", textColor: "text-green-300" };
    };
 
    // Navegación entre casos en la misma ubicación
@@ -305,28 +389,37 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
                               </button>
                            </div>
 
-                           <div className="grid grid-cols-2 gap-3 mb-3">
+                           <div className="grid grid-cols-3 gap-3 mb-3">
                               <div className="bg-gray-800/50 rounded-lg p-3 text-center">
                                  <div className="text-2xl font-bold text-white">{selectedLocation.stats.total}</div>
                                  <div className="text-xs text-gray-400">Total Casos</div>
                               </div>
-                              <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                                 <div className="text-2xl font-bold text-red-400">{selectedLocation.stats.highRisk}</div>
-                                 <div className="text-xs text-gray-400">Alto Riesgo</div>
+                              <div className="bg-gradient-to-br from-red-500 to-yellow-500 rounded-lg p-3 text-center">
+                                 <div className="text-2xl font-bold text-white">{selectedLocation.stats.enProceso}</div>
+                                 <div className="text-xs text-gray-200">En Proceso</div>
                               </div>
                               <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                                 <div className="text-2xl font-bold text-yellow-400">{selectedLocation.stats.mediumRisk}</div>
-                                 <div className="text-xs text-gray-400">Medio Riesgo</div>
+                                 <div className="text-2xl font-bold text-green-400">{selectedLocation.stats.finalizados}</div>
+                                 <div className="text-xs text-gray-400">Finalizados</div>
                               </div>
-                              <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                                 <div className="text-2xl font-bold text-green-400">{selectedLocation.stats.lowRisk}</div>
-                                 <div className="text-xs text-gray-400">Bajo Riesgo</div>
+                              <div className="bg-red-500/20 rounded-lg p-3 text-center">
+                                 <div className="text-xl font-bold text-red-400">{selectedLocation.stats.contraloria}</div>
+                                 <div className="text-xs text-gray-400">Contraloría</div>
                               </div>
-                           </div>
-
-                           <div className="bg-gray-800/50 rounded-lg p-3 text-center">
-                              <div className="text-lg font-bold text-blue-400">{selectedLocation.stats.avgAlcohol} mg/L</div>
-                              <div className="text-xs text-gray-400">Promedio de Alcohol</div>
+                              <div className="bg-amber-500/20 rounded-lg p-3 text-center">
+                                 <div className="text-xl font-bold text-amber-400">{selectedLocation.stats.transito}</div>
+                                 <div className="text-xs text-gray-400">Tránsito</div>
+                              </div>
+                              <div className="bg-blue-500/20 rounded-lg p-3 text-center">
+                                 <div className="text-xl font-bold text-blue-400">{selectedLocation.stats.seguridad}</div>
+                                 <div className="text-xs text-gray-400">Seguridad</div>
+                              </div>
+                              {selectedLocation.stats.juzgados > 0 && (
+                                 <div className="bg-purple-500/20 rounded-lg p-3 text-center">
+                                    <div className="text-xl font-bold text-purple-400">{selectedLocation.stats.juzgados}</div>
+                                    <div className="text-xs text-gray-400">Juzgados</div>
+                                 </div>
+                              )}
                            </div>
                         </div>
 
@@ -337,12 +430,16 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
                            </h4>
                            <div className="space-y-3">
                               {selectedLocation.penalties.map((penalty) => {
-                                 const risk = getRiskLevel(penalty.amountAlcohol);
+                                 const risk = getRiskLevel(penalty.current_process_id, penalty.finish);
                                  return (
                                     <div
                                        key={penalty.id}
                                        onClick={() => openPenaltyModal(penalty)}
-                                       className="p-3 rounded-lg bg-gray-800/40 hover:bg-gray-700/60 cursor-pointer transition border border-gray-700"
+                                       className={`p-3 rounded-lg hover:bg-gray-700/60 cursor-pointer transition border ${
+                                          penalty.finish === 0
+                                             ? "border-dashed border-amber-500/50 bg-gradient-to-r from-gray-800/40 to-amber-500/10"
+                                             : "border-gray-700 bg-gray-800/40"
+                                       }`}
                                     >
                                        <div className="flex justify-between items-start mb-2">
                                           <div className="min-w-0 flex-1">
@@ -350,12 +447,22 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
                                              <div className="text-xs text-gray-400 truncate">{penalty.name}</div>
                                           </div>
                                           <div className={`px-2 py-1 rounded-full text-xs font-semibold ${risk.bgColor} ${risk.textColor} whitespace-nowrap ml-2`}>
-                                             {penalty.amountAlcohol} mg/L
+                                             {risk.level}
                                           </div>
                                        </div>
                                        <div className="flex items-center justify-between text-xs text-gray-400">
                                           <span>{penalty.date}</span>
                                           <span>{penalty.time}</span>
+                                       </div>
+                                       <div className="mt-2 flex items-center justify-between">
+                                          <div className="text-xs text-gray-500">Alcohol: {penalty.amountAlcohol} mg/L</div>
+                                          <div
+                                             className={`text-xs px-2 py-1 rounded-full ${
+                                                penalty.finish === 0 ? "bg-amber-500/20 text-amber-400" : "bg-green-500/20 text-green-400"
+                                             }`}
+                                          >
+                                             {penalty.finish === 0 ? "🔄 En proceso" : "✅ Finalizado"}
+                                          </div>
                                        </div>
                                     </div>
                                  );
@@ -389,10 +496,12 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
                                     </div>
                                     <div className="text-right flex-shrink-0 ml-2">
                                        <div className="text-sm font-semibold text-blue-300 whitespace-nowrap">{location.stats.total} casos</div>
-                                       <div className="text-xs text-gray-400 whitespace-nowrap">
-                                          {location.stats.highRisk > 0 && <span className="text-red-400">{location.stats.highRisk} alto</span>}
-                                          {location.stats.highRisk > 0 && location.stats.mediumRisk > 0 && " • "}
-                                          {location.stats.mediumRisk > 0 && <span className="text-yellow-400">{location.stats.mediumRisk} medio</span>}
+                                       <div className="text-xs text-gray-400 whitespace-nowrap flex flex-wrap gap-1 justify-end">
+                                          {location.stats.enProceso > 0 && (
+                                             <span className="bg-gradient-to-r from-amber-500/30 to-amber-600/30 text-amber-400 px-1 rounded text-xs">
+                                                {location.stats.enProceso} en proceso
+                                             </span>
+                                          )}
                                        </div>
                                     </div>
                                  </div>
@@ -403,29 +512,43 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
                         <div className="bg-gray-800/40 rounded-xl p-4">
                            <h4 className="font-semibold text-gray-300 mb-3 flex items-center gap-2">
                               <AlertTriangle className="w-4 h-4" />
-                              Niveles de Riesgo
+                              Estados del Proceso
                            </h4>
-                           <div className="space-y-2">
-                              <div className="flex items-center justify-between">
-                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                                    <span className="text-sm text-gray-300">Bajo Riesgo</span>
+                           <div className="space-y-3">
+                              <div className="space-y-2">
+                                 <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                       <div className="w-3 h-3 rounded-full bg-gradient-to-r from-amber-500 to-yellow-300"></div>
+                                       <span className="text-sm text-gray-300">En Proceso</span>
+                                    </div>
                                  </div>
-                                 <span className="text-xs text-gray-400">&lt; 1.0 mg/L</span>
+                                 <div className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2">
+                                       <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                                       <span className="text-sm text-gray-300">Finalizado</span>
+                                    </div>
+                                 </div>
                               </div>
-                              <div className="flex items-center justify-between">
-                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                                    <span className="text-sm text-gray-300">Riesgo Medio</span>
+                              <div className="pt-2 border-t border-gray-700">
+                                 <h5 className="text-xs text-gray-400 mb-2">Colores por proceso:</h5>
+                                 <div className="grid grid-cols-2 gap-1">
+                                    <div className="flex items-center gap-1">
+                                       <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                                       <span className="text-xs text-gray-400">Contraloría</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                       <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                                       <span className="text-xs text-gray-400">Tránsito</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                       <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                                       <span className="text-xs text-gray-400">Seguridad</span>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                       <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                                       <span className="text-xs text-gray-400">Juzgados</span>
+                                    </div>
                                  </div>
-                                 <span className="text-xs text-gray-400">1.0 - 3.0 mg/L</span>
-                              </div>
-                              <div className="flex items-center justify-between">
-                                 <div className="flex items-center gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-red-500"></div>
-                                    <span className="text-sm text-gray-300">Alto Riesgo</span>
-                                 </div>
-                                 <span className="text-xs text-gray-400">&gt; 3.0 mg/L</span>
                               </div>
                            </div>
                         </div>
@@ -451,9 +574,8 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
                                  key={location.cp}
                                  className="p-3 rounded-lg bg-gray-800/40 hover:bg-gray-700/60 cursor-pointer transition border border-gray-700"
                                  onClick={() => {
-
                                     handleLocationSelect(location);
-                                    handleCloseMobilePanel()
+                                    handleCloseMobilePanel();
                                  }}
                               >
                                  <div className="flex justify-between items-start">
@@ -463,9 +585,12 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
                                     </div>
                                     <div className="text-right flex-shrink-0 ml-2">
                                        <div className="text-sm font-semibold text-blue-300">{location.stats.total} casos</div>
-                                       <div className="text-xs text-gray-400">
-                                          {location.stats.highRisk > 0 && <span className="text-red-400">{location.stats.highRisk} alto</span>}
-                                          {location.stats.mediumRisk > 0 && <span className="text-yellow-400"> {location.stats.mediumRisk} medio</span>}
+                                       <div className="text-xs text-gray-400 flex flex-wrap gap-1 justify-end">
+                                          {location.stats.enProceso > 0 && (
+                                             <span className="bg-gradient-to-r from-amber-500/30 to-amber-600/30 text-amber-400 px-1 rounded text-xs">
+                                                {location.stats.enProceso} en proceso
+                                             </span>
+                                          )}
                                        </div>
                                     </div>
                                  </div>
@@ -508,7 +633,7 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
                   ))}
 
                   {/* Popup para desktop */}
-                  {popupVisible && selectedLocation  && (
+                  {popupVisible && selectedLocation && (
                      <Popup
                         longitude={selectedLocation.center.lon}
                         latitude={selectedLocation.center.lat}
@@ -531,36 +656,36 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
                                     <div className="flex items-center gap-2 mt-2 text-xs text-gray-400 flex-wrap">
                                        <span>{selectedLocation.stats.total} casos</span>
                                        <span>•</span>
-                                       <span>Prom: {selectedLocation.stats.avgAlcohol} mg/L</span>
+                                       <span className="text-amber-400">{selectedLocation.stats.enProceso} en proceso</span>
                                     </div>
                                  </div>
                               </div>
                            </div>
 
                            <div className="p-3">
-                              <div className="grid grid-cols-3 gap-2 mb-3">
-                                 <div className="text-center p-2 bg-red-500/10 rounded-lg">
-                                    <div className="text-sm font-bold text-red-400">{selectedLocation.stats.highRisk}</div>
-                                    <div className="text-xs text-gray-400">Alto</div>
-                                 </div>
-                                 <div className="text-center p-2 bg-yellow-500/10 rounded-lg">
-                                    <div className="text-sm font-bold text-yellow-400">{selectedLocation.stats.mediumRisk}</div>
-                                    <div className="text-xs text-gray-400">Medio</div>
+                              <div className="grid grid-cols-2 gap-2 mb-3">
+                                 <div className="text-center p-2 bg-gradient-to-br from-amber-500/20 to-yellow-500/20 rounded-lg">
+                                    <div className="text-sm font-bold text-amber-400">{selectedLocation.stats.enProceso}</div>
+                                    <div className="text-xs text-gray-400">En Proceso</div>
                                  </div>
                                  <div className="text-center p-2 bg-green-500/10 rounded-lg">
-                                    <div className="text-sm font-bold text-green-400">{selectedLocation.stats.lowRisk}</div>
-                                    <div className="text-xs text-gray-400">Bajo</div>
+                                    <div className="text-sm font-bold text-green-400">{selectedLocation.stats.finalizados}</div>
+                                    <div className="text-xs text-gray-400">Finalizados</div>
                                  </div>
                               </div>
 
                               <div className="space-y-2 max-h-32 overflow-y-auto">
                                  {selectedLocation.penalties.map((penalty) => {
-                                    const risk = getRiskLevel(penalty.amountAlcohol);
+                                    const risk = getRiskLevel(penalty.current_process_id, penalty.finish);
                                     return (
                                        <div
                                           key={penalty.id}
                                           onClick={() => openPenaltyModal(penalty)}
-                                          className="flex items-center justify-between p-2 rounded-lg bg-gray-800/40 hover:bg-gray-700/60 cursor-pointer transition group"
+                                          className={`flex items-center justify-between p-2 rounded-lg cursor-pointer transition group ${
+                                             penalty.finish === 0
+                                                ? "bg-gradient-to-r from-gray-800/40 to-amber-500/10 border border-dashed border-amber-500/30"
+                                                : "bg-gray-800/40 hover:bg-gray-700/60"
+                                          }`}
                                        >
                                           <div className="min-w-0 flex-1">
                                              <div className="text-xs font-medium text-gray-200 truncate">Folio {penalty.id}</div>
@@ -568,8 +693,9 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
                                           </div>
                                           <div className="text-right flex-shrink-0 ml-2 flex items-center gap-1">
                                              <div className={`px-1.5 py-0.5 rounded-full text-xs font-semibold ${risk.bgColor} ${risk.textColor} whitespace-nowrap`}>
-                                                {penalty.amountAlcohol} mg/L
+                                                {risk.level.includes("(") ? risk.level.split("(")[0] : risk.level}
                                              </div>
+                                             {penalty.finish === 0 && <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>}
                                              <ChevronRight className="w-3 h-3 text-gray-400 group-hover:text-white" />
                                           </div>
                                        </div>
@@ -583,34 +709,7 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
                </Map>
 
                {/* Panel de control flotante */}
-               <div
-                  className={`
-                  absolute top-4 left-4 bg-gray-900/90 backdrop-blur-sm rounded-xl p-3 border border-gray-700 shadow-2xl
-                  ${isMobile ? "max-w-[160px]" : "max-w-xs"}
-               `}
-               >
-                  <div className="flex items-center gap-2 mb-2">
-                     <TrendingUp className="w-4 h-4 text-blue-400" />
-                     <div className="min-w-0">
-                        <div className="text-sm font-semibold text-gray-200 truncate">Resumen</div>
-                        <div className="text-xs text-gray-400">{locationGroups.length} zonas</div>
-                     </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-1 text-center">
-                     <div className="bg-gray-800/50 rounded p-1">
-                        <div className="text-sm font-bold text-green-400">{locationGroups.reduce((sum, loc) => sum + loc.stats.lowRisk, 0)}</div>
-                        <div className="text-[10px] text-gray-400">Bajo</div>
-                     </div>
-                     <div className="bg-gray-800/50 rounded p-1">
-                        <div className="text-sm font-bold text-yellow-400">{locationGroups.reduce((sum, loc) => sum + loc.stats.mediumRisk, 0)}</div>
-                        <div className="text-[10px] text-gray-400">Medio</div>
-                     </div>
-                     <div className="bg-gray-800/50 rounded p-1">
-                        <div className="text-sm font-bold text-red-400">{locationGroups.reduce((sum, loc) => sum + loc.stats.highRisk, 0)}</div>
-                        <div className="text-[10px] text-gray-400">Alto</div>
-                     </div>
-                  </div>
-               </div>
+           
 
                {/* Botón para abrir panel en móvil */}
                {isMobile && !mobilePanelOpen && (
@@ -623,9 +722,6 @@ const CustomMap = ({ penaltiesData, onCaseSelect }: CustomMapProps) => {
                )}
             </div>
          </div>
-
-         {/* Modal para detalles del caso */}
-     
       </div>
    );
 };

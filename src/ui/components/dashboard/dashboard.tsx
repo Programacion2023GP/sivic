@@ -507,11 +507,20 @@ const AdvancedAnalyticsDashboard = ({ data = SAMPLE_DATA, fieldLabels = SAMPLE_L
          }));
    }, [data, fieldLabels]);
 
-   const getUniqueValues = (field: string) => {
-      if (!field || !data) return [];
-      return [...new Set(data.map((item) => item[field]))].filter((v) => v != null).sort();
-   };
+ const getUniqueValues = (field: string) => {
+    if (!field || !data) return [];
 
+    return [
+       ...new Set(
+          data.map((item) =>
+             // CAMBIAR: Normalizar nulls aquí también
+             item[field] == null ? "N/D" : item[field]
+          )
+       )
+    ]
+       .filter((v) => v != null && v !== "")
+       .sort();
+ };
    const generateRanges = (field: string, type: "number" | "date", step: number = 5) => {
       const values = getUniqueValues(field);
 
@@ -554,45 +563,40 @@ const AdvancedAnalyticsDashboard = ({ data = SAMPLE_DATA, fieldLabels = SAMPLE_L
       return config.ranges || [];
    };
 
-   const processDataWithRanges = (data: any[], field: string, ranges: any[]) => {
-      if (!advancedFilterConfig[field]?.enabled || ranges.length === 0) {
-         return data;
-      }
+  const processDataWithRanges = (data: any[], field: string, ranges: any[]) => {
+     if (!advancedFilterConfig[field]?.enabled || ranges.length === 0) {
+        return data.map((item) => ({
+           ...item,
+           // Normalizar nulls aquí también
+           [field]: item[field] == null ? "N/D" : item[field]
+        }));
+     }
 
-      return data.map((item) => {
-         const value = item[field];
+     return data.map((item) => {
+        const value = item[field];
+        // CAMBIAR: Normalizar null primero
+        const normalizedValue = value == null ? "N/D" : value;
 
-         // Para campos de fecha, normalizar el valor
-         let normalizedValue = value;
-         if (advancedFilterConfig[field]?.type === "date") {
-            // Si es formato YYYY-MM, convertirlo a fecha completa para comparación
-            if (/^\d{4}-\d{2}$/.test(value)) {
-               normalizedValue = value + "-01"; // Agregar día 1
-            }
-         }
+        // Resto del código existente...
+        const range = ranges.find((r) => {
+           if (r.min !== undefined && r.max !== undefined) {
+              const numValue = Number(normalizedValue);
+              return !isNaN(numValue) && numValue >= r.min && numValue <= r.max;
+           } else if (r.start && r.end) {
+              const dateValue = new Date(normalizedValue);
+              const rangeStart = new Date(r.start);
+              const rangeEnd = new Date(r.end);
+              return !isNaN(dateValue.getTime()) && dateValue >= rangeStart && dateValue <= rangeEnd;
+           }
+           return r.label === normalizedValue;
+        });
 
-         const range = ranges.find((r) => {
-            if (r.min !== undefined && r.max !== undefined) {
-               // Para rangos numéricos
-               const numValue = Number(normalizedValue);
-               return !isNaN(numValue) && numValue >= r.min && numValue <= r.max;
-            } else if (r.start && r.end) {
-               // Para rangos de fecha
-               const dateValue = new Date(normalizedValue);
-               const rangeStart = new Date(r.start);
-               const rangeEnd = new Date(r.end);
-
-               return !isNaN(dateValue.getTime()) && dateValue >= rangeStart && dateValue <= rangeEnd;
-            }
-            return r.label === value;
-         });
-
-         return {
-            ...item,
-            [field]: range ? range.label : value
-         };
-      });
-   };
+        return {
+           ...item,
+           [field]: range ? range.label : normalizedValue
+        };
+     });
+  };
 
    // Función mejorada para aplicar múltiples filtros
    const applyFilters = (data: any[], filters: ChartFilter[]) => {
@@ -623,50 +627,58 @@ const AdvancedAnalyticsDashboard = ({ data = SAMPLE_DATA, fieldLabels = SAMPLE_L
       });
    };
 
-   const processChartData = (config: ChartConfig) => {
-      if (!config.xAxis || !data || data.length === 0) return [];
+  const processChartData = (config: ChartConfig) => {
+     if (!config.xAxis || !data || data.length === 0) return [];
 
-      // Aplicar todos los filtros
-      let filteredData = applyFilters(data, config.filters);
+     let filteredData = applyFilters(data, config.filters);
+     const groupedData: { [key: string]: any[] } = {};
 
-      const groupedData: { [key: string]: any[] } = {};
-      filteredData.forEach((item) => {
-         const xValue = item[config.xAxis];
-         if (!groupedData[xValue]) groupedData[xValue] = [];
-         groupedData[xValue].push(item);
-      });
+     filteredData.forEach((item) => {
+        const xValue = item[config.xAxis];
+        // CAMBIAR ESTA LÍNEA: Reemplazar null/undefined por "N/D"
+        const normalizedValue = xValue == null ? "N/D" : String(xValue);
 
-      const processedData = Object.keys(groupedData).map((key) => {
-         const items = groupedData[key];
-         let yValue: number;
+        if (!groupedData[normalizedValue]) groupedData[normalizedValue] = [];
+        groupedData[normalizedValue].push(item);
+     });
 
-         if (config.aggregation === "count") {
-            yValue = items.length;
-         } else if (config.aggregation === "sum" && config.yAxis) {
-            yValue = items.reduce((sum, item) => sum + (parseFloat(item[config.yAxis]) || 0), 0);
-         } else if (config.aggregation === "avg" && config.yAxis) {
-            const sum = items.reduce((s, item) => s + (parseFloat(item[config.yAxis]) || 0), 0);
-            yValue = sum / items.length;
-         } else {
-            yValue = items.length;
-         }
+     const processedData = Object.keys(groupedData).map((key) => {
+        const items = groupedData[key];
+        let yValue: number;
 
-         return { name: String(key), y: yValue, count: items.length };
-      });
+        // Cálculos existentes...
+        if (config.aggregation === "count") {
+           yValue = items.length;
+        } else if (config.aggregation === "sum" && config.yAxis) {
+           yValue = items.reduce((sum, item) => sum + (parseFloat(item[config.yAxis]) || 0), 0);
+        } else if (config.aggregation === "avg" && config.yAxis) {
+           const sum = items.reduce((s, item) => s + (parseFloat(item[config.yAxis]) || 0), 0);
+           yValue = sum / items.length;
+        } else {
+           yValue = items.length;
+        }
 
-      return processedData.sort((a, b) => b.y - a.y);
-   };
+        // CAMBIAR ESTA LÍNEA: Usar key que ya tiene "N/D" si era null
+        return {
+           name: key, // ← ya viene normalizado
+           y: yValue,
+           count: items.length
+        };
+     });
+
+     return processedData.sort((a, b) => b.y - a.y);
+  };
 
    const createHighchartsConfig = (config: ChartConfig) => {
       const chartData = processChartData(config);
       const is3D = config.is3D && ["column", "bar", "pie"].includes(config.type);
       const aggregationLabel = config.aggregation === "count" ? "Cantidad" : config.aggregation === "sum" ? "Suma" : "Promedio";
 
-      const coloredData = chartData.map((point, index) => ({
-         ...point,
-         color: config.type === "pie" || config.type === "column" || config.type === "bar" ? HIGHCHARTS_COLORS[index % HIGHCHARTS_COLORS.length] : undefined
-      }));
-
+    const coloredData = chartData.map((point, index) => ({
+       ...point,
+       name: point.name || "N/D", // ← asegurar
+       color: config.type === "pie" || config.type === "column" || config.type === "bar" ? HIGHCHARTS_COLORS[index % HIGHCHARTS_COLORS.length] : undefined
+    }));
       return {
          colors: HIGHCHARTS_COLORS,
          chart: {
@@ -687,6 +699,7 @@ const AdvancedAnalyticsDashboard = ({ data = SAMPLE_DATA, fieldLabels = SAMPLE_L
          tooltip: {
             pointFormat: "<b>{point.y:.2f}</b><br/>Registros: {point.count}",
             headerFormat: '<span style="font-size: 10px">{point.key}</span><br/>'
+            
          },
          plotOptions: {
             column: {
@@ -1363,7 +1376,10 @@ const AdvancedAnalyticsDashboard = ({ data = SAMPLE_DATA, fieldLabels = SAMPLE_L
                                                       }}
                                                       className="w-3 h-3 text-cyan-600 rounded"
                                                    />
-                                                   <span className="text-gray-700">{String(value)}</span>
+                                                   <span className="text-gray-700">
+                                                      {/* CAMBIAR: Mostrar "N/D" en lugar de "null" */}
+                                                      {String(value) === "N/D" ? "N/D" : String(value)}
+                                                   </span>
                                                 </label>
                                              ))}
                                           </div>

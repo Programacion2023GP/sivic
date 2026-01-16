@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState, lazy, Suspense } from "react
 import { FaUserTie } from "react-icons/fa6";
 import PageLogin from "./ui/pages/login/PageLogin";
 import "./App.css";
-import { FaChartLine, FaCode, FaFileInvoiceDollar } from "react-icons/fa";
+import { FaChartLine, FaCode, FaFileInvoiceDollar, FaUserAlt } from "react-icons/fa";
 import { SidebarDrop } from "./ui/components/sidebar/CustomSidebarDrop";
 import { FaBuildingColumns } from "react-icons/fa6";
 import { Routes, Navigate, Outlet, Route, useLocation } from "react-router-dom";
@@ -13,7 +13,7 @@ import { usePermissionsStore } from "./store/menu/menu.store";
 import { FaUserDoctor } from "react-icons/fa6";
 import { FaStopCircle } from "react-icons/fa";
 import Spinner from "./ui/components/loading/loading";
-import PagePublicSecurity from "./ui/pages/securrity/pagesecurrity";
+import { redirectRoute } from "./utils/redirect";
 
 // Lazy imports para todas las páginas
 const PageDependence = lazy(() => import("./ui/pages/catalogues/dependece/pagedependece"));
@@ -23,12 +23,12 @@ const PageLogs = lazy(() => import("./ui/pages/pagelogs/PageLogs"));
 const PageReports = lazy(() => import("./ui/pages/reports/dashboard/reports"));
 const PageDoctor = lazy(() => import("./ui/pages/catalogues/doctor/pagedoctor"));
 const PageCauseOfDetention = lazy(() => import("./ui/pages/catalogues/causeofdetention/pagecauseofdetention"));
-const PageCourts = lazy(() => import("./ui/pages/courts/pagecourts"));
-const PageTraffic = lazy(() => import("./ui/pages/traffic/pagetraffic"));
+const PageReicendences = lazy(() => import("./ui/pages/reicendences/reicedences"));
+const PageSender = lazy(() => import("./ui/pages/catalogues/sender/senderpage"));
 
 const PageReportMap = lazy(() => import("./ui/pages/reports/map/map"));
 const PageCalendary = lazy(() => import("./ui/pages/reports/calendary/calendary"));
-
+const PoliceSearch404 = lazy(() => import("./ui/pages/nofound/PageNoFound"));
 // Componente Layout para las rutas autenticadas
 const MainLayout = () => {
    const [open, setOpen] = useState(false);
@@ -69,7 +69,7 @@ const MainLayout = () => {
    const sidebarItems = useMemo(
       () => [
          { prefix: "usuarios_", route: "/usuarios", icon: <FaUserTie />, label: "Usuarios" },
-         { prefix: "multas_", route: "/multa", icon: <FaFileInvoiceDollar />, label: "Multas" },
+         { prefix: "multas_", route: "/multa", icon: <FaFileInvoiceDollar />, label: "Controlaroria" },
          { prefix: "juzgados_", route: "/juzgados", icon: <FaFileInvoiceDollar />, label: "Juzgados" },
          { prefix: "transito_vialidad_", route: "/transito-vialidad", icon: <FaFileInvoiceDollar />, label: "Transito y vialidad" },
          { prefix: "seguridad_publica_", route: "/seguridad-publica", icon: <FaFileInvoiceDollar />, label: "Seguridad pública" },
@@ -80,41 +80,31 @@ const MainLayout = () => {
             label: "Catálogos",
             children: [
                {
-                  prefix: ["catalogo_dependencia_", "catalogo_doctor_"],
-                  label: "Alcolímetros",
-                  children: [
-                     {
-                        prefix: "catalogo_dependencia_",
-                        route: "/catalogos/dependencias",
-                        icon: <FaBuildingColumns />,
-                        label: "Dependencias"
-                     },
-                     {
-                        prefix: "catalogo_doctor_",
-                        route: "/catalogos/doctor",
-                        icon: <FaUserDoctor />,
-                        label: "Doctores"
-                     }
-                  ]
+                  prefix: "catalogo_doctor_",
+                  route: "/catalogos/doctor",
+                  icon: <FaUserDoctor />,
+                  label: "Doctores"
+               },
+               {
+                  prefix: "catalogo_motivo_detencion_",
+                  route: "/catalogos/motivodet",
+                  icon: <FaStopCircle />,
+                  label: "Motivo detención"
+               },
+               {
+                  prefix: "catalogo_remitente_",
+                  route: "/catalogos/remitente",
+                  icon: <FaUserAlt />,
+                  label: "Remitente"
                }
-               // {
-               //    prefix: ["catalogo_motivo_detencion_"],
-               //    label: "Vialidad",
-               //    children: [
-               //       {
-               //          prefix: "catalogo_motivo_detencion_",
-               //          route: "/catalogos/motivodet",
-               //          icon: <FaStopCircle />,
-               //          label: "Motivo detención"
-               //       }
-               //    ]
-               // }
             ]
          },
          {
             prefix: "reports_",
             label: "Reportes",
             children: [
+               { route: "/reportes/general", prefix: "reports_", icon: <FaChartLine />, label: "General" },
+               { route: "/reportes/reicidencias", prefix: "reports_", icon: <FaChartLine />, label: "Recidencias" },
                { route: "/reportes/mapa", prefix: "reports_", icon: <FaChartLine />, label: "Mapa" },
                { route: "/reportes/calendario", prefix: "reports_", icon: <FaChartLine />, label: "Calendario" },
 
@@ -252,7 +242,7 @@ function App() {
          />
 
          <Route
-            path="/*"
+            path="/"
             element={
                <ProtectedRoute>
                   <MainLayout />
@@ -295,11 +285,10 @@ function App() {
                path="seguridad-publica"
                element={
                   <Suspense fallback={<Spinner />}>
-                     <PagePenalities section="securrity"/>
+                     <PagePenalities section="securrity" />
                   </Suspense>
                }
             />
-
             <Route
                path="logs"
                element={
@@ -333,6 +322,14 @@ function App() {
                      </Suspense>
                   }
                />
+               <Route
+                  path="remitente"
+                  element={
+                     <Suspense fallback={<Spinner />}>
+                        <PageSender />
+                     </Suspense>
+                  }
+               />
             </Route>
             <Route path="reportes">
                <Route
@@ -359,17 +356,43 @@ function App() {
                      </Suspense>
                   }
                />
+               <Route
+                  path="general"
+                  element={
+                     <Suspense fallback={<Spinner />}>
+                        <PagePenalities section="general" />
+                     </Suspense>
+                  }
+               />
+               <Route
+                  path="reicidencias"
+                  element={
+                     <Suspense fallback={<Spinner />}>
+                        <PageReicendences />
+                     </Suspense>
+                  }
+               />
             </Route>
-
+            {/* Ruta para la raíz dentro del layout */}
             <Route
-               path="*"
+               index
                element={
                   <Suspense fallback={<Spinner />}>
-                     <PageUsersPanel />
+                     <Navigate to={redirectRoute(JSON.parse(localStorage.getItem("permisos") ?? "[]"))} replace />
                   </Suspense>
                }
             />
          </Route>
+
+         {/* Ruta 404 debe estar AL MISMO NIVEL que las otras rutas principales */}
+         <Route
+            path="*"
+            element={
+               <Suspense fallback={<Spinner />}>
+                  <PoliceSearch404 />
+               </Suspense>
+            }
+         />
       </Routes>
    );
 }
