@@ -1,4 +1,5 @@
 import { AxiosRequest, GetAxios } from "../../axios/Axios";
+import { Court } from "../../domain/models/courts/courts.model";
 import type { Result } from "../../domain/models/users/users.domain";
 import { CourtsRepository } from "../../domain/repositories/courts/courts.repositories";
 

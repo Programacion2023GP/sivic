@@ -38,28 +38,28 @@ export const usePenaltiesStore = create<PenaltiesStore>((set, get) => ({
    },
    showHistoryCurp: async (penaltie: Penalties, repo: PenaltiesRepository) => {
       set({ loading: true, initialValues: { ...get().initialValues, name: penaltie.name } });
-      try {
-         const data = await repo.showHistoryCurp(penaltie);
-         if (data.ok == true) {
-            set({
-               history: Array.isArray(data.data) ? data.data : [data.data],
-               loading: false
-            });
-            if (Array.isArray(data.data) && data.data.length > 0) {
-               set({ openHistory: true });
-            } else {
-               showToast("NO TIENE HISTORIAL LA PERSONA", "info");
-            }
-         }
-         set({ loading: false });
-      } catch (error: unknown) {
-         let message = "";
-         if (error instanceof Error) {
-            message = error.message;
-         }
-         set({ error: message, loading: false });
-         get().resetInitialValues();
-      }
+      // try {
+      //    const data = await repo.showHistoryCurp(penaltie);
+      //    if (data.ok == true) {
+      //       set({
+      //          history: Array.isArray(data.data) ? data.data : [data.data],
+      //          loading: false
+      //       });
+      //       if (Array.isArray(data.data) && data.data.length > 0) {
+      //          set({ openHistory: true });
+      //       } else {
+      //          showToast("NO TIENE HISTORIAL LA PERSONA", "info");
+      //       }
+      //    }
+      //    set({ loading: false });
+      // } catch (error: unknown) {
+      //    let message = "";
+      //    if (error instanceof Error) {
+      //       message = error.message;
+      //    }
+      //    set({ error: message, loading: false });
+      //    get().resetInitialValues();
+      // }
    },
    penalties: [],
    history: [],

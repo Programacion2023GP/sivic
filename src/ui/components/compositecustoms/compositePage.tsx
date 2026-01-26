@@ -16,16 +16,7 @@ interface PropsCompositePage {
    fullModal?: boolean;
 }
 
-const CompositePage: React.FC<PropsCompositePage> = ({
-   table,
-   form,
-   tableDirection = "izq",
-   formDirection = "der",
-   isOpen,
-   onClose,
-   modalTitle,
-   fullModal = false
-}) => {
+const CompositePage: React.FC<PropsCompositePage> = ({ table, form, tableDirection = "izq", formDirection = "der", isOpen, onClose, modalTitle, fullModal = false }) => {
    const [isExpanded, setIsExpanded] = useState(fullModal);
    const [isClosing, setIsClosing] = useState(false);
    const { width: windowWidth, height: windowHeight } = useWindowSize();
@@ -54,7 +45,7 @@ const CompositePage: React.FC<PropsCompositePage> = ({
       } else if (isTablet) {
          setSheetHeight("100vh");
       }
-   }, [isSmallMobile, isMediumMobile, isTablet,table,form]);
+   }, [isSmallMobile, isMediumMobile, isTablet, table, form]);
 
    const handleClose = () => {
       setIsClosing(true);
@@ -79,127 +70,159 @@ const CompositePage: React.FC<PropsCompositePage> = ({
    };
 
    // Renderizar contenido del modal
-   const renderModalContent = (content?: () => ReactNode) => {
-      if (!isOpen || !content) return null;
+   // Si necesitas una versión aún más robusta, aquí está:
 
-      // Versión Mobile - Bottom Sheet mejorado
-      // Versión Mobile / Tablet - 100vh fijo
-      if (isMobile) {
-         return (
-            <AnimatePresence>
-               <motion.div className="fixed inset-0 z-50" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-                  {/* Backdrop */}
-                  <motion.div
-                     className="absolute inset-0 bg-black bg-opacity-40"
-                     onClick={handleClose}
-                     initial={{ opacity: 0 }}
-                     animate={{ opacity: 1 }}
-                     exit={{ opacity: 0 }}
-                  />
+const renderModalContent = (content?: () => ReactNode) => {
+   if (!isOpen || !content) return null;
 
-                  {/* Modal FULLSCREEN */}
-                  <motion.div
-                     className="absolute bottom-0 left-0 right-0 overflow-hidden bg-white border border-gray-100 shadow-2xl rounded-t-3xl touch-pan-y"
-                     initial={{ y: "100%" }}
-                     animate={{ y: 0 }}
-                     exit={{ y: "100%" }}
-                     transition={{
-                        type: "spring",
-                        damping: 30,
-                        stiffness: 300,
-                        mass: 0.8
-                     }}
-                     style={{
-                        height: "100vh",
-                        maxHeight: "100vh"
-                     }}
-                     drag="y"
-                     dragConstraints={{ top: 0, bottom: 0 }}
-                     dragElastic={0.15}
-                     onDragEnd={(event, info) => {
-                        if (info.offset.y > 120 || info.velocity.y > 800) {
-                           handleClose();
-                        }
-                     }}
-                  >
-                     {/* Handle */}
-                     <div className="flex justify-center pt-3 pb-3">
-                        <div className="w-20 h-2 bg-gray-300 rounded-full" />
-                     </div>
-
-                     {/* Close Button */}
-                     <motion.button
-                        className="absolute z-10 flex items-center justify-center text-red-400 transition-colors border rounded-full shadow-md top-3 right-3 w-7 h-7 hover:cursor-pointer hover:text-red-600"
-                        onClick={handleClose}
-                        // className="absolute flex items-center justify-center w-10 h-10 text-gray-600 bg-white border border-gray-200 rounded-full shadow-lg top-4 right-4 hover:text-gray-800"
-                     >
-                        <AiOutlineClose className="text-xl text-red-400 hover:text-red-600" />
-                     </motion.button>
-
-                     <div className="mb-5"></div>
-
-                     {/* Content */}
-                     <div className="max-h-[82vh] overflow-y-auto pb-6 px-4">
-                        {/* Header móvil */}
-                        <div className="flex items-center justify-between pb-3 mb-4 border-b">
-                           <h2 className="text-lg font-bold text-gray-800">{modalTitle || "Modal"}</h2>
-                        </div>
-                        {content()}
-                     </div>
-
-                     {/* Contenido scrollable */}
-                    
-                     {/* Safe area */}
-                  </motion.div>
-               </motion.div>
-            </AnimatePresence>
-         );
-      }
-
-      // Versión Desktop - Modal tradicional (sin cambios)
-      return (
-         <div
-            className={`fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-300 ${
-               isClosing ? "opacity-0" : "opacity-100"
-            }`}
-            onClick={handleClose}
-         >
-            <div
-               className={`bg-white shadow-2xl transform transition-all duration-300 overflow-hidden ${
-                  isExpanded ? "w-full h-full rounded-none" : "w-[95vw] sm:w-11/12 max-w-6xl max-h-[95vh] sm:max-h-[90vh] rounded-2xl"
-               } ${isClosing ? "scale-95 opacity-0" : "scale-100 opacity-100"}`}
-               onClick={(e) => e.stopPropagation()}
-            >
-               {/* Header del modal */}
-               <div className="flex justify-between items-center border-b presidencia px-3 py-2.5 sm:px-4 sm:py-3 sticky top-0 z-10">
-                  <h2 className="flex-1 mr-2 text-base font-bold text-gray-800 truncate sm:text-lg md:text-xl">{modalTitle || "Modal"}</h2>
-                  <div className="flex items-center flex-shrink-0 gap-1 sm:gap-2">
-                     <button
-                        onClick={toggleExpand}
-                        className="hover:cursor-pointer p-1.5 sm:p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                        title={isExpanded ? "Contraer" : "Expandir"}
-                     >
-                        <AiOutlineExpandAlt size={18} className={`sm:w-5 sm:h-5 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
-                     </button>
-                     <button
-                        onClick={handleClose}
-                        className=" hover:cursor-pointer p-1.5 sm:p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                        title="Cerrar"
-                     >
-                        <AiOutlineClose size={18} className="sm:w-5 sm-h-5" />
-                     </button>
-                  </div>
-               </div>
-
-               {/* Contenido del modal */}
-               <div className={`overflow-auto ${isExpanded ? "h-[calc(100vh-48px)] sm:h-[calc(100vh-56px)]" : "max-h-[calc(95vh-48px)] sm:max-h-[calc(90vh-56px)]"}`}>
-                  <div className="p-3 sm:p-4 md:p-6">{content()}</div>
-               </div>
-            </div>
-         </div>
-      );
+   // Función para calcular altura del contenido (más precisa)
+   const getContentHeight = () => {
+      if (isMobile) return `calc(100vh - 132px)`; // handle(32px) + header(68px) + padding(32px)
+      if (isTablet) return `calc(90vh - 100px)`; // header(68px) + handle(32px)
+      return isExpanded ? `calc(100vh - 100px)` : `calc(90vh - 100px)`;
    };
 
+   // Render común para backdrop
+   const renderBackdrop = () => (
+      <motion.div
+         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+         onClick={handleClose}
+         initial={{ opacity: 0 }}
+         animate={{ opacity: 1 }}
+         exit={{ opacity: 0 }}
+      />
+   );
+
+   // Render común para header
+   const renderHeader = () => (
+      <div className="sticky top-0 z-10 flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
+         <h2 className="text-xl font-bold text-gray-900 truncate">{modalTitle || "Modal"}</h2>
+
+         <div className="flex items-center gap-2">
+            {!isMobile && (
+               <button
+                  onClick={toggleExpand}
+                  className="p-2 text-gray-500 transition-colors rounded-lg hover:text-blue-600 hover:bg-blue-50"
+                  title={isExpanded ? "Contraer" : "Expandir"}
+               >
+                  <AiOutlineExpandAlt size={18} className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+               </button>
+            )}
+
+            <button
+               onClick={handleClose}
+               className={`text-gray-500 transition-colors rounded-lg hover:text-red-600 hover:bg-red-50 ${
+                  isMobile ? "absolute top-3 right-3 w-8 h-8 flex items-center justify-center bg-white border border-gray-200 shadow-md" : "p-2"
+               }`}
+               title="Cerrar"
+            >
+               <AiOutlineClose size={18} />
+            </button>
+         </div>
+      </div>
+   );
+
+   // MOBILE: Modal desde abajo con drag
+   if (isMobile) {
+      return (
+         <AnimatePresence>
+            <motion.div className="fixed inset-0 z-50">
+               {renderBackdrop()}
+
+               <motion.div
+                  className="absolute bottom-0 left-0 right-0 overflow-hidden bg-white shadow-2xl rounded-t-3xl"
+                  initial={{ y: "100%" }}
+                  animate={{ y: 0 }}
+                  exit={{ y: "100%" }}
+                  transition={{
+                     type: "spring",
+                     damping: 30,
+                     stiffness: 300,
+                     mass: 0.8
+                  }}
+                  style={{ height: "100vh" }}
+                  drag="y"
+                  dragConstraints={{ top: 0, bottom: 0 }}
+                  dragElastic={0.15}
+                  onDragEnd={(event, info) => {
+                     if (info.offset.y > 120 || info.velocity.y > 800) {
+                        handleClose();
+                     }
+                  }}
+               >
+                  {/* Handle para arrastrar */}
+                  <div className="flex justify-center pt-3 pb-3">
+                     <div className="w-20 h-2 bg-gray-300 rounded-full" />
+                  </div>
+
+                  {renderHeader()}
+
+                  {/* Contenido scrollable */}
+                  <div
+                     className="overflow-y-auto"
+                     style={{
+                        height: getContentHeight(),
+                        paddingBottom: "env(safe-area-inset-bottom, 20px)"
+                     }}
+                  >
+                     <div className="px-6 py-4">{content()}</div>
+                  </div>
+               </motion.div>
+            </motion.div>
+         </AnimatePresence>
+      );
+   }
+
+   // TABLET & DESKTOP: Modal desde abajo con drag (igual que móvil)
+   return (
+      <AnimatePresence>
+         <motion.div className="fixed inset-0 z-50">
+            {renderBackdrop()}
+
+            <motion.div
+               className={`absolute bottom-0 left-0 right-0 overflow-hidden bg-white shadow-2xl ${
+                  isTablet ? "rounded-t-3xl" : isExpanded ? "rounded-none" : "rounded-t-3xl"
+               }`}
+               initial={{ y: "100%" }}
+               animate={{ y: 0 }}
+               exit={{ y: "100%" }}
+               transition={{
+                  type: "spring",
+                  damping: 30,
+                  stiffness: 300,
+                  mass: 0.8
+               }}
+               style={{
+                  height: isTablet ? "90vh" : isExpanded ? "100vh" : "90vh",
+                  maxWidth: isTablet ? "100%" : isExpanded ? "100%" : "1280px",
+                  left: isTablet ? 0 : isExpanded ? 0 : "50%",
+                  transform: isTablet ? "none" : isExpanded ? "none" : "translateX(-50%)"
+               }}
+               drag="y"
+               dragConstraints={{ top: 0, bottom: 0 }}
+               dragElastic={0.15}
+               onDragEnd={(event, info) => {
+                  if (info.offset.y > 150 || info.velocity.y > 800) {
+                     handleClose();
+                  }
+               }}
+            >
+               {/* Handle para arrastrar - visible en todos los tamaños */}
+               <div className="flex justify-center pt-3 pb-3 cursor-grab active:cursor-grabbing">
+                  <div className="w-20 h-1.5 bg-gray-300 rounded-full transition-colors hover:bg-gray-400" />
+               </div>
+
+               {renderHeader()}
+
+               {/* Contenido scrollable */}
+               <div className="overflow-y-auto" style={{ height: getContentHeight() }}>
+                  <div className="p-6">{content()}</div>
+               </div>
+            </motion.div>
+         </motion.div>
+      </AnimatePresence>
+   );
+};
    // El resto del componente sin cambios...
    // Determinar si ambas secciones están visibles (no modales)
    const bothVisible =
@@ -246,6 +269,6 @@ const CompositePage: React.FC<PropsCompositePage> = ({
          {formDirection === "modal" && renderModalContent(form)}
       </>
    );
-};
+};;
 
 export default CompositePage;

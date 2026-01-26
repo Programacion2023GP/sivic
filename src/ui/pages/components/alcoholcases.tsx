@@ -10,7 +10,7 @@ import { DateFormat, formatDatetime } from "../../../utils/formats";
 import { TbCheck } from "react-icons/tb";
 import { CiEdit } from "react-icons/ci";
 import { BsClockHistory } from "react-icons/bs";
-import { FaPlus, FaRegFilePdf } from "react-icons/fa";
+import { FaPlus, FaRegFilePdf, FaTrash } from "react-icons/fa";
 import { useAlcohol } from "../../../hooks/alcohol.hook";
 import Tooltip from "../../components/toltip/Toltip";
 import { Dispatch, ReactNode, SetStateAction, useState } from "react";
@@ -21,12 +21,15 @@ import CustomDataDisplay from "../../components/movil/view/customviewmovil";
 import { penalizacionesMovilView } from "./penaltiesmovil";
 import CustomModal from "../../components/modal/modal";
 import { showToast } from "../../../sweetalert/Sweetalert";
+import { Court } from "../../../domain/models/courts/courts.model";
 
 type section = "penaltie" | "traffic" | "securrity" | "courts" | "general";
 interface AlcoholProps {
    setUiState?: (callback: (prev: any) => any) => void;
    resetInitialValues?: (type: string) => void;
    handleEdit?: (row: {}) => void;
+   handleDelete?: (row: {}) => void;
+
    data: Penalties[] | Court[] | Traffic[] | Public_Securrity[];
    loading?: boolean;
    loadData?: (type: string) => void;
@@ -35,7 +38,7 @@ interface AlcoholProps {
    buttons?: ReactNode;
 }
 
-const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, setHistory, handleEdit, data, loading, section }: AlcoholProps) => {
+const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, setHistory, handleEdit, handleDelete, data, loading, section }: AlcoholProps) => {
    const { seguimiento, open, setClose } = useAlcohol();
    const [segData, seSegData] = useState<any>([]);
    const typeData = (section: section, row: Penalties): ReactNode => {
@@ -43,20 +46,22 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
          case "penaltie":
             return (
                <>
-                  <Tooltip content="Seguimiento">
+                  <CustomButton
+                     size="sm"
+                     color="purple"
+                     variant="neon"
+                     onClick={() =>
+                        setUiState((prev) => ({
+                           ...prev,
+                           pdfPenalties: { open: true, row }
+                        }))
+                     }
+                  >
+                     <FaRegFilePdf />
+                  </CustomButton>
+                  {/* <Tooltip content="Seguimiento">
                      <CustomButton
                         size="sm"
-                        variant="neon"
-                        color="blue"
-                        onClick={async () => {
-                           seSegData(await seguimiento(row.id));
-                        }}
-                     >
-                        <BsClockHistory />
-                     </CustomButton>
-                  </Tooltip>
-                  {row.current_process_id == 1 && !row.finish && (
-                     <>
                         <CustomButton
                            size="sm"
                            color="purple"
@@ -70,7 +75,17 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                         >
                            <FaRegFilePdf />
                         </CustomButton>
-
+                        variant="neon"
+                        color="blue"
+                        onClick={async () => {
+                           seSegData(await seguimiento(row.id));
+                        }}
+                     >
+                        <BsClockHistory />
+                     </CustomButton>
+                  </Tooltip> */}
+                  {row.current_process_id == 1 && !row.finish && (
+                     <>
                         {/* <Tooltip content="Continuar">
                 <CustomButton
                   size="sm"
@@ -83,32 +98,30 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                   <TbCheck />
                 </CustomButton>
               </Tooltip> */}
-                  {row.finish != 1 && (
-
-                        <PermissionRoute requiredPermission={"multas_actualizar"}>
-                           <Tooltip content="Continuar">
-                              <CustomButton
-                                 size="sm"
-                                 color="green"
-                                 variant="neon"
-                                 onClick={() => {
-                                    setUiState((prev) => ({
-                                       ...prev,
-                                       open: true,
-                                       activeStep: 0
-                                    }));
-                                    handleEdit(row);
-                                 }}
-                              >
-                                 <VscDebugContinueSmall />
-                              </CustomButton>
-                           </Tooltip>
-                        </PermissionRoute>
-                  )}
+                        {row.finish != 1 && (
+                           <PermissionRoute requiredPermission={"multas_actualizar"}>
+                              <Tooltip content="Continuar">
+                                 <CustomButton
+                                    size="sm"
+                                    color="green"
+                                    variant="neon"
+                                    onClick={() => {
+                                       setUiState((prev) => ({
+                                          ...prev,
+                                          open: true,
+                                          activeStep: 0
+                                       }));
+                                       handleEdit(row);
+                                    }}
+                                 >
+                                    <VscDebugContinueSmall />
+                                 </CustomButton>
+                              </Tooltip>
+                           </PermissionRoute>
+                        )}
                      </>
-                              
-)}
-
+                  )}
+                  {/* 
                   {row.residencias ? (
                      <PermissionRoute requiredPermission={"multas_historial"}>
                         <Tooltip content="Historial">
@@ -130,7 +143,21 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                            </CustomButton>
                         </Tooltip>
                      </PermissionRoute>
-                  ) : null}
+                  ) : null} */}
+                  <PermissionRoute requiredPermission={"multas_eliminar"}>
+                     <Tooltip content="Eliminar">
+                        <CustomButton
+                           size="sm"
+                           color="red"
+                           variant="neon"
+                           onClick={() => {
+                              handleDelete(row);
+                           }}
+                        >
+                           <FaTrash />
+                        </CustomButton>
+                     </Tooltip>
+                  </PermissionRoute>
                </>
             );
 
@@ -140,7 +167,7 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
             // Aquí deberías retornar JSX para el caso "traffic"
             return (
                <>
-                  <Tooltip content="Seguimiento">
+                  {/* <Tooltip content="Seguimiento">
                      <CustomButton
                         size="sm"
                         variant="neon"
@@ -151,7 +178,20 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                      >
                         <BsClockHistory />
                      </CustomButton>
-                  </Tooltip>
+                  </Tooltip> */}
+                  <CustomButton
+                     size="sm"
+                     color="purple"
+                     variant="neon"
+                     onClick={() =>
+                        setUiState((prev) => ({
+                           ...prev,
+                           pdfPenalties: { open: true, row }
+                        }))
+                     }
+                  >
+                     <FaRegFilePdf />
+                  </CustomButton>
                   {row.finish != 1 && (
                      <PermissionRoute requiredPermission={["multas_actualizar", "seguridad_publica_editar", "seguridad_publica_actualizar", "juzgados_actualizar"]}>
                         <Tooltip content="Continuar">
@@ -177,18 +217,19 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
             );
          case "general":
             return (
-               <Tooltip content="Seguimiento">
-                  <CustomButton
-                     size="sm"
-                     variant="neon"
-                     color="blue"
-                     onClick={async () => {
-                        seSegData(await seguimiento(row.id));
-                     }}
-                  >
-                     <BsClockHistory />
-                  </CustomButton>
-               </Tooltip>
+               <CustomButton
+                  size="sm"
+                  color="purple"
+                  variant="neon"
+                  onClick={() =>
+                     setUiState((prev) => ({
+                        ...prev,
+                        pdfPenalties: { open: true, row }
+                     }))
+                  }
+               >
+                  <FaRegFilePdf />
+               </CustomButton>
             );
          default:
             return null;
@@ -276,13 +317,13 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                                  </CustomButton>
                               </Tooltip>
                            </PermissionRoute>
-                           <Tooltip content="Refrescar">
-                              <CustomButton color="purple" onClick={() => loadData(section)}>
-                                 <LuRefreshCcw />
-                              </CustomButton>
-                           </Tooltip>
                         </>
                      )}
+                     <Tooltip content="Refrescar">
+                        <CustomButton color="purple" onClick={() => loadData(section)}>
+                           <LuRefreshCcw />
+                        </CustomButton>
+                     </Tooltip>
                   </>
                )}
                data={data as Penalties[]}
@@ -303,6 +344,12 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                      field: "image_penaltie",
                      visibility: "expanded",
                      headerName: "Foto Multa",
+                     renderField: (value) => <PhotoZoom src={value} alt={value} />
+                  },
+                  {
+                     field: "image_penaltie_money",
+                     visibility: "expanded",
+                     headerName: "Foto Recibo",
                      renderField: (value) => <PhotoZoom src={value} alt={value} />
                   },
                   { field: "doctor", headerName: "Doctor", visibility: "expanded" },
@@ -327,10 +374,20 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                   { field: "command_troops", headerName: "Tropa Comando", visibility: "expanded" },
                   { field: "command_details", headerName: "Detalles Comando", visibility: "expanded" },
                   { field: "filter_supervisor", headerName: "Supervisor Filtro", visibility: "expanded" },
-                  { field: "cp", headerName: "Código Postal", visibility: "always" },
-                  { field: "city", headerName: "Ciudad", visibility: "always" },
+                  { field: "cp", headerName: "Código Postal", visibility: "expanded" },
+                  { field: "city", headerName: "Ciudad", visibility: "expanded" },
                   ...(section == "general"
                      ? [
+                          {
+                             field: "days_passed",
+                             headerName: "Días en proceso",
+                             renderField: (field) =>
+                                field != null ? (
+                                   <>
+                                      {field} {field === 1 ? "día" : "días"}
+                                   </>
+                                ) : null
+                          },
                           {
                              field: "current_process_id",
                              headerName: "Progreso",
@@ -399,13 +456,23 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                      headerName: "Activo",
                      visibility: "expanded",
                      renderField: (v) => (
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${v ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
-                        </span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${v ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}></span>
                      )
                   }
                ]}
                actions={(row) => <>{typeData(section, row)}</>}
                mobileConfig={{
+                  listTile: {
+                     leading: (row) => (
+                        <div className="flex items-center justify-center w-10 h-10 font-bold text-white bg-red-500 rounded-full">{row.name || "N/A"}</div>
+                     ),
+                     title: (row) => <span className="font-semibold">{row.name || `Multa #${row.id}`}</span>,
+                     subtitle: (row) => (
+                        <span className="text-gray-600">
+                           {row.alcohol_concentration ? `${row.alcohol_concentration}% alcohol` : row.detention_reason || row.detainee_released_to || "Sin detalles"}
+                        </span>
+                     )
+                  },
                   swipeActions: {
                      left: [
                         {
@@ -430,7 +497,10 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                   bottomSheet: {
                      height: 100,
                      showCloseButton: true,
-                     builder: (user, onClose) => <CustomDataDisplay data={user} config={penalizacionesMovilView} />
+                     builder: (user, onClose) => {
+                        console.log("user", user);
+                        return <CustomDataDisplay data={user} config={penalizacionesMovilView} />;
+                     }
                   }
                }}
             />

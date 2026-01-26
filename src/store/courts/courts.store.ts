@@ -3,6 +3,7 @@ import { create } from "zustand";
 import { showToast } from "../../sweetalert/Sweetalert";
 import { CourtsRepository } from "../../domain/repositories/courts/courts.repositories";
 import { Penalties } from "../../domain/models/penalties/penalties.model";
+import { Court } from "../../domain/models/courts/courts.model";
 
 interface CourtStore {
    initialValues: Court;
@@ -88,7 +89,6 @@ export const useCourtStore = create<CourtStore>((set, get) => ({
       set({
          disabled: true,
          initialValues: {
-            penalties_id: penaltie.id,
             id: 0,
             date: new Date().toISOString().split("T")[0], // "2024-01-15"
             referring_agency: "Alcoholimetros",

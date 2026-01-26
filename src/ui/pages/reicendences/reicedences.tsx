@@ -54,7 +54,7 @@ const PageReincidencias = () => {
                            {item.Nombre?.charAt(0) || "P"}
                         </div>
                         <div className="absolute -bottom-1 -right-1 bg-red-600 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
-                           {item.Total_Reincidencias || 0}
+                           {item?.["recidencias"]}
                         </div>
                      </div>
                   ),
@@ -63,7 +63,7 @@ const PageReincidencias = () => {
                         <span className="font-bold text-gray-800">{item.Nombre || "Sin nombre"}</span>
                         <div className="flex items-center gap-2 mt-1">
                            <span className="text-sm font-medium bg-gray-100 px-2 py-0.5 rounded">{item.Placa || "Sin placa"}</span>
-                           <span className="text-sm text-red-600 font-semibold">{item.Total_Reincidencias || 0} reincidencias</span>
+                           <span className="text-sm text-red-600 font-semibold">{item?.["recidencias"]} reincidencias</span>
                         </div>
                      </div>
                   ),
@@ -92,7 +92,7 @@ const PageReincidencias = () => {
 
                {
                   field: "recidencias",
-                  headerName: "Recidencias"
+                  headerName: "Reincidencias"
                },
                {
                   field: "FoliosReincidencias",
@@ -144,22 +144,23 @@ const PageReincidencias = () => {
                      size="sm"
                      color="purple"
                      variant="neon"
-                     onClick={async() =>
-                         setOpenpdf({
-                                       open: true,
-                                       data: await request(
-                                          {
-                                             data: {
-                                                cid: row.id
-                                             },
-                                             method: "POST",
-                                             url: "alcohol_cases/show",
-                                             formData: false
-                                          },
-                                          Recidences
-                                       )
-                                    })
-                     }
+                     onClick={async () => {
+                        console.log("aqui", row);
+                        setOpenpdf({
+                           open: true,
+                           data: await request(
+                              {
+                                 data: {
+                                    cid: row.UltimoFolio
+                                 },
+                                 method: "POST",
+                                 url: "alcohol_cases/show",
+                                 formData: false
+                              },
+                              Recidences
+                           )
+                        });
+                     }}
                   >
                      <FaRegFilePdf />
                   </CustomButton>

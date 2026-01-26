@@ -276,27 +276,39 @@ export const CustomCalendar: React.FC<CalendarProps> = ({
       return filtered;
    }, [events, selectedModule, searchTerm, activeViewFilters]);
 
-   const getEventsForDay = (date: Date) => {
-      return filteredEvents
-         .filter((e) => e.datetime)
-         .filter((e) => e.datetime.toDateString() === date.toDateString())
-         .sort((a, b) => a.datetime.getTime() - b.datetime.getTime());
-   };
+  const getEventsForDay = (date: Date) => {
+     const targetDate = new Date(date);
+     targetDate.setHours(0, 0, 0, 0);
 
-   const getEventsForHour = (date: Date, hour: number) => {
-      return filteredEvents
-         .filter((e) => e.datetime)
-         .map((e) => ({
-            ...e,
-            datetime: e.datetime instanceof Date ? e.datetime : new Date(e.datetime)
-         }))
-         .filter((e) => {
-            const eventDate = e.datetime.toDateString();
-            const eventHour = e.datetime.getHours();
-            return eventDate === date.toDateString() && eventHour === hour;
-         })
-         .sort((a, b) => a.datetime.getMinutes() - b.datetime.getMinutes());
-   };
+     const nextDay = new Date(targetDate);
+     nextDay.setDate(nextDay.getDate() + 1);
+
+     return filteredEvents
+        .filter((e) => e.datetime && e.datetime instanceof Date && !isNaN(e.datetime.getTime()))
+        .filter((e) => {
+           const eventDate = new Date(e.datetime);
+           return eventDate >= targetDate && eventDate < nextDay;
+        })
+        .sort((a, b) => a.datetime.getTime() - b.datetime.getTime());
+  };
+
+  const getEventsForHour = (date: Date, hour: number) => {
+     // Crear un rango de tiempo para esa hora específica
+     const hourStart = new Date(date);
+     hourStart.setHours(hour, 0, 0, 0);
+
+     const hourEnd = new Date(date);
+     hourEnd.setHours(hour, 59, 59, 999);
+
+     return filteredEvents
+        .filter((e) => e.datetime && e.datetime instanceof Date)
+        .filter((e) => {
+           const eventTime = new Date(e.datetime);
+           // Verificar si el evento cae dentro de esta hora específica
+           return eventTime >= hourStart && eventTime <= hourEnd;
+        })
+        .sort((a, b) => a.datetime.getTime() - b.datetime.getTime());
+  };
 
    const getAllDayEvents = (date: Date) => {
       return filteredEvents.filter((e) => {
@@ -373,7 +385,9 @@ export const CustomCalendar: React.FC<CalendarProps> = ({
       const currentHour = now.getHours();
       const currentMinute = now.getMinutes();
       const isToday = currentDate.toDateString() === now.toDateString();
-
+      console.log("Fecha actual:", currentDate.toISOString().split("T")[0]);
+      console.log("Eventos del día:", dayEvents);
+      console.log("Todos los eventos:", events);
       return (
          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="presidencia text-white p-6">
@@ -1105,7 +1119,7 @@ export const CustomCalendar: React.FC<CalendarProps> = ({
                         <button
                            onClick={() => {
                               const tomorrow = new Date();
-                              tomorrow.setDate(tomorrow.getDate() + 1);
+                              // tomorrow.setDate(tomorrow.getDate() + 1);
                               const tomorrowStr = tomorrow.toISOString().split("T")[0];
                               setCustomDate(tomorrowStr);
                               goToDate(tomorrowStr);

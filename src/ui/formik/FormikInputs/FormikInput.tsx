@@ -62,11 +62,12 @@ export const FormikTextArea: React.FC<InputWithLabelProps> = ({
                const hasValue = values?.[name] && values[name].toString().length > 0;
                const isActive = hasValue || isFocused;
 
-               const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+               const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
                   const newValue = e.target.value;
                   setFieldValue(name, newValue);
 
-                  if (newValue !== field.value && handleModified) {
+                  // Add a safety check before calling handleModified
+                  if (values && newValue !== field.value && handleModified) {
                      handleModified({ ...values, [name]: newValue }, setFieldValue);
                   }
                };
@@ -199,7 +200,7 @@ export const FormikTextArea: React.FC<InputWithLabelProps> = ({
 //    hidden = false,
 //    onBlur,
 //    render,
-   
+
 // }) => {
 //    const formik = useFormikContext();
 //    const [isFocused, setIsFocused] = useState(false);
@@ -260,8 +261,8 @@ export const FormikTextArea: React.FC<InputWithLabelProps> = ({
 //                               {/* Esta línea TAPA la parte superior del borde (efecto border-top abierto) */}
 //                               <div
 //                                  className={`
-//                absolute -top-[2px] left-[10px] h-[4px] 
-//                ${error ? "bg-red-50" : "bg-gray-100"} 
+//                absolute -top-[2px] left-[10px] h-[4px]
+//                ${error ? "bg-red-50" : "bg-gray-100"}
 //                z-[1]
 //             `}
 //                                  style={{
@@ -395,7 +396,7 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
             {({ field, form: { values, setFieldValue, setFieldTouched, touched, errors } }) => {
                const error = touched?.[name] && errors?.[name] ? String(errors[name]) : null;
                const hasValue = values?.[name] && values[name].toString().length > 0;
-               const isActive = hasValue || isFocused;
+               const isActive = hasValue || isFocused || type === "date" || type === "datetime-local";
                const isActiveDisabled = disabled && values?.[name]?.toString()?.length > 0;
 
                const handleChange = (e) => {
@@ -534,7 +535,7 @@ export const FormikInput: React.FC<InputWithLabelProps> = ({
                         </motion.div>
                      ) : null}
 
-                     {render }
+                     {render}
 
                      {/* Contador de caracteres (opcional) */}
                      {hasValue && type === "text" ? (
@@ -577,14 +578,32 @@ export const FormikNativeTimeInput: React.FC<InputWithLabelProps> = ({
                const isActive = hasValue || isFocused;
 
                const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-                  const newValue = e.target.value;
-                  setFieldValue(name, newValue);
+                  console.log("DEBUG - Before handleChange:");
+                  console.log("values:", values);
+                  console.log("field:", field);
+                  console.log("field.value:", field?.value);
 
-                  if (newValue !== field.value && handleModified) {
+                  const newValue = e?.target?.value;
+                  console.log("aqui ho")
+                  console.log("newValue:", newValue);
+                  if ( newValue !=undefined) {
+                     setFieldValue(name, newValue);
+                  }
+                  console.log("DEBUG - After setFieldValue:");
+                  console.log("values:", values);
+
+                  // More comprehensive check
+                  if (values && typeof values === "object" && newValue !== field?.value && handleModified) {
+                     console.log("DEBUG - Calling handleModified");
                      handleModified({ ...values, [name]: newValue }, setFieldValue);
+                  } else {
+                     console.log("DEBUG - Skipping handleModified, condition not met");
+                     console.log("values exists?", !!values);
+                     console.log("type of values:", typeof values);
+                     console.log("newValue !== field.value?", newValue !== field?.value);
+                     console.log("handleModified exists?", !!handleModified);
                   }
                };
-
                const handleFocus = () => setIsFocused(true);
                const handleBlur = () => {
                   setIsFocused(false);
@@ -656,11 +675,7 @@ export const FormikNativeTimeInput: React.FC<InputWithLabelProps> = ({
                               className={`
                                  absolute left-3 transition-all duration-300 pointer-events-none
                                  transform origin-left
-                                 ${
-                                    
-                                        `-top-2.5 text-xs px-1 bg-white ${error ? "text-red-500" : isFocused ? "text-blue-500" : "text-gray-700"} font-medium`
-                                      
-                                 }
+                                 ${`-top-2.5 text-xs px-1 bg-white ${error ? "text-red-500" : isFocused ? "text-blue-500" : "text-gray-700"} font-medium`}
                                  ${disabled ? "text-gray-400" : ""}
                               `}
                            >
@@ -747,8 +762,8 @@ export const FormikColorPicker: React.FC<ColorPickerProps> = ({
                   disabled
                      ? "opacity-50 cursor-not-allowed border-gray-200"
                      : isOpen
-                     ? "border-purple-500 shadow-lg shadow-purple-100"
-                     : "border-gray-200 hover:border-purple-300 hover:shadow-md"
+                       ? "border-purple-500 shadow-lg shadow-purple-100"
+                       : "border-gray-200 hover:border-purple-300 hover:shadow-md"
                }`}
                disabled={disabled}
             >
@@ -953,8 +968,6 @@ export const FormikCheckbox: React.FC<CheckboxWithLabelProps> = ({
       </ColComponent>
    );
 };
-
-
 
 interface FormikImageInputProps {
    label: string;
@@ -1675,16 +1688,15 @@ export const FormikAutocomplete = <T extends Record<string, any>>({
       deepObj[lastKey] = value;
    };
 
- const getValueFromFormik = () => {
-    if (!formik || !formik.values) return undefined;
+   const getValueFromFormik = () => {
+      if (!formik || !formik.values) return undefined;
 
-    if (Array.isArray(name)) {
-       return getNestedValue(formik.values, name);
-    }
+      if (Array.isArray(name)) {
+         return getNestedValue(formik.values, name);
+      }
 
-    return formik.values?.[name];
- };
-
+      return formik.values?.[name];
+   };
 
    // Nueva función para actualizar el valor mostrado basado en el valor actual de Formik
    const updateDisplayValue = (currentValue: any) => {

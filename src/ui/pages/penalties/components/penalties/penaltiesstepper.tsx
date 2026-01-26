@@ -14,24 +14,35 @@ const PenaltiesStepper = ({ section,steps, activeStep, setActiveStep }: StepperP
    const { errors, touched } = useFormikContext<any>();
 const stepFields: Record<string, Record<number, string[]>> = {
    penaltie: {
-      0: ["init_date", "final_date"],
-      1: ["time", "date", "person_oficial", "alcohol_concentration"],
+      0: ["init_date", "final_date", "doctor_id", "group", "filter_supervisor"],
+      1: [
+         "time",
+         "date",
+         "person_oficial",
+         "alcohol_concentration",
+         "person_contraloria",
+         "civil_protection",
+         "command_vehicle",
+         "command_troops",
+         "command_details",
+         "plate_number"
+      ],
       2: ["name", "cp", "city"]
    },
    traffic: {
-      0: ["date", "time"],
-      1: ["age", "vehicle_brand", "name", "plate_number", "time", "municipal_police"],
-      2: ["name", "city", "image_penaltie"]
+      0: [],
+      1: ["age", "vehicle_brand", "name", "plate_number", "time", "alcohol_concentration"],
+      2: ["image_penaltie", "images_evidences", "images_evidences_car"]
    },
    securrity: {
-      0: ["init_date", "final_date"],
-      1: ["detention_reason", "patrol_unit_number"],
-      2: ["name", "cp", "city"]
+      0: [],
+      1: ["detention_reason", "municipal_police", "patrol_unit_number"],
+      2: []
    },
    courts: {
-      0: ["init_date", "final_date"],
-      1: ["exit_reason", "fine_amount", "person_oficial", "alcohol_concentration"],
-      2: ["name", "cp", "city"]
+      0: [],
+      1: ["exit_reason"],
+      2: []
    }
 };
 

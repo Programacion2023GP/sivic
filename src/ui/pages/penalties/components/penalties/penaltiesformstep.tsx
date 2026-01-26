@@ -21,12 +21,7 @@ interface StepProps {
 // ============================================
 // STEP 0: Configuración Inicial
 // ============================================
-export const Step0 = ({
-   RESPONSIVE_CONFIG,
-   contraloria,
-   doctor,
-   proteccionCivil
-}: Pick<StepProps, "RESPONSIVE_CONFIG" | "contraloria" | "doctor" | "proteccionCivil">) => (
+export const Step0 = ({ RESPONSIVE_CONFIG, contraloria, doctor, proteccionCivil }: Pick<StepProps, "RESPONSIVE_CONFIG" | "contraloria" | "doctor" | "proteccionCivil">) => (
    <div className="space-y-2">
       <FormikNativeTimeInput icon="date" label="Inicio del turno" name="init_date" type="datetime-local" responsive={RESPONSIVE_CONFIG} />
 
@@ -43,7 +38,15 @@ export const Step0 = ({
          disabled
       />
 
-      <FormikAutocomplete label="Doctor" name="doctor_id" options={doctor} responsive={RESPONSIVE_CONFIG} idKey="id" labelKey="name" />
+      <FormikAutocomplete
+         label="Doctor"
+         name="doctor_id"
+         options={doctor}
+         loading={!Array.isArray(doctor) || doctor.length === 0}
+         responsive={RESPONSIVE_CONFIG}
+         idKey="id"
+         labelKey="name"
+      />
 
       <FormikRadio
          name="group"
@@ -92,6 +95,11 @@ export const Step1 = ({
    useEffect(() => {
    }, [section]);
    const {values,setFieldValue} = useFormikContext()
+   useEffect(()=>{
+      setFieldValue("lon",location?.lon)
+      setFieldValue("lat", location?.lat);
+
+   },[location])
    return (
       <div className="space-y-2">
          {/* Información del Operativo */}
@@ -109,14 +117,16 @@ export const Step1 = ({
             labelKey="text"
             handleModified={handleOficialChange}
          />
+      {section=="securrity" && (
 
          <FormikInput
-            icon="usuario-corbata"
-            name="municipal_police"
-            label="Policía Municipal"
-            disabled={!["traffic", "penaltie", "securrity"].includes(section)}
-            responsive={RESPONSIVE_CONFIG}
+         icon="usuario-corbata"
+         name="municipal_police"
+         label="Policía Municipal"
+         disabled={!["traffic", "penaltie", "securrity"].includes(section)}
+         // responsive={RESPONSIVE_CONFIG}
          />
+      )}
 
          {/* Sección: Datos del Detenido */}
          <div className="my-6">
@@ -164,7 +174,7 @@ export const Step1 = ({
 
          {/* Información de Ubicación */}
          <FormikInput disabled value={location?.address?.postcode} label="Código postal" name="cp" responsive={RESPONSIVE_CONFIG} />
-         {values?.["residence_folio"] && section=="penaltie" && (
+         {values?.["residence_folio"] && section == "penaltie" && (
             <div className="mt-2">
                <div className="flex items-start p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                   <div className="mr-2 mt-0.5">
@@ -226,7 +236,8 @@ export const Step1 = ({
                />
                <FormikInput
                   label="Motivo de detención"
-                  disabled={!["traffic", "penaltie", "securrity"].includes(section)}
+                  disabled={true}
+                  value={'ALCOLIMETRO'}
                   name="detention_reason"
                   responsive={RESPONSIVE_CONFIG}
                />
@@ -246,6 +257,7 @@ export const Step1 = ({
          <FormikInput name="curp" label="CURP" responsive={RESPONSIVE_CONFIG} />
 
          <FormikTextArea name="observations" label="Observaciones" />
+         {section == "courts" && <FormikImageInput name="image_penaltie_money" maxFiles={1} label="Recibo" />}
       </div>
    );
 };

@@ -809,7 +809,6 @@ const CustomTable = <T extends object>({
       const titleField = columns.find(
          (col) => col.priority === 1 || col.headerName.toLowerCase().includes("nombre") || col.headerName.toLowerCase().includes("titulo")
       );
-
       return titleField ? String(row[titleField.field] || "Sin título") : "Item";
    };
 

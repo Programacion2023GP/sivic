@@ -1,3 +1,4 @@
+import { Court } from "../../models/courts/courts.model";
 import type { Result } from "../../models/users/users.domain";
 
 export interface CourtsRepository{

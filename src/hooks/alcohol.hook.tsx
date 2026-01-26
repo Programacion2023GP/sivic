@@ -9,6 +9,7 @@ import { Public_Securrity } from "../domain/models/security/security";
 import dayjs from "dayjs";
 import { Await } from "react-router-dom";
 import { Seguimiento } from "../domain/models/seguimiento/seguimineto";
+import { Court } from "../domain/models/courts/courts.model";
 type section = "penaltie" | "traffic" | "securrity" | "courts" | "general";
 export const useAlcohol = () => {
    useEffect(() => {}, []);
@@ -28,6 +29,7 @@ export const useAlcohol = () => {
       loading: false, // ← Añadir loading aquí
       submitting: false // ← Para operaciones de submit
    });
+   const [items, setItems] = useState<Penalties[]>([]);
    const [initialValues, setInitialValues] = useState<Penalties | Court | Traffic | Public_Securrity>();
    // Stores optimizadas - evitar recreación en cada render
    const [open,setOpen] = useState<boolean>(false)
@@ -83,7 +85,9 @@ export const useAlcohol = () => {
       amountAlcohol: 0,
       curp: null,
       image_penaltie: null,
+      image_penaltie_money:null,
       images_evidences: [],
+      images_evidences_car:null,
       lat: 0,
       lon: 0,
       init_date: undefined,
@@ -95,6 +99,9 @@ export const useAlcohol = () => {
       detention_reason:null,
       patrol_unit_number:null
    };
+   useEffect(()=>{
+      setInitialValues(penaltieCaseStore.initialValues)
+   },[])
    const usePenaltiesCase = useMemo(() => {
       // Crear valores iniciales una sola vez
 
@@ -170,6 +177,7 @@ export const useAlcohol = () => {
          console.log(fetchedData)
          // DEPURACIÓN
          
+         setItems(fetchedData);
          if (page === "penaltie") {
             let items: Penalties[] = fetchedData.filter((it) => it.current_process_id == 1);
             setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
@@ -202,32 +210,41 @@ export const useAlcohol = () => {
       switch (page) {
          case "penaltie":
             const today = dayjs();
-            const array = state.data as Penalties[];
+            // const array = state.data as Penalties[];
+            console.log("activado")
+            const array = items as Penalties[];
+            console.log(array)
             const configTurn = array.find((p) => {
                if (!p.init_date || !p.final_date) return false;
                return p.auth_id == auth_id && today.isBetween(dayjs(p.init_date), dayjs(p.final_date), null, "[]");
             });
             if (configTurn) {
-               setInitialValues({
-                  ...penaltieCaseStore.initialValues,
-                  time: now.toLocaleTimeString("en-US", {
-                     hour: "2-digit",
-                     minute: "2-digit",
-                     hour12: false // ← Cambiar a false
-                  }),
-                  date: new Date().toISOString().split("T")[0],
-                  person_contraloria: configTurn.person_contraloria,
-                  doctor_id: configTurn.doctor_id,
-                  civil_protection: configTurn.civil_protection,
-                  command_vehicle: configTurn.command_details,
-                  command_troops: configTurn.command_troops,
-                  command_details: configTurn.command_details,
-                  filter_supervisor: configTurn.filter_supervisor,
-                  init_date: configTurn.init_date,
-                  final_date: configTurn.final_date,
-                  auth_id: configTurn.auth_id,
-                  penalty_preload_data_id: configTurn.penalty_preload_data_id
-               } as Penalties);
+               setInitialValues(
+                  (prev:Penalties) =>
+                     ({
+                        city: prev?.city,
+                        cp: prev?.cp,
+
+                        ...penaltieCaseStore.initialValues,
+                        time: now.toLocaleTimeString("en-US", {
+                           hour: "2-digit",
+                           minute: "2-digit",
+                           hour12: false // ← Cambiar a false
+                        }),
+                        date: new Date().toISOString().split("T")[0],
+                        person_contraloria: configTurn.person_contraloria,
+                        doctor_id: configTurn.doctor_id,
+                        civil_protection: configTurn.civil_protection,
+                        command_vehicle: configTurn.command_details,
+                        command_troops: configTurn.command_troops,
+                        command_details: configTurn.command_details,
+                        filter_supervisor: configTurn.filter_supervisor,
+                        init_date: configTurn.init_date,
+                        final_date: configTurn.final_date,
+                        auth_id: configTurn.auth_id,
+                        penalty_preload_data_id: configTurn.penalty_preload_data_id
+                     }) as Penalties
+               );
 
                return penaltieCaseStore.initialValues;
             } else {
@@ -248,21 +265,23 @@ export const useAlcohol = () => {
    ) => {
       switch (page) {
          case "penaltie":
+            console.log("aqio e",specificFields)
             if (specificFields && specificFields.length > 0) {
                // Editar solo campos específicos
+               console.log("si especifico")
                const partialUpdate: Partial<Penalties> = {};
                specificFields.forEach((field) => {
                   if (field in row) {
                      partialUpdate[field] = row[field as keyof typeof row];
                   }
                });
-               console.log("aqui en data", row, specificFields, partialUpdate);
                setInitialValues((prev) => ({
                   ...prev,
                   ...partialUpdate
                }));
             } else {
                // Editar toda la fila
+               
                setInitialValues(row);
             }
             break;
@@ -324,13 +343,15 @@ export const useAlcohol = () => {
       create,
       loadData,
       data: state.data,
+      dataItems: items,
       loading: state.loading,
       submitting: state.submitting,
-      initialValues,
+      initialValues: initialValues,
       editInitialValues,
       resetInitialValues,
       deleteRow,
       nextProccess,
+      setInitialValues,
       allData: state.allData,
       seguimiento,
       open,

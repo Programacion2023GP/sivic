@@ -2,6 +2,7 @@ import type { FormikProps } from "formik";
 import { ReactNode } from "react";
 
 export type FormikType = {
+   buttonLoading?:boolean;
    validationSchema?: any;
    initialValues: Record<string, any>;
    children: (

@@ -4,6 +4,168 @@
 
 ---
 
+## 🔧 **v4.0.1.16** · *🧪 Beta*
+📅 **Fecha:** 23 de enero de 2026, 2:47 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.1.15** · *🧪 Beta*
+📅 **Fecha:** 23 de enero de 2026, 2:43 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.1.14** · *🧪 Beta*
+📅 **Fecha:** 23 de enero de 2026, 2:38 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.1.13** · *🧪 Beta*
+📅 **Fecha:** 23 de enero de 2026, 2:16 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.1.12** · *🧪 Beta*
+📅 **Fecha:** 23 de enero de 2026, 11:53 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.1.11** · *🧪 Beta*
+📅 **Fecha:** 23 de enero de 2026, 10:16 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.1.10** · *🧪 Beta*
+📅 **Fecha:** 23 de enero de 2026, 10:05 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.1.9** · *🧪 Beta*
+📅 **Fecha:** 22 de enero de 2026, 3:27 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.1.8** · *🧪 Beta*
+📅 **Fecha:** 22 de enero de 2026, 2:15 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.1.7** · *🧪 Beta*
+📅 **Fecha:** 22 de enero de 2026, 1:57 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.1.6** · *🧪 Beta*
+📅 **Fecha:** 20 de enero de 2026, 11:45 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.1.5** · *🧪 Beta*
+📅 **Fecha:** 20 de enero de 2026, 11:15 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.1.4** · *🧪 Beta*
+📅 **Fecha:** 20 de enero de 2026, 11:01 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.1.3** · *🧪 Beta*
+📅 **Fecha:** 20 de enero de 2026, 10:40 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.1.2** · *🧪 Beta*
+📅 **Fecha:** 20 de enero de 2026, 9:54 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🧩 **v4.0.1.1** · *🧪 Beta*
+📅 **Fecha:** 19 de enero de 2026, 4:06 p.m.  
+👤 **Autor:** luis gutierrez  
+🧭 **Tipo:** Patch
+
+**✨ Mejoras**
+- correcion de reportes
+
+
+
+---
+
+## 🚀 **v4.0.0.1** · *🧪 Beta*
+📅 **Fecha:** 19 de enero de 2026, 3:10 p.m.  
+👤 **Autor:** luis gutierrez  
+🧭 **Tipo:** Major
+
+**✨ Mejoras**
+- se cambio a un proceso
+   - procesos dependiendo del grado del alcohol
+   - cuenta con reicidencias aceptadas
+   - historial
+
+
+
+---
+
 ## 🔧 **v3.1.1.2** · *🧪 Beta*
 📅 **Fecha:** 7 de diciembre de 2025, 12:08 a.m.  
 👤 **Autor:**   

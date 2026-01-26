@@ -70,7 +70,6 @@ const PageCalendary = () => {
    }, []);
 
    const handleEventClick = (event: EventItem) => {
-      console.log("Evento seleccionado:", event);
       setRow({
          open: true,
          row: event!.data,
@@ -83,13 +82,13 @@ const PageCalendary = () => {
             return <MultaPDF data={row} />;
 
          case "Juzgados":
-            return <CourtPDF data={row}/>;
+            return <MultaPDF data={row} />;
 
          case "Seguridad publica":
-            return <PublicSecurrityPDF data={row} />;
+            return <MultaPDF data={row} />;
 
          case "Transito Vialidad":
-            return <TrafficPDF data={row} />;
+            return <MultaPDF data={row} />;
 
          default:
             return null;

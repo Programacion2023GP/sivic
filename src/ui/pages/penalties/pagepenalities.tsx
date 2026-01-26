@@ -24,6 +24,8 @@ import { Public_Securrity } from "../../../domain/models/security/security";
 import { Traffic } from "../../../domain/models/traffic/traffic";
 import { VscDebugContinueSmall } from "react-icons/vsc";
 import { Court } from "../../../domain/models/courts/courts.model";
+import PageCourt from "../court/courtpage";
+import { CustomTab } from "../../components/tab/customtab";
 
 type section = "penaltie" | "traffic" | "securrity" | "courts" | "general";
 
@@ -39,9 +41,9 @@ const PagePenalities = ({ section }: { section: section }) => {
    const { location, address, getLocation, loading: LoadingCp } = useLocation();
 
    // Store principal
-   const { data, allData, loading, loadData, create, initialValues, editInitialValues, resetInitialValues, deleteRow, nextProccess } = useAlcohol();
+   const { data, allData, loading, loadData, create, initialValues, editInitialValues, resetInitialValues, deleteRow, nextProccess, setInitialValues } = useAlcohol();
    // Store doctor
-   const { doctor, fetchDoctor, loading: doctorLoading } = useDoctorStore();
+   const { doctor, fetchDoctor, loading: doctorLoading,  } = useDoctorStore();
    const apiDoc = useMemo(() => new DoctorApi(), []);
    const [itemsData, setItemsData] = useState<Penalties[] | Court[] | Traffic[] | Public_Securrity[]>();
    // Valores memoizados
@@ -60,8 +62,20 @@ const PagePenalities = ({ section }: { section: section }) => {
    const validations = {
       penaltie: () =>
          Yup.object({
-            alcohol_concentration: Yup.number().typeError("Debe ser un número").required("Campo obligatorio").min(0.1, "Debe ser mínimo 0.1"),
-            name: Yup.string().required("Campo obligatorio").min(1, "El nombre es requerido")
+         //   init_date: Yup.string().required("Campo obligatorio"),
+           // final_date: Yup.string().required("Campo obligatorio"),
+            //doctor_id: Yup.string().required("Campo obligatorio"),
+            //group: Yup.number().required("Campo obligatorio").min(1, "campo obligatorio"),
+            //filter_supervisor: Yup.string().required("Campo obligatorio"),
+
+            alcohol_concentration: Yup.number().typeError("Debe ser un número").required("Campo obligatorio").min(0.001, "Campo obligatorio"),
+            name: Yup.string().required("Campo obligatorio").min(1, "El nombre es requerido"),
+            //person_oficial: Yup.string().required("Campo obligatorio").min(1, "Campo obligatorio"),
+            //amountAlcohol: Yup.number().required("Campo obligatorio").min(0.001, "Debe ser minimo 0.1"),
+           // vehicle_service_type: Yup.string().required("Campo obligatorio").min(1, "Campo obligatorio"),
+            //age: Yup.number().required("Campo obligatorio").min(0.001, "Campo obligatorio"),
+           // number_of_passengers: Yup.number().required("Campo obligatorio").min(0.001, "Campo obligatorio"),
+           // plate_number: Yup.string().required("Campo obligatorio").min(1, "La placa es requerida")
          }),
 
       traffic: () =>
@@ -79,12 +93,14 @@ const PagePenalities = ({ section }: { section: section }) => {
 
             image_penaltie: Yup.string().required("Campo obligatorio"),
             images_evidences: Yup.string().required("Campo obligatorio"),
-            images_evidences_car: Yup.string()
-               .notRequired()
-               .test("image_car", "campo obligatorio", (value) => {
-                  const alcohol = Number(formikRef?.current?.values?.alcohol_concentration ?? 0);
-                  return  value!=null && alcohol < 3;
-               })
+            images_evidences_car: Yup.string().required("Campo obligatorio")
+
+            // Yup.string()
+            //    .notRequired()
+            //    .test("image_car", "campo obligatorio", (value) => {
+            //       const alcohol = Number(formikRef?.current?.values?.alcohol_concentration ?? 0);
+            //       return value != null && alcohol < 3;
+            //    })
          }),
       securrity: () =>
          Yup.object({
@@ -95,16 +111,16 @@ const PagePenalities = ({ section }: { section: section }) => {
 
       courts: () =>
          Yup.object({
-            exit_reason: Yup.string().required("Campo obligatorio").min(1, "El motivo de salida es requerido"),
-            fine_amount: Yup.string().required("Campo obligatorio").min(1, "La cantidad es requerida")
+            exit_reason: Yup.string().required("Campo obligatorio").min(1, "El motivo de salida es requerido")
+            // fine_amount: Yup.string().required("Campo obligatorio").min(1, "La cantidad es requerida")
          })
    };
 
-const validationSchema = useMemo(() => validations[section]?.(), [section]);
+   const validationSchema = useMemo(() => validations[section]?.(), [section]);
 
-const initialFormValues = useMemo(() => initialValues, [initialValues]);
-
-
+   const initialFormValues = useMemo(() => {
+      return initialValues;
+   }, [initialValues]);
    // Handlers del componente principal
    const { handleOficialChange, handleNameBlur } = usePenaltiesHandlers(formikRef, oficiales, allData as Penalties[], setDuplicate);
 
@@ -117,7 +133,6 @@ const initialFormValues = useMemo(() => initialValues, [initialValues]);
 
    const handleSubmit = useCallback(
       async (values: FormikValues) => {
-         console.log("aca");
          if (uiState.activeStep < steps.length - 1) {
             handleStepNavigation("next");
             return;
@@ -185,7 +200,7 @@ const initialFormValues = useMemo(() => initialValues, [initialValues]);
       let mounted = true;
       const initializeData = async () => {
          try {
-            await getLocation(true)
+            await getLocation(true);
             await loadData(section);
 
             if (mounted) {
@@ -249,121 +264,141 @@ const initialFormValues = useMemo(() => initialValues, [initialValues]);
 
    return (
       <>
-         <CompositePage
-            formDirection="modal"
-            isOpen={uiState.open}
-            modalTitle="Nueva Multa"
-            fullModal={true}
-            onClose={() => {
-               setUiState((prev) => ({ ...prev, open: false }));
-               setDuplicate({
-                  duplicate: false,
-                  value: null
-               });
-            }}
-            form={() =>
+         <CustomTab
+            variant="minimal"
+            tabs={[
+               ...(section == "courts"
+                  ? [
+                       {
+                          id: "Juzgados",
+                          label: "Juzgados",
+                          content: <PageCourt />
+                       }
+                    ]
+                  : []),
                {
-                   if (section =="general") {
-                     return null
-                  }
-                  return (
-                     <div className="p-4">
-                        <FormikForm ref={formikRef} validationSchema={validationSchema} initialValues={initialFormValues} onSubmit={handleSubmit}>
-                           {(vakues) => (
-                              <div className="w-full space-y-2">
-                                 {/* {JSON.stringify(vakues)} */}
-                                 <PenaltiesStepper
-                                    section={section}
-                                    steps={steps}
-                                    activeStep={uiState.activeStep}
-                                    setActiveStep={(step) => setUiState((prev) => ({ ...prev, activeStep: step }))}
-                                 />
+                  id: "Alcolimetro",
+                  label: "Alcolimetro",
+                  content: (
+                     <CompositePage
+                        formDirection="modal"
+                        isOpen={uiState.open}
+                        modalTitle="Nueva Multa"
+                        fullModal={true}
+                        onClose={() => {
+                           setUiState((prev) => ({ ...prev, open: false }));
+                           setDuplicate({
+                              duplicate: false,
+                              value: null
+                           });
+                        }}
+                        form={() => {
+                           if (section == "general") {
+                              return null;
+                           }
+                           return (
+                              <div className="p-4">
+                                 <FormikForm ref={formikRef} validationSchema={validationSchema} initialValues={initialFormValues} onSubmit={handleSubmit}>
+                                    {(vakues) => (
+                                       <div className="w-full space-y-2">
+                                          {/* {JSON.stringify(vakues)} */}
+                                          <PenaltiesStepper
+                                             section={section}
+                                             steps={steps}
+                                             activeStep={uiState.activeStep}
+                                             setActiveStep={(step) => setUiState((prev) => ({ ...prev, activeStep: step }))}
+                                          />
 
-                                 <div className="bg-white rounded-xl p-2 shadow-sm min-h-[400px] w-full">{renderStepContent(section)}</div>
+                                          <div className="bg-white rounded-xl p-2 shadow-sm min-h-[400px] w-full">{renderStepContent(section)}</div>
 
-                                 <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                                    <div className="text-sm text-gray-500">
-                                       Paso {uiState.activeStep + 1} de {steps.length}
-                                    </div>
-                                    <div className="flex gap-3 flex-wrap">
-                                       {uiState.activeStep > 0 && (
-                                          <CustomButton type="button" variant="secondary" size="md" color="cyan" onClick={() => handleStepNavigation("prev")}>
-                                             Regresar
-                                          </CustomButton>
-                                       )}
-                                       <CustomButton
-                                          type="button"
-                                          color="slate"
-                                          variant={uiState.activeStep < steps.length - 1 ? "outline" : "neon"}
-                                          loading={loading}
-                                          onClick={() => {
-                                             if (uiState.activeStep < steps.length - 1) {
-                                                handleStepNavigation("next");
-                                             } else {
-                                                console.log(formikRef.current?.errors);
-                                                formikRef.current?.submitForm();
-                                             }
-                                          }}
-                                       >
-                                          {uiState.activeStep < steps.length - 1 ? " Continuar →" : "💾 Guardar"}
-                                       </CustomButton>
-                                       {uiState.activeStep < steps.length - 1 ? null : (
-                                          <CustomButton
-                                             loading={loading}
-                                             onClick={async () => {
-                                                const formik = formikRef.current;
+                                          <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                                             <div className="text-sm text-gray-500">
+                                                Paso {uiState.activeStep + 1} de {steps.length}
+                                             </div>
+                                             <div className="flex gap-3 flex-wrap">
+                                                {uiState.activeStep > 0 && (
+                                                   <CustomButton type="button" variant="secondary" size="md" color="cyan" onClick={() => handleStepNavigation("prev")}>
+                                                      Regresar
+                                                   </CustomButton>
+                                                )}
+                                                <CustomButton
+                                                   type="button"
+                                                   color="slate"
+                                                   variant={uiState.activeStep < steps.length - 1 ? "outline" : "neon"}
+                                                   loading={loading}
+                                                   onClick={() => {
+                                                      if (uiState.activeStep < steps.length - 1) {
+                                                         handleStepNavigation("next");
+                                                      } else {
+                                                         console.log(formikRef.current?.errors);
+                                                         formikRef.current?.submitForm();
+                                                      }
+                                                   }}
+                                                >
+                                                   {uiState.activeStep < steps.length - 1 ? " Continuar →" : "💾 Guardar"}
+                                                </CustomButton>
+                                                {uiState.activeStep < steps.length - 1 ? null : (
+                                                   <CustomButton
+                                                      loading={loading}
+                                                      onClick={async () => {
+                                                         const formik = formikRef.current;
 
-                                                // Fuerza validación
-                                                const errors = await formik.validateForm();
+                                                         // Fuerza validación
+                                                         const errors = await formik.validateForm();
 
-                                                // Marca todos los campos como tocados (para mostrar errores)
-                                                formik.setTouched(
-                                                   Object.keys(formik.values).reduce((acc, key) => {
-                                                      acc[key] = true;
-                                                      return acc;
-                                                   }, {})
-                                                );
+                                                         // Marca todos los campos como tocados (para mostrar errores)
+                                                         formik.setTouched(
+                                                            Object.keys(formik.values).reduce((acc, key) => {
+                                                               acc[key] = true;
+                                                               return acc;
+                                                            }, {})
+                                                         );
 
-                                                // Si hay errores, no continúes
-                                                if (Object.keys(errors).length > 0) {
-                                                   return;
-                                                }
+                                                         // Si hay errores, no continúes
+                                                         if (Object.keys(errors).length > 0) {
+                                                            return;
+                                                         }
 
-                                                // Si todo está bien
-                                                setUiState((prev) => ({ ...prev, open: false }));
-                                                handleNext(formik.values);
-                                             }}
-                                             variant="primary"
-                                          >
-                                             Registrar y continuar
-                                          </CustomButton>
-                                       )}
-                                    </div>
-                                 </div>
+                                                         // Si todo está bien
+                                                         setUiState((prev) => ({ ...prev, open: false }));
+                                                         handleNext(formik.values);
+                                                      }}
+                                                      variant="primary"
+                                                   >
+                                                      Registrar y continuar
+                                                   </CustomButton>
+                                                )}
+                                             </div>
+                                          </div>
+                                       </div>
+                                    )}
+                                 </FormikForm>
                               </div>
-                           )}
-                        </FormikForm>
-                     </div>
-                  );
-               } }
-            table={() => (
-               <TableAlcoholCases
-                  section={section}
-                  handleEdit={handleEdit}
-                  //   handleNext={handleNext}
-                  
-                  loadData={loadData}
-                  resetInitialValues={resetInitialValues}
-                  setUiState={setUiState}
-                  setHistory={setHistory}
-                  data={
-                     data
-                     // data.filter((it:any) => it.current_process_id==1) as Penalties[]
-                  }
-                  loading={loading}
-               />
-            )}
+                           );
+                        }}
+                        table={() => (
+                           <TableAlcoholCases
+                              section={section}
+                              handleEdit={handleEdit}
+                              //   handleNext={handleNext}
+                              handleDelete={handleDelete}
+                              loadData={loadData}
+                              resetInitialValues={resetInitialValues}
+                              setUiState={setUiState}
+                              setHistory={setHistory}
+                              data={
+                                 data
+                                 // data.filter((it:any) => it.current_process_id==1) as Penalties[]
+                              }
+                              loading={loading}
+                           />
+                        )}
+                     />
+                  )
+               }
+            ]}
          />
+
          <CustomHistoryCase
             open={history.open}
             id={history.idSearch}
