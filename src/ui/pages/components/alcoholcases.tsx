@@ -291,7 +291,15 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
          <PermissionRoute requiredPermission={["multas_ver", "juzgados_ver", "transito_vialidad__ver", "seguridad_publica_ver"]}>
             <div className="absolute z-20 right-4 bottom-4">
                <PermissionRoute requiredPermission={["multas_crear", "juzgados_crear", "transito_vialidad__crear", "seguridad_publica_crear"]}>
-                  <FloatingActionButton onClick={() => setUiState((prev) => ({ ...prev, open: true }))} icon={<FaPlus />} color="primary" size="normal" />
+                  <FloatingActionButton
+                     onClick={() => {
+                        resetInitialValues("penaltie");
+                        setUiState((prev) => ({ ...prev, open: true }));
+                     }}
+                     icon={<FaPlus />}
+                     color="primary"
+                     size="normal"
+                  />
                </PermissionRoute>
             </div>
 
@@ -327,7 +335,7 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                   </>
                )}
                data={data as Penalties[]}
-               paginate={[5, 10, 25, 50]}
+               paginate={[5, 10, 25, 50, 100, 250, 500, 1000]}
                loading={loading}
                columns={[
                   { field: "id", headerName: "Folio", visibility: "always" },
@@ -361,7 +369,13 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                      renderField: (v) => <>{formatDatetime(`2025-01-01 ${v}`, true, DateFormat.H_MM_SS_A)}</>,
                      getFilterValue: (v) => formatDatetime(`2025-01-01 ${v}`, true, DateFormat.H_MM_SS_A)
                   },
-
+                  {
+                     field: "date",
+                     headerName: "Fecha",
+                     visibility: "always",
+                     renderField: (v) => <>{formatDatetime(`${v}`, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)}</>,
+                     getFilterValue: (v) => formatDatetime(`${v}`, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)
+                  },
                   { field: "person_contraloria", headerName: "Contraloría", visibility: "expanded" },
                   { field: "oficial_payroll", headerName: "Nómina Oficial", visibility: "expanded" },
                   { field: "person_oficial", headerName: "Oficial", visibility: "expanded" },
@@ -391,6 +405,28 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                           {
                              field: "current_process_id",
                              headerName: "Progreso",
+                             getFilterValue(value) {
+                                switch (value) {
+                                   case 1:
+                                      return "Contraloría";
+                                      break;
+                                   case 2:
+                                      return "Tránsito";
+
+                                      break;
+                                   case 3:
+                                      return "Seguridad";
+
+                                      break;
+                                   case 4:
+                                      return "Juzgados";
+
+                                      break;
+                                   default:
+                                      return null;
+                                      break;
+                                }
+                             },
                              renderField: (v) => {
                                 const configs = {
                                    1: { short: "Contraloría", full: "Contraloría", color: "bg-red-100 text-red-800" },
@@ -462,16 +498,117 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                ]}
                actions={(row) => <>{typeData(section, row)}</>}
                mobileConfig={{
+                  activeViews: section == "general",
+                  quickFilters: {
+                     enabled: true,
+                     filters: [
+                        {
+                           field: "date",
+                           type: "date",
+                           label: "Fecha",
+                           // defaultValue: "today",
+                           showTodayButton: true,
+                           showClearButton: true
+                        },
+
+                        {
+                           field: "date",
+                           type: "date-range",
+                           label: "Rango de fechas"
+                        },
+                        // {
+                        //    field: "estado",
+                        //    type: "select",
+                        //    label: "Estado",
+                        //    defaultValue: "activo",
+                        //    options: [
+                        //       { label: "Activo", value: "activo" },
+                        //       { label: "Inactivo", value: "inactivo" },
+                        //       { label: "Pendiente", value: "pendiente" }
+                        //    ]
+                        // },
+                        {
+                           field: "current_process_id",
+                           type: "select",
+                           label: "Status",
+                           options: [
+                              { label: "Contraloria", value: 1 },
+                              { label: "Transito y vialidad", value: 2 },
+                              { label: "Seguridad Pública", value: 3 },
+                              { label: "Juzgados", value: 4 }
+                           ]
+                        }
+                     ],
+                     onApply: (filters) => {
+                        // Hacer llamada API con los filtros
+                     }
+                  },
                   listTile: {
-                     leading: (row) => (
-                        <div className="flex items-center justify-center w-10 h-10 font-bold text-white bg-red-500 rounded-full">{row.name || "N/A"}</div>
-                     ),
+                     leading: (row) => <PhotoZoom src={row.image_penaltie} shape="circle" alt={row.image_penaltie} />,
                      title: (row) => <span className="font-semibold">{row.name || `Multa #${row.id}`}</span>,
-                     subtitle: (row) => (
-                        <span className="text-gray-600">
-                           {row.alcohol_concentration ? `${row.alcohol_concentration}% alcohol` : row.detention_reason || row.detainee_released_to || "Sin detalles"}
-                        </span>
-                     )
+                     subtitle: (row) => {
+                        if (section != "general") {
+                           return;
+                        }
+
+                        const configs = {
+                           1: { short: "Contraloría", full: "Contraloría", color: "bg-red-100 text-red-800" },
+                           2: { short: "Tránsito", full: "Tránsito y Vialidad", color: "bg-amber-100 text-amber-800" },
+                           3: { short: "Seguridad", full: "Seguridad Pública", color: "bg-blue-100 text-blue-800" },
+                           4: { short: "Juzgados", full: "Juzgados", color: "bg-purple-100 text-purple-800" }
+                        };
+
+                        const value = row.current_process_id;
+                        const config = configs[value] ?? {
+                           short: "N/A",
+                           full: "Desconocido",
+                           color: "bg-gray-100 text-gray-800"
+                        };
+
+                        const alcohol = row.alcohol_concentration;
+                        const hasAlcohol = alcohol !== null && alcohol !== undefined;
+
+                        // Si tiene alcohol, modificamos el texto del badge
+                        const badgeText = hasAlcohol ? `${config.short} • ${alcohol}g/L` : config.short;
+
+                        return (
+                           <div className="group relative inline-block">
+                              <span className={`inline-block px-3 py-1 rounded-lg text-sm font-medium ${config.color} cursor-help`}>{badgeText}</span>
+
+                              {/* Tooltip unificado */}
+                              <div
+                                 className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2
+                bg-gray-900 text-white text-xs rounded-lg opacity-0 invisible
+                group-hover:opacity-100 group-hover:visible transition-all duration-200
+                whitespace-nowrap z-10 min-w-[200px]"
+                              >
+                                 <div className="flex flex-col gap-1">
+                                    <div className="font-medium">{config.full}</div>
+
+                                    {hasAlcohol && (
+                                       <div className="flex items-center gap-2 text-gray-300 pt-1 border-t border-gray-700 mt-1">
+                                          <svg className="w-3 h-3 text-rose-400" fill="currentColor" viewBox="0 0 20 20">
+                                             <path
+                                                fillRule="evenodd"
+                                                d="M18 13V5a2 2 0 00-2-2H4a2 2 0 00-2 2v8a2 2 0 002 2h3l3 3 3-3h3a2 2 0 002-2zM5 7a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h3a1 1 0 100-2H6z"
+                                                clipRule="evenodd"
+                                             />
+                                          </svg>
+                                          <span>
+                                             Concentración de alcohol: <span className="font-bold text-rose-300">{alcohol} g/L</span>
+                                          </span>
+                                       </div>
+                                    )}
+                                 </div>
+
+                                 <div
+                                    className="absolute top-full left-1/2 -translate-x-1/2 -mt-1
+                    border-4 border-transparent border-t-gray-900"
+                                 />
+                              </div>
+                           </div>
+                        );
+                     }
                   },
                   swipeActions: {
                      left: [

@@ -4,6 +4,66 @@
 
 ---
 
+## 🔧 **v4.0.3.3** · *🧪 Beta*
+📅 **Fecha:** 30 de enero de 2026, 12:28 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.3.2** · *🧪 Beta*
+📅 **Fecha:** 29 de enero de 2026, 2:55 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🧩 **v4.0.3.1** · *🧪 Beta*
+📅 **Fecha:** 28 de enero de 2026, 12:59 p.m.  
+👤 **Autor:** luis gutierrez  
+🧭 **Tipo:** Patch
+
+**✨ Mejoras**
+- cambio visual movil de mejoras responsivas y vistas distintas con filtros
+
+
+
+---
+
+## 🔧 **v4.0.2.3** · *🧪 Beta*
+📅 **Fecha:** 28 de enero de 2026, 8:58 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.2.2** · *🧪 Beta*
+📅 **Fecha:** 26 de enero de 2026, 3:54 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🧩 **v4.0.2.1** · *🧪 Beta*
+📅 **Fecha:** 26 de enero de 2026, 10:39 a.m.  
+👤 **Autor:** luis gutierrez  
+🧭 **Tipo:** Patch
+
+**✨ Mejoras**
+- se agrego el pdf a todos los casos de section
+
+
+
+---
+
 ## 🔧 **v4.0.1.16** · *🧪 Beta*
 📅 **Fecha:** 23 de enero de 2026, 2:47 p.m.  
 👤 **Autor:**   

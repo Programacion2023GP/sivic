@@ -21,11 +21,31 @@ interface StepProps {
 // ============================================
 // STEP 0: Configuración Inicial
 // ============================================
-export const Step0 = ({ RESPONSIVE_CONFIG, contraloria, doctor, proteccionCivil }: Pick<StepProps, "RESPONSIVE_CONFIG" | "contraloria" | "doctor" | "proteccionCivil">) => (
+export const Step0 = ({
+   RESPONSIVE_CONFIG,
+   section,
+   contraloria,
+   doctor,
+   proteccionCivil
+}: Pick<StepProps, "RESPONSIVE_CONFIG" | "contraloria" | "doctor" | "proteccionCivil" | "section">) => (
    <div className="space-y-2">
-      <FormikNativeTimeInput icon="date" label="Inicio del turno" name="init_date" type="datetime-local" responsive={RESPONSIVE_CONFIG} />
+      <FormikNativeTimeInput
+         icon="date"
+         disabled={!["penaltie"].includes(section)}
+         label="Inicio del turno"
+         name="init_date"
+         type="datetime-local"
+         responsive={RESPONSIVE_CONFIG}
+      />
 
-      <FormikNativeTimeInput icon="date" label="Final del turno" name="final_date" type="datetime-local" responsive={RESPONSIVE_CONFIG} />
+      <FormikNativeTimeInput
+         icon="date"
+         disabled={!["penaltie"].includes(section)}
+         label="Final del turno"
+         name="final_date"
+         type="datetime-local"
+         responsive={RESPONSIVE_CONFIG}
+      />
 
       <FormikAutocomplete
          label="Persona de contraloría a cargo"
@@ -46,6 +66,7 @@ export const Step0 = ({ RESPONSIVE_CONFIG, contraloria, doctor, proteccionCivil 
          responsive={RESPONSIVE_CONFIG}
          idKey="id"
          labelKey="name"
+         disabled={!["penaltie"].includes(section)}
       />
 
       <FormikRadio
@@ -57,6 +78,7 @@ export const Step0 = ({ RESPONSIVE_CONFIG, contraloria, doctor, proteccionCivil 
          ]}
          responsive={RESPONSIVE_CONFIG}
          idKey="id"
+         disabled={!["penaltie"].includes(section)}
          labelKey="name"
       />
 
@@ -67,16 +89,29 @@ export const Step0 = ({ RESPONSIVE_CONFIG, contraloria, doctor, proteccionCivil 
          loading={proteccionCivil.loading}
          responsive={RESPONSIVE_CONFIG}
          idKey="value"
+         disabled={!["penaltie"].includes(section)}
          labelKey="text"
       />
 
-      <FormikInput icon="auto" name="command_vehicle" label="Vehículo" responsive={RESPONSIVE_CONFIG} />
+      <FormikInput icon="auto" name="command_vehicle" label="Vehículo" disabled={!["penaltie"].includes(section)} responsive={RESPONSIVE_CONFIG} />
 
-      <FormikInput icon="usuario-corbata" name="command_troops" label="Tropas" responsive={RESPONSIVE_CONFIG} />
+      <FormikInput icon="usuario-corbata" name="command_troops" label="Tropas" disabled={!["penaltie"].includes(section)} responsive={RESPONSIVE_CONFIG} />
 
-      <FormikInput icon="usuario-corbata" name="command_details" label="Datos de Mando Único" responsive={RESPONSIVE_CONFIG} />
+      <FormikInput
+         icon="usuario-corbata"
+         name="command_details"
+         label="Datos de Mando Único"
+         disabled={!["penaltie"].includes(section)}
+         responsive={RESPONSIVE_CONFIG}
+      />
 
-      <FormikInput icon="usuario-corbata" name="filter_supervisor" label="Datos del Encargado del Filtro" responsive={RESPONSIVE_CONFIG} />
+      <FormikInput
+         icon="usuario-corbata"
+         name="filter_supervisor"
+         label="Datos del Encargado del Filtro"
+         disabled={!["penaltie"].includes(section)}
+         responsive={RESPONSIVE_CONFIG}
+      />
    </div>
 );
 
@@ -103,9 +138,9 @@ export const Step1 = ({
    return (
       <div className="space-y-2">
          {/* Información del Operativo */}
-         <FormikNativeTimeInput name="time" label="Hora" disabled={!["traffic", "penaltie"].includes(section)} responsive={RESPONSIVE_CONFIG} />
+         <FormikNativeTimeInput name="time" label="Hora" disabled={!["penaltie"].includes(section)} responsive={RESPONSIVE_CONFIG} />
 
-         <FormikNativeTimeInput type="date" name="date" label="Fecha de Operativo" responsive={RESPONSIVE_CONFIG} />
+         <FormikNativeTimeInput type="date" name="date" label="Fecha de Operativo" disabled={!["penaltie"].includes(section)} responsive={RESPONSIVE_CONFIG} />
 
          <FormikAutocomplete
             label="Oficial"
@@ -113,20 +148,20 @@ export const Step1 = ({
             options={oficiales.employes}
             loading={oficiales.loading}
             responsive={RESPONSIVE_CONFIG}
+            disabled={!["penaltie"].includes(section)}
             idKey="value"
             labelKey="text"
             handleModified={handleOficialChange}
          />
-      {section=="securrity" && (
-
-         <FormikInput
-         icon="usuario-corbata"
-         name="municipal_police"
-         label="Policía Municipal"
-         disabled={!["traffic", "penaltie", "securrity"].includes(section)}
-         // responsive={RESPONSIVE_CONFIG}
-         />
-      )}
+         {section == "penaltie" && (
+            <FormikInput
+               icon="usuario-corbata"
+               name="municipal_police"
+               label="Policía Municipal"
+               disabled={!["penaltie"].includes(section)}
+               // responsive={RESPONSIVE_CONFIG}
+            />
+         )}
 
          {/* Sección: Datos del Detenido */}
          <div className="my-6">
@@ -139,15 +174,23 @@ export const Step1 = ({
                   icon="cantidad"
                   responsive={RESPONSIVE_CONFIG}
                   name="alcohol_concentration"
-                  disabled={section != "penaltie"}
+                  disabled={!["penaltie"].includes(section)}
                   label="Grado de alcohol"
                   type="number"
                />
 
-               <FormikInput icon="cantidad" type="number" name="amountAlcohol" label="Cantidad de alcohol" responsive={RESPONSIVE_CONFIG} />
+               <FormikInput
+                  icon="cantidad"
+                  type="number"
+                  name="amountAlcohol"
+                  disabled={!["penaltie"].includes(section)}
+                  label="Cantidad de alcohol"
+                  responsive={RESPONSIVE_CONFIG}
+               />
 
                <FormikRadio
                   name="vehicle_service_type"
+                  disabled={!["penaltie"].includes(section)}
                   label="Tipo de servicio"
                   options={[
                      { id: "Servicio público", name: "Servicio público" },
@@ -206,41 +249,23 @@ export const Step1 = ({
          <FormikInput disabled value={location?.address?.city} label="Lugar donde se encuentran" name="location" responsive={RESPONSIVE_CONFIG} />
 
          {/* Datos Personales del Detenido */}
-         <FormikInput type="number" icon="cantidad" disabled={!["traffic", "penaltie"].includes(section)} name="age" label="Edad" responsive={RESPONSIVE_CONFIG} />
-
-         <FormikInput type="number" icon="cantidad" name="number_of_passengers" label="Número de pasajeros" responsive={RESPONSIVE_CONFIG} />
+         <FormikInput type="number" icon="cantidad" disabled={!["penaltie"].includes(section)} name="age" label="Edad" responsive={RESPONSIVE_CONFIG} />
 
          <FormikInput
-            name="plate_number"
-            disabled={!["traffic", "penaltie"].includes(section)}
+            type="number"
             icon="cantidad"
-            label="Número de placa"
+            name="number_of_passengers"
+            disabled={!["penaltie"].includes(section)}
+            label="Número de pasajeros"
             responsive={RESPONSIVE_CONFIG}
          />
-         {["traffic", "securrity", "courts"].includes(section) && (
-            <FormikInput
-               icon="user"
-               name="vehicle_brand"
-               disabled={!["traffic", "penaltie"].includes(section)}
-               label="Marca Vehiculo"
-               responsive={RESPONSIVE_CONFIG}
-            />
-         )}
-         {["securrity", "courts"].includes(section) && (
+
+         <FormikInput name="plate_number" disabled={!["penaltie"].includes(section)} icon="cantidad" label="Número de placa" responsive={RESPONSIVE_CONFIG} />
+         {["traffic"].includes(section) && <FormikInput icon="user" name="vehicle_brand" label="Marca Vehiculo" responsive={RESPONSIVE_CONFIG} />}
+         {["penaltie"].includes(section) && (
             <>
-               <FormikInput
-                  label="N° de patrulla"
-                  name="patrol_unit_number"
-                  disabled={!["traffic", "penaltie", "securrity"].includes(section)}
-                  responsive={RESPONSIVE_CONFIG}
-               />
-               <FormikInput
-                  label="Motivo de detención"
-                  disabled={true}
-                  value={'ALCOLIMETRO'}
-                  name="detention_reason"
-                  responsive={RESPONSIVE_CONFIG}
-               />
+               <FormikInput label="N° de patrulla" name="patrol_unit_number" disabled={!["penaltie"].includes(section)} responsive={RESPONSIVE_CONFIG} />
+               <FormikInput label="Motivo de detención" disabled={true} value={"ALCOLIMETRO"} name="detention_reason" responsive={RESPONSIVE_CONFIG} />
             </>
          )}
          {section == "courts" && (
@@ -250,13 +275,27 @@ export const Step1 = ({
             </>
          )}
 
-         <FormikInput icon="user" name="detainee_released_to" label="Nombre de la persona que acudió" responsive={RESPONSIVE_CONFIG} />
+         <FormikInput
+            icon="user"
+            name="detainee_released_to"
+            disabled={!["penaltie"].includes(section)}
+            label="Nombre de la persona que acudió"
+            responsive={RESPONSIVE_CONFIG}
+         />
 
-         <FormikInput maskType="phone" name="detainee_phone_number" mask="phone" label="Teléfono del detenido" icon="phone" responsive={RESPONSIVE_CONFIG} />
+         <FormikInput
+            maskType="phone"
+            name="detainee_phone_number"
+            disabled={!["penaltie"].includes(section)}
+            mask="phone"
+            label="Teléfono del detenido"
+            icon="phone"
+            responsive={RESPONSIVE_CONFIG}
+         />
 
-         <FormikInput name="curp" label="CURP" responsive={RESPONSIVE_CONFIG} />
+         <FormikInput name="curp" label="CURP" disabled={!["penaltie"].includes(section)} responsive={RESPONSIVE_CONFIG} />
 
-         <FormikTextArea name="observations" label="Observaciones" />
+         <FormikTextArea name="observations" label="Observaciones" disabled={!["penaltie"].includes(section)} />
          {section == "courts" && <FormikImageInput name="image_penaltie_money" maxFiles={1} label="Recibo" />}
       </div>
    );

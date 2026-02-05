@@ -11,10 +11,12 @@ interface PhotoZoomProps {
    title?: string;
    placeholderText?: string;
    thumbnailSize?: "xs" | "sm" | "md" | "lg" | "xl";
+   shape?: "square" | "circle" | "rounded" | "rounded-lg" | "rounded-full";
    showDownload?: boolean;
    zoomLevels?: number[];
    maxZoom?: number;
    containerClassName?: string;
+   imageClassName?: string;
    onZoomChange?: (isZoomed: boolean) => void;
 }
 
@@ -25,10 +27,12 @@ const PhotoZoom: React.FC<PhotoZoomProps> = ({
    title,
    placeholderText = "Sin imagen",
    thumbnailSize = "md",
+   shape = "square",
    showDownload = true,
    zoomLevels = [1, 1.5, 2, 3, 4],
    maxZoom = 5,
    containerClassName = "",
+   imageClassName = "",
    onZoomChange
 }) => {
    const [isZoomed, setIsZoomed] = useState(false);
@@ -57,21 +61,91 @@ const PhotoZoom: React.FC<PhotoZoomProps> = ({
       xl: "w-20 h-20"
    };
 
-   // Crear contenedor para portal al montar
-   useEffect(() => {
-      const container = portalContainer.current;
-      container.id = "photo-zoom-portal";
-      document.body.appendChild(container);
+   // Clases de forma
+   const shapeClasses = {
+      square: "rounded-none",
+      circle: "rounded-full",
+      rounded: "rounded-md",
+      "rounded-lg": "rounded-lg",
+      "rounded-full": "rounded-full"
+   };
 
-      return () => {
-         if (document.body.contains(container)) {
-            document.body.removeChild(container);
-         }
-         if (controlsTimeoutRef.current) {
-            clearTimeout(controlsTimeoutRef.current);
-         }
-      };
+   // Estilo de imagen según forma
+   const getImageStyle = () => {
+      if (shape === "circle") {
+         return "object-cover";
+      }
+      return "object-contain";
+   };
+
+   // Control de visibilidad de controles
+   const hideControls = useCallback(() => {
+      setShowControls(false);
+      if (controlsTimeoutRef.current) {
+         clearTimeout(controlsTimeoutRef.current);
+         controlsTimeoutRef.current = null;
+      }
    }, []);
+
+   const showControlsTemporarily = useCallback(() => {
+      setShowControls(true);
+      if (controlsTimeoutRef.current) {
+         clearTimeout(controlsTimeoutRef.current);
+      }
+      controlsTimeoutRef.current = setTimeout(() => {
+         setShowControls(false);
+      }, 3000);
+   }, []);
+
+   // Pantalla completa
+   const toggleFullscreen = useCallback(() => {
+      if (!modalRef.current) return;
+
+      if (!document.fullscreenElement) {
+         modalRef.current.requestFullscreen?.().then(() => {
+            setIsFullscreen(true);
+         });
+      } else {
+         document.exitFullscreen?.().then(() => {
+            setIsFullscreen(false);
+         });
+      }
+   }, []);
+
+   // Zoom functions
+   const zoomIn = useCallback(() => {
+      setZoomLevel((prev) => {
+         const currentIndex = zoomLevels.indexOf(prev);
+         const nextIndex = Math.min(currentIndex + 1, zoomLevels.length - 1);
+         return zoomLevels[nextIndex];
+      });
+   }, [zoomLevels]);
+
+   const zoomOut = useCallback(() => {
+      setZoomLevel((prev) => {
+         const currentIndex = zoomLevels.indexOf(prev);
+         const prevIndex = Math.max(currentIndex - 1, 0);
+         return zoomLevels[prevIndex];
+      });
+   }, [zoomLevels]);
+
+   const resetZoom = useCallback(() => {
+      setZoomLevel(1);
+      setPosition({ x: 0, y: 0 });
+   }, []);
+
+   // Panning
+   const handlePan = useCallback(
+      (event: any, info: PanInfo) => {
+         if (zoomLevel > 1) {
+            setPosition((prev) => ({
+               x: prev.x + info.delta.x,
+               y: prev.y + info.delta.y
+            }));
+         }
+      },
+      [zoomLevel]
+   );
 
    // Toggle zoom
    const toggleZoom = useCallback(
@@ -98,7 +172,7 @@ const PhotoZoom: React.FC<PhotoZoomProps> = ({
             showControlsTemporarily();
          }
       },
-      [hasImage, isZoomed, onZoomChange]
+      [hasImage, isZoomed, onZoomChange, showControlsTemporarily]
    );
 
    const handleClose = useCallback(
@@ -167,30 +241,8 @@ const PhotoZoom: React.FC<PhotoZoomProps> = ({
                break;
          }
       },
-      [isZoomed, zoomLevel]
+      [isZoomed, zoomLevel, zoomIn, zoomOut, toggleFullscreen]
    );
-
-   // Zoom functions
-   const zoomIn = useCallback(() => {
-      setZoomLevel((prev) => {
-         const currentIndex = zoomLevels.indexOf(prev);
-         const nextIndex = Math.min(currentIndex + 1, zoomLevels.length - 1);
-         return zoomLevels[nextIndex];
-      });
-   }, [zoomLevels]);
-
-   const zoomOut = useCallback(() => {
-      setZoomLevel((prev) => {
-         const currentIndex = zoomLevels.indexOf(prev);
-         const prevIndex = Math.max(currentIndex - 1, 0);
-         return zoomLevels[prevIndex];
-      });
-   }, [zoomLevels]);
-
-   const resetZoom = useCallback(() => {
-      setZoomLevel(1);
-      setPosition({ x: 0, y: 0 });
-   }, []);
 
    // Scroll zoom
    const handleWheel = useCallback(
@@ -234,51 +286,20 @@ const PhotoZoom: React.FC<PhotoZoomProps> = ({
       }
    }, [imageSrc, alt]);
 
-   // Pantalla completa
-   const toggleFullscreen = useCallback(() => {
-      if (!modalRef.current) return;
+   // Crear contenedor para portal al montar
+   useEffect(() => {
+      const container = portalContainer.current;
+      container.id = "photo-zoom-portal";
+      document.body.appendChild(container);
 
-      if (!document.fullscreenElement) {
-         modalRef.current.requestFullscreen?.().then(() => {
-            setIsFullscreen(true);
-         });
-      } else {
-         document.exitFullscreen?.().then(() => {
-            setIsFullscreen(false);
-         });
-      }
-   }, []);
-
-   // Panning
-   const handlePan = useCallback(
-      (event: any, info: PanInfo) => {
-         if (zoomLevel > 1) {
-            setPosition((prev) => ({
-               x: prev.x + info.delta.x,
-               y: prev.y + info.delta.y
-            }));
+      return () => {
+         if (document.body.contains(container)) {
+            document.body.removeChild(container);
          }
-      },
-      [zoomLevel]
-   );
-
-   // Control de visibilidad de controles
-   const hideControls = useCallback(() => {
-      setShowControls(false);
-      if (controlsTimeoutRef.current) {
-         clearTimeout(controlsTimeoutRef.current);
-         controlsTimeoutRef.current = null;
-      }
-   }, []);
-
-   const showControlsTemporarily = useCallback(() => {
-      setShowControls(true);
-      if (controlsTimeoutRef.current) {
-         clearTimeout(controlsTimeoutRef.current);
-      }
-      controlsTimeoutRef.current = setTimeout(() => {
-         setShowControls(false);
-      }, 3000);
+         if (controlsTimeoutRef.current) {
+            clearTimeout(controlsTimeoutRef.current);
+         }
+      };
    }, []);
 
    // Sincronizar imageSrc
@@ -354,13 +375,16 @@ const PhotoZoom: React.FC<PhotoZoomProps> = ({
 
    // Render miniatura
    const renderThumbnail = () => {
+      const shapeClass = shapeClasses[shape];
+      const imageStyleClass = getImageStyle();
+
       if (hasImage) {
          return (
             <div className="relative">
                <motion.div
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="relative overflow-hidden rounded-lg shadow-md cursor-zoom-in"
+                  className={`relative overflow-hidden shadow-md cursor-zoom-in ${thumbnailSizes[thumbnailSize]} ${shapeClass} ${containerClassName}`}
                   onClick={toggleZoom}
                   role="button"
                   tabIndex={0}
@@ -371,17 +395,20 @@ const PhotoZoom: React.FC<PhotoZoomProps> = ({
                      ref={imgRef}
                      src={imageSrc}
                      alt={alt}
-                     className={`${thumbnailSizes[thumbnailSize]} object-cover transition-opacity duration-300 ${!imageLoaded ? "opacity-0" : "opacity-100"}`}
+                     className={`w-full h-full ${imageStyleClass} transition-opacity duration-300 ${!imageLoaded ? "opacity-0" : "opacity-100"} ${imageClassName}`}
                      onError={handleImageError}
                      onLoad={handleImageLoad}
                      loading="lazy"
+                     style={{
+                        aspectRatio: shape === "circle" ? "1/1" : "auto"
+                     }}
                   />
                   {!imageLoaded && (
-                     <div className="absolute inset-0 flex items-center justify-center bg-gray-200 rounded-lg">
+                     <div className={`absolute inset-0 flex items-center justify-center bg-gray-200 ${shapeClass}`}>
                         <FaSpinner className="text-gray-400 animate-spin" size={14} />
                      </div>
                   )}
-                  <div className="absolute inset-0 bg-black opacity-0 hover:opacity-20 rounded-lg transition-opacity duration-300" />
+                  <div className={`absolute inset-0 bg-black opacity-0 hover:opacity-20 transition-opacity duration-300 ${shapeClass}`} />
                </motion.div>
                <div className="absolute bottom-1 right-1 bg-black bg-opacity-50 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                   <FaSearchPlus size={10} className="text-white" />
@@ -392,7 +419,7 @@ const PhotoZoom: React.FC<PhotoZoomProps> = ({
 
       return (
          <div
-            className={`${thumbnailSizes[thumbnailSize]} rounded-lg bg-gray-200 flex flex-col items-center justify-center border border-gray-300`}
+            className={`${thumbnailSizes[thumbnailSize]} ${shapeClass} bg-gray-200 flex flex-col items-center justify-center border border-gray-300 ${containerClassName}`}
             title="No hay imagen disponible"
          >
             <FaExclamationTriangle className="text-gray-400 mb-1" size={14} />
@@ -561,12 +588,12 @@ const PhotoZoom: React.FC<PhotoZoomProps> = ({
                         whileHover={{ opacity: 1 }}
                         onClick={(e) => e.stopPropagation()}
                      >
-                        <div className="font-semibold mb-1">Atajos:</div>
+                        {/* <div className="font-semibold mb-1">Atajos:</div>
                         <div>ESC: Cerrar</div>
                         <div>Ctrl + +/-: Zoom</div>
                         <div>Ctrl + 0: Reset</div>
                         <div>F: Pantalla completa</div>
-                        <div className="mt-2 text-[10px] opacity-70">Click para ocultar controles</div>
+                        <div className="mt-2 text-[10px] opacity-70">Click para ocultar controles</div> */}
                      </motion.div>
 
                      {/* Overlay para cerrar */}

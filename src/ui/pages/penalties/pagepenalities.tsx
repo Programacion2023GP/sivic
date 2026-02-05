@@ -62,20 +62,23 @@ const PagePenalities = ({ section }: { section: section }) => {
    const validations = {
       penaltie: () =>
          Yup.object({
-         //   init_date: Yup.string().required("Campo obligatorio"),
-           // final_date: Yup.string().required("Campo obligatorio"),
-            //doctor_id: Yup.string().required("Campo obligatorio"),
-            //group: Yup.number().required("Campo obligatorio").min(1, "campo obligatorio"),
-            //filter_supervisor: Yup.string().required("Campo obligatorio"),
+            init_date: Yup.string().required("Campo obligatorio"),
+            final_date: Yup.string().required("Campo obligatorio"),
+            doctor_id: Yup.string().required("Campo obligatorio"),
+            group: Yup.number().required("Campo obligatorio").min(1, "campo obligatorio"),
+            filter_supervisor: Yup.string().required("Campo obligatorio"),
 
             alcohol_concentration: Yup.number().typeError("Debe ser un número").required("Campo obligatorio").min(0.001, "Campo obligatorio"),
             name: Yup.string().required("Campo obligatorio").min(1, "El nombre es requerido"),
-            //person_oficial: Yup.string().required("Campo obligatorio").min(1, "Campo obligatorio"),
-            //amountAlcohol: Yup.number().required("Campo obligatorio").min(0.001, "Debe ser minimo 0.1"),
-           // vehicle_service_type: Yup.string().required("Campo obligatorio").min(1, "Campo obligatorio"),
-            //age: Yup.number().required("Campo obligatorio").min(0.001, "Campo obligatorio"),
-           // number_of_passengers: Yup.number().required("Campo obligatorio").min(0.001, "Campo obligatorio"),
-           // plate_number: Yup.string().required("Campo obligatorio").min(1, "La placa es requerida")
+            // person_oficial: Yup.string().required("Campo obligatorio").min(1, "Campo obligatorio"),
+            amountAlcohol: Yup.number().required("Campo obligatorio").min(0.001, "Debe ser minimo 0.1"),
+            vehicle_service_type: Yup.string().required("Campo obligatorio").min(1, "Campo obligatorio"),
+            age: Yup.number().required("Campo obligatorio").min(0.001, "Campo obligatorio"),
+            number_of_passengers: Yup.number().required("Campo obligatorio").min(0.001, "Campo obligatorio"),
+            plate_number: Yup.string().required("Campo obligatorio").min(1, "La placa es requerida"),
+            municipal_police: Yup.string().required("Campo obligatorio"),
+            detention_reason: Yup.string().required("Campo obligatorio").min(1, "El motivo es requerida"),
+            patrol_unit_number: Yup.string().required("Campo obligatorio").min(1, "El numero de patrulla es requerida")
          }),
 
       traffic: () =>
@@ -91,9 +94,26 @@ const PagePenalities = ({ section }: { section: section }) => {
 
             time: Yup.string().required("Campo obligatorio"),
 
-            image_penaltie: Yup.string().required("Campo obligatorio"),
-            images_evidences: Yup.string().required("Campo obligatorio"),
-            images_evidences_car: Yup.string().required("Campo obligatorio")
+            image_penaltie: Yup.mixed()
+               .required("Campo obligatorio")
+               .test("fileSize", "El archivo es demasiado pesado, máximo 2MB", (value) => {
+                  if (!value || !(value instanceof File)) return true;
+                  return value.size <= 2 * 1024 * 1024;
+               }),
+
+            images_evidences: Yup.mixed()
+               .required("Campo obligatorio")
+               .test("fileSize", "El archivo es demasiado pesado, máximo 2MB", (value) => {
+                  if (!value || !(value instanceof File)) return true;
+                  return value.size <= 2 * 1024 * 1024;
+               }),
+
+            images_evidences_car: Yup.mixed()
+               .required("Campo obligatorio")
+               .test("fileSize", "El archivo es demasiado pesado, máximo 2MB", (value) => {
+                  if (!value || !(value instanceof File)) return true;
+                  return value.size <= 2 * 1024 * 1024;
+               })
 
             // Yup.string()
             //    .notRequired()
@@ -173,20 +193,49 @@ const PagePenalities = ({ section }: { section: section }) => {
       [deleteRow]
    );
 
-   const handleNext = useCallback(
-      (row: any) => {
-         showConfirmationAlert(`Continuar`, {
-            text: "Al aceptar, se dará continuidad a su proceso."
-         }).then((isConfirmed) => {
-            if (isConfirmed) {
-               nextProccess(row, section);
-            } else {
-               showToast("La acción fue cancelada.", "error");
-            }
-         });
-      },
-      [nextProccess]
-   );
+const handleNext = useCallback(
+   async (row: any) => {
+      const isConfirmed = await showConfirmationAlert(`Continuar`, {
+         text: "Al aceptar, se dará continuidad a su proceso."
+      });
+
+      if (!isConfirmed) {
+         showToast("La acción fue cancelada.", "error");
+         return;
+      }
+
+      try {
+         const response = await nextProccess(row, section);
+         if (response == true) {
+            setUiState((prev) => ({ ...prev, open: false }));
+         } else {
+              const formik = formikRef.current;
+
+            const allTouched = Object.keys(formik.values).reduce(
+               (acc, key) => {
+                  acc[key] = true;
+                  return acc;
+               },
+               {} as { [key: string]: boolean }
+            );
+
+            formik.setTouched(allTouched);
+
+            // console.log("aqui ", allTouched);
+            // 3. Si hay errores, mostrarlos
+           
+
+            // return true; // Validación pasó
+         }
+         // Handle the response if needed
+      } catch (error) {
+         console.error("Error in handleNext:", error);
+         // Optionally show error toast
+         // showToast("Ocurrió un error al continuar", "error");
+      }
+   },
+   [nextProccess, section, showToast] // Add all dependencies
+);
 
    const handleEdit = useCallback(
       async (row: any) => {
@@ -227,7 +276,7 @@ const PagePenalities = ({ section }: { section: section }) => {
       (section: "penaltie" | "traffic" | "securrity" | "courts") => {
          switch (uiState.activeStep) {
             case 0:
-               return <Step0 RESPONSIVE_CONFIG={RESPONSIVE_CONFIG} contraloria={contraloria} doctor={doctor} proteccionCivil={proteccionCivil} />;
+               return <Step0 section={section} RESPONSIVE_CONFIG={RESPONSIVE_CONFIG} contraloria={contraloria} doctor={doctor} proteccionCivil={proteccionCivil} />;
             case 1:
                return (
                   <Step1
@@ -360,7 +409,6 @@ const PagePenalities = ({ section }: { section: section }) => {
                                                          }
 
                                                          // Si todo está bien
-                                                         setUiState((prev) => ({ ...prev, open: false }));
                                                          handleNext(formik.values);
                                                       }}
                                                       variant="primary"
@@ -380,6 +428,7 @@ const PagePenalities = ({ section }: { section: section }) => {
                            <TableAlcoholCases
                               section={section}
                               handleEdit={handleEdit}
+                              
                               //   handleNext={handleNext}
                               handleDelete={handleDelete}
                               loadData={loadData}

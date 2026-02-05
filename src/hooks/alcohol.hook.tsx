@@ -7,7 +7,7 @@ import { Penalties } from "../domain/models/penalties/penalties.model";
 import { Traffic } from "../domain/models/traffic/traffic";
 import { Public_Securrity } from "../domain/models/security/security";
 import dayjs from "dayjs";
-import { Await } from "react-router-dom";
+import { Await, data } from "react-router-dom";
 import { Seguimiento } from "../domain/models/seguimiento/seguimineto";
 import { Court } from "../domain/models/courts/courts.model";
 type section = "penaltie" | "traffic" | "securrity" | "courts" | "general";
@@ -32,7 +32,7 @@ export const useAlcohol = () => {
    const [items, setItems] = useState<Penalties[]>([]);
    const [initialValues, setInitialValues] = useState<Penalties | Court | Traffic | Public_Securrity>();
    // Stores optimizadas - evitar recreación en cada render
-   const [open,setOpen] = useState<boolean>(false)
+   const [open, setOpen] = useState<boolean>(false);
    const useAlcoholCase = useMemo(
       () =>
          useGenericStore<AlcoholCase>({
@@ -41,16 +41,16 @@ export const useAlcohol = () => {
          }),
       []
    );
-  const useSeguimientoAlcohol = useMemo(
-     () =>
-        useGenericStore<Seguimiento>({
-           id: 0,
-           nombre: "",
-           proceso: "",
-           estatus: ""
-        }),
-     []
-  );
+   const useSeguimientoAlcohol = useMemo(
+      () =>
+         useGenericStore<Seguimiento>({
+            id: 0,
+            nombre: "",
+            proceso: "",
+            estatus: ""
+         }),
+      []
+   );
    const initialValuesPenalties = {
       doctor_id: null,
       active: true,
@@ -85,9 +85,9 @@ export const useAlcohol = () => {
       amountAlcohol: 0,
       curp: null,
       image_penaltie: null,
-      image_penaltie_money:null,
+      image_penaltie_money: null,
       images_evidences: [],
-      images_evidences_car:null,
+      images_evidences_car: null,
       lat: 0,
       lon: 0,
       init_date: undefined,
@@ -95,13 +95,13 @@ export const useAlcohol = () => {
       auth_id: 0,
       penalty_preload_data_id: 0,
       residence_folio: null,
-      vehicle_brand:null,
-      detention_reason:null,
-      patrol_unit_number:null
+      vehicle_brand: null,
+      detention_reason: null,
+      patrol_unit_number: null
    };
-   useEffect(()=>{
-      setInitialValues(penaltieCaseStore.initialValues)
-   },[])
+   useEffect(() => {
+      setInitialValues(penaltieCaseStore.initialValues);
+   }, []);
    const usePenaltiesCase = useMemo(() => {
       // Crear valores iniciales una sola vez
 
@@ -117,17 +117,16 @@ export const useAlcohol = () => {
       alcoholCaseStore.setPrefix("alcohol_cases");
       penaltieCaseStore.setPrefix("penalties");
       segumientoCaseStore.setPrefix("seguimiento");
-
    }, [alcoholCaseStore, penaltieCaseStore]);
 
    const create = useCallback(
-     async (data: Penalties,section:section) => {
-      setState((prev)=>({
-         ...prev,
-         loading:true,
-         submitting:true,
-      }));
-      prefix();
+      async (data: Penalties, section: section) => {
+         setState((prev) => ({
+            ...prev,
+            loading: true,
+            submitting: true
+         }));
+         prefix();
 
          // Evitar crear objetos innecesarios
          const caseData = {
@@ -135,8 +134,8 @@ export const useAlcohol = () => {
             requires_confirmation: false,
             alcohol_level: String(data.alcohol_concentration || "")
          };
-        await alcoholCaseStore.postItem(caseData, AlcoholApi, true, false);
-        await loadData(section);
+         await alcoholCaseStore.postItem(caseData, AlcoholApi, true, false);
+         await loadData(section);
          setState((prev) => ({
             ...prev,
             loading: false,
@@ -147,7 +146,7 @@ export const useAlcohol = () => {
    );
 
    const deleteRow = useCallback(
-      (data: Penalties,section:section) => {
+      (data: Penalties, section: section) => {
          prefix();
 
          // Evitar crear objetos innecesarios
@@ -162,65 +161,64 @@ export const useAlcohol = () => {
       },
       [prefix, penaltieCaseStore]
    );
-  const loadData = useCallback(
-   async (page: section) => {
-          setState((prev) => ({
-             ...prev,
-             loading: true,
-             submitting: true
-          }));
-      prefix();
-      setState((prev: any) => ({ ...prev, dataSearch: page }));
+   const loadData = useCallback(
+      async (page: section) => {
+         setState((prev) => ({
+            ...prev,
+            loading: true,
+            submitting: true
+         }));
+         prefix();
+         setState((prev: any) => ({ ...prev, dataSearch: page }));
 
-      try {
-         const fetchedData = await penaltieCaseStore.fetchData(PenaltieApi);
-         console.log(fetchedData)
-         // DEPURACIÓN
-         
-         setItems(fetchedData);
-         if (page === "penaltie") {
-            let items: Penalties[] = fetchedData.filter((it) => it.current_process_id == 1);
-            setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
-         } else if (page == "traffic") {
-            let items = fetchedData.filter((it) => it.current_process_id == 2);
-            setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
-         } else if (page == "securrity") {
-            let items = fetchedData.filter((it) => it.current_process_id == 3);
-            setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
-         } else if (page == "courts") {
-            let items = fetchedData.filter((it) => it.current_process_id == 4);
-            setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
-         } else if (page == "general") {
-            let items = fetchedData;
-            setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
+         try {
+            const fetchedData = await penaltieCaseStore.fetchData(PenaltieApi);
+            console.log(fetchedData);
+            // DEPURACIÓN
+
+            setItems(fetchedData);
+            if (page === "penaltie") {
+               let items: Penalties[] = fetchedData.filter((it) => it.current_process_id == 1);
+               setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
+            } else if (page == "traffic") {
+               let items = fetchedData.filter((it) => it.current_process_id == 2);
+               setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
+            } else if (page == "securrity") {
+               let items = fetchedData.filter((it) => it.current_process_id == 3);
+               setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
+            } else if (page == "courts") {
+               let items = fetchedData.filter((it) => it.current_process_id == 4);
+               setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
+            } else if (page == "general") {
+               let items = fetchedData;
+               setState((prev) => ({ ...prev, data: items, allData: fetchedData }));
+            }
+         } catch (error) {
+            console.error("Error loading data:", error);
          }
-      } catch (error) {
-         console.error("Error loading data:", error);
-      }
-        setState((prev) => ({
-           ...prev,
-           loading: false,
-           submitting: false
-        }));
-   },
-   [prefix]
-
+         setState((prev) => ({
+            ...prev,
+            loading: false,
+            submitting: false
+         }));
+      },
+      [state.data]
    );
    const resetInitialValues = (page: "penaltie") => {
       switch (page) {
          case "penaltie":
             const today = dayjs();
             // const array = state.data as Penalties[];
-            console.log("activado")
+            console.log("activado");
             const array = items as Penalties[];
-            console.log(array)
+            console.log(array);
             const configTurn = array.find((p) => {
                if (!p.init_date || !p.final_date) return false;
                return p.auth_id == auth_id && today.isBetween(dayjs(p.init_date), dayjs(p.final_date), null, "[]");
             });
             if (configTurn) {
                setInitialValues(
-                  (prev:Penalties) =>
+                  (prev: Penalties) =>
                      ({
                         city: prev?.city,
                         cp: prev?.cp,
@@ -232,6 +230,8 @@ export const useAlcohol = () => {
                            hour12: false // ← Cambiar a false
                         }),
                         date: new Date().toISOString().split("T")[0],
+                        group: configTurn.group,
+
                         person_contraloria: configTurn.person_contraloria,
                         doctor_id: configTurn.doctor_id,
                         civil_protection: configTurn.civil_protection,
@@ -265,10 +265,10 @@ export const useAlcohol = () => {
    ) => {
       switch (page) {
          case "penaltie":
-            console.log("aqio e",specificFields)
+            console.log("aqio e", specificFields);
             if (specificFields && specificFields.length > 0) {
                // Editar solo campos específicos
-               console.log("si especifico")
+               console.log("si especifico");
                const partialUpdate: Partial<Penalties> = {};
                specificFields.forEach((field) => {
                   if (field in row) {
@@ -281,7 +281,7 @@ export const useAlcohol = () => {
                }));
             } else {
                // Editar toda la fila
-               
+
                setInitialValues(row);
             }
             break;
@@ -289,41 +289,67 @@ export const useAlcohol = () => {
             break;
       }
    };
-   const nextProccess = async(row: {},section:section) => {
-      try {
-           setState((prev) => ({
-              ...prev,
-              loading: true,
-              submitting: true
-           }));
-        await alcoholCaseStore.request(
-            {
-               data: row,
-               method: "POST",
-               url: "alcohol_cases/advance",
-               formData: true
-            },
-            AlcoholApi
-         );
-        await loadData(section);
-      } catch (error) {}
-        setState((prev) => ({
-           ...prev,
-           loading: false,
-           submitting: false
-        }));
-   };
-   const seguimiento = async(case_id:number)=>{
+ const nextProccess = async (row: {}, section: section): Promise<boolean> => {
+    // Helper function to reset loading states
+    const resetLoading = () => {
+       setState((prev) => ({
+          ...prev,
+          loading: false,
+          submitting: false
+       }));
+    };
 
+    try {
+       setState((prev) => ({
+          ...prev,
+          loading: true,
+          submitting: true
+       }));
+
+       const response = await alcoholCaseStore.request(
+          {
+             data: row,
+             method: "POST",
+             url: "alcohol_cases/advance",
+             formData: true
+          },
+          AlcoholApi,
+          ...(section === "traffic"
+             ? [
+                  {
+                     error: () => {}
+                  }
+               ]
+             : [])
+       );
+
+
+       const message = response as any;
+
+       if (message === "Alguna imagen fallo por favor vuelva a intentarlo") {
+          resetLoading();
+          return false;
+       }
+
+       await loadData(section);
+       resetLoading();
+       return true;
+    } catch (error) {
+       console.error("Error in nextProcess:", error);
+       resetLoading();
+       return false;
+    }
+ };
+   const seguimiento = async (case_id: number) => {
       try {
-        setState((prev) => ({
-           ...prev,
-           loading: true,
-        }));
-         const report =  await segumientoCaseStore.request(
+         setState((prev) => ({
+            ...prev,
+            loading: true
+         }));
+         const report = await segumientoCaseStore.request(
             {
                data: {
-                  case_id:case_id
+                  case_id: case_id
                },
                method: "POST",
                url: "seguimiento/seguimiento",
@@ -331,14 +357,14 @@ export const useAlcohol = () => {
             },
             SeguimientoApi
          );
-         setOpen(true)
+         setOpen(true);
          return report;
       } catch (error) {}
-         setState((prev) => ({
-            ...prev,
-            loading: false
-         }));
-   }
+      setState((prev) => ({
+         ...prev,
+         loading: false
+      }));
+   };
    return {
       create,
       loadData,

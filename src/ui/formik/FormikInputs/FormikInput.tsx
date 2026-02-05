@@ -2032,10 +2032,16 @@ export const FormikRadio = <T extends Record<string, any>>({
    const [field, meta] = useField(name);
    const error = meta.touched && meta.error ? String(meta.error) : null;
 
+   // DEBUG: Para ver qué valor tiene Formik
+   console.log("FormikRadio - field.value:", field.value, "type:", typeof field.value);
+   console.log(
+      "FormikRadio - options:",
+      options.map((o) => ({ id: o[idKey], label: o[labelKey] }))
+   );
+
    return (
       <ColComponent responsive={responsive} autoPadding={padding}>
          <div className={`relative w-full mb-1 group ${disabled ? "opacity-70 cursor-not-allowed" : ""}`}>
-            {/* Contenedor principal con borde similar a los otros componentes */}
             <div
                className={`
                relative px-3 pt-4 pb-3 border-2 rounded-lg transition-all duration-300
@@ -2043,7 +2049,6 @@ export const FormikRadio = <T extends Record<string, any>>({
                ${disabled ? "bg-gray-100 border-gray-300" : "bg-transparent"}
             `}
             >
-               {/* Label flotante similar a FormikInput */}
                <label
                   className={`
                   absolute left-3 -top-2.5 text-xs px-1 transition-all duration-300 font-medium
@@ -2054,15 +2059,24 @@ export const FormikRadio = <T extends Record<string, any>>({
                   {label}
                </label>
 
-               {/* Grid de opciones */}
                <div className="flex flex-wrap gap-3 mt-1">
                   {options.map((option) => {
-                     const isSelected = field.value === option[idKey];
-                     const optionId = `${name}-${String(option[idKey])}`;
+                     // SOLUCIÓN: Comparación más robusta
+                     const optionValue = option[idKey];
+                     const fieldValue = field.value;
+
+                     // Compara convirtiendo ambos a string o manteniendo su tipo original
+                     // Opción 1: Comparación estricta con conversión a string
+                     const isSelected = String(fieldValue) === String(optionValue);
+
+                     // Opción 2: O comparación laxa (recomendada para diferentes tipos)
+                     // const isSelected = fieldValue == optionValue;
+
+                     const optionId = `${name}-${String(optionValue)}`;
 
                      return (
                         <label
-                           key={String(option[idKey])}
+                           key={String(optionValue)}
                            htmlFor={optionId}
                            className={`
                               relative flex items-center gap-3 px-4 py-3 rounded-lg border-2 cursor-pointer transition-all duration-200
@@ -2076,7 +2090,6 @@ export const FormikRadio = <T extends Record<string, any>>({
                               ${disabled ? "cursor-not-allowed opacity-70" : ""}
                            `}
                         >
-                           {/* Radio button personalizado */}
                            <div
                               className={`
                               flex items-center justify-center w-5 h-5 rounded-full border-2 transition-all duration-200
@@ -2098,10 +2111,16 @@ export const FormikRadio = <T extends Record<string, any>>({
                               type="radio"
                               id={optionId}
                               name={name}
-                              value={String(option[idKey])}
-                              checked={isSelected}
+                              value={String(optionValue)} // Asegúrate de que esto coincida
+                              checked={isSelected} // Esto es crucial
                               disabled={disabled}
-                              onChange={() => !disabled && formik.setFieldValue(name, option[idKey])}
+                              onChange={() => {
+                                 if (!disabled) {
+                                    // IMPORTANTE: Guarda el valor en el tipo original de option[idKey]
+                                    // Si optionValue es número, guarda número; si es string, guarda string
+                                    formik.setFieldValue(name, optionValue);
+                                 }
+                              }}
                               className="absolute opacity-0 w-0 h-0"
                            />
 
@@ -2119,7 +2138,6 @@ export const FormikRadio = <T extends Record<string, any>>({
                </div>
             </div>
 
-            {/* Mensaje de error mejorado - mismo estilo que FormikInput */}
             {error ? (
                <motion.div initial={{ opacity: 0, y: -5 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }} className="flex items-center gap-2 mt-2 px-1">
                   <div className="w-1.5 h-1.5 bg-red-500 rounded-full flex-shrink-0"></div>

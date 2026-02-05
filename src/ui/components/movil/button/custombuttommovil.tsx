@@ -263,23 +263,29 @@ export const FloatingActionButton: React.FC<{
    extended?: boolean;
    label?: string;
    className?: string;
-}> = ({ onClick, icon, color = "primary", size = "normal", extended = false, label, className = "" }) => {
-   // Para círculo perfecto, usar mismo width y height + rounded-full
+   position?: "bottom-right" | "bottom-left" | "bottom-center" | "inline";
+}> = ({ onClick, icon, color = "primary", size = "normal", extended = false, label, className = "", position = "bottom-right" }) => {
+   // Clases de tamaño
    const sizeClasses = {
       small: "w-12 h-12",
       normal: "w-16 h-16",
       large: "w-24 h-24"
    }[size];
 
+   // Clases de color (Material Design 3)
    const colorClasses = {
-      primary: "bg-blue-500 text-white shadow-lg hover:bg-blue-600",
-      secondary: "bg-purple-500 text-white shadow-lg hover:bg-purple-600",
-      surface: "bg-white text-gray-700 shadow-lg hover:bg-gray-50",
-      tertiary: "bg-gray-100 text-gray-800 shadow-lg hover:bg-gray-200"
+      primary: "bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700",
+      secondary: "bg-purple-500 text-white hover:bg-purple-600 active:bg-purple-700",
+      surface: "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 active:bg-gray-100",
+      tertiary: "bg-gray-100 text-gray-800 hover:bg-gray-200 active:bg-gray-300"
    }[color];
 
-   // Para extended, mantener el rounded pero más grande
-   const extendedClasses = extended ? "px-6 h-14 rounded-[28px]" : "";
+   const positionClasses = {
+      "bottom-right": "fixed bottom-6 right-6",
+      "bottom-left": "fixed bottom-6 left-6",
+      "bottom-center": "fixed bottom-6 left-1/2 transform -translate-x-1/2",
+      inline: "relative"
+   }[position];
 
    return (
       <motion.button
@@ -287,24 +293,29 @@ export const FloatingActionButton: React.FC<{
          whileTap={{ scale: 0.9 }}
          whileHover={{ scale: 1.05, y: -2 }}
          className={`
-        ${extended ? extendedClasses : `${sizeClasses} rounded-full`}
-        ${colorClasses}
-        flex items-center justify-center
-        font-medium transition-all duration-200
-        focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-        active:brightness-95
-        /* Ocultar en tablets y desktop (≥1024px) */
-        lg:hidden
-        ${className}
-      `}
+            ${positionClasses}
+            ${extended ? "px-6 h-14 rounded-[28px]" : `${sizeClasses} rounded-full`}
+            ${colorClasses}
+            flex items-center justify-center
+            font-medium transition-all duration-200
+            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
+            active:brightness-95
+            shadow-lg
+            z-40
+            lg:hidden
+            ${className}
+         `}
+         style={{
+            paddingBottom: position !== "inline" ? "env(safe-area-inset-bottom, 0)" : "0"
+         }}
       >
          {extended && label ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
                {icon}
-               <span className="text-sm font-medium">{label}</span>
+               <span className="text-sm font-medium whitespace-nowrap">{label}</span>
             </div>
          ) : (
-            icon
+            <div className="flex items-center justify-center w-full h-full">{icon}</div>
          )}
       </motion.button>
    );

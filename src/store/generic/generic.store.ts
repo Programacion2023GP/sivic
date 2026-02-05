@@ -5,6 +5,7 @@ import { Doctor } from "../../domain/models/doctor/dependence";
 import { DoctorRepository } from "../../domain/repositories/doctor/doctor.repositories";
 import { GenericRepository } from "../../domain/repositories/generic/generic.repositories";
 import { Result } from "../../domain/models/users/users.domain";
+import { data } from "react-router-dom";
 
 interface GenericStore<T extends object> {
    initialValues: T;
@@ -28,7 +29,12 @@ interface GenericStore<T extends object> {
          method: "POST" | "PUT" | "GET" | "DELETE";
          formData?: boolean;
       },
-      repo: GenericRepository<T>
+      repo: GenericRepository<T>,
+      callback?:{
+         then? :()=>void,
+         error?:()=>void,
+         
+      }
    ) => Promise<T | T[] | undefined>;
 }
 
@@ -72,12 +78,16 @@ export const useGenericStore = <T extends { id?: number }>(initialValues: T) => 
       },
       request: async (
          options: {
-            data: Partial<T>; 
+            data: Partial<T>;
             url: string;
             method: "POST" | "PUT" | "GET" | "DELETE";
             formData?: boolean;
          },
-         repo: GenericRepository<T>
+         repo: GenericRepository<T>,
+         callback?: {
+            then?: () => void;
+            error?: () => void;
+         }
       ) => {
          set({ loading: true });
          try {
@@ -103,13 +113,22 @@ export const useGenericStore = <T extends { id?: number }>(initialValues: T) => 
                return result.data;
             } else {
                showToast(result.message || "Error en la operación", "error");
+
                set({ error: result.message });
                throw new Error(result.message);
             }
          } catch (error) {
             const msg = error instanceof Error ? error.message : "Error desconocido";
-            showToast(msg, "error");
-            set({ error: msg });
+            if (callback?.error) {
+               console.log("aqui e",error);
+               return msg;
+            }
+            else{
+
+               showToast(msg, "error");
+               set({ error: msg });
+            }
+
             throw error;
          } finally {
             set({ loading: false });
@@ -143,6 +162,8 @@ export const useGenericStore = <T extends { id?: number }>(initialValues: T) => 
          set({ loading: true });
          try {
             const data = await repo.create(item, get().prefix, formData);
+            if (data.message) {
+            }
             if (data.ok) {
                showToast(data.message, "success");
                get().setOpen();
@@ -155,6 +176,8 @@ export const useGenericStore = <T extends { id?: number }>(initialValues: T) => 
             }
          } catch (error) {
             const msg = error instanceof Error ? error.message : "Error desconocido";
+            set({ open: true });
+
             showToast(msg, "error");
             set({ error: msg });
          } finally {
