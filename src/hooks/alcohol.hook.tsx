@@ -10,6 +10,12 @@ import dayjs from "dayjs";
 import { Await, data } from "react-router-dom";
 import { Seguimiento } from "../domain/models/seguimiento/seguimineto";
 import { Court } from "../domain/models/courts/courts.model";
+type Images = {
+   image_penaltie: any;
+   images_evidences_car: any;
+   images_evidences: any;
+};
+
 type section = "penaltie" | "traffic" | "securrity" | "courts" | "general";
 export const useAlcohol = () => {
    useEffect(() => {}, []);
@@ -28,6 +34,11 @@ export const useAlcohol = () => {
       allData: [],
       loading: false, // ← Añadir loading aquí
       submitting: false // ← Para operaciones de submit
+   });
+   const [images, setImages] = useState<Images>({
+      image_penaltie: "",
+      images_evidences_car: "",
+      images_evidences: ""
    });
    const [items, setItems] = useState<Penalties[]>([]);
    const [initialValues, setInitialValues] = useState<Penalties | Court | Traffic | Public_Securrity>();
@@ -232,6 +243,9 @@ export const useAlcohol = () => {
                         date: new Date().toISOString().split("T")[0],
                         group: configTurn.group,
 
+        vehicle_security:configTurn.vehicle_security,
+
+        person_security:configTurn.person_security,
                         person_contraloria: configTurn.person_contraloria,
                         doctor_id: configTurn.doctor_id,
                         civil_protection: configTurn.civil_protection,
@@ -381,6 +395,8 @@ export const useAlcohol = () => {
       allData: state.allData,
       seguimiento,
       open,
-      setClose: () => setOpen(false)
+      setClose: () => setOpen(false),
+      setImages,
+      images,
    };
 };

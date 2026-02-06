@@ -37,7 +37,6 @@ export const Step0 = ({
          type="datetime-local"
          responsive={RESPONSIVE_CONFIG}
       />
-
       <FormikNativeTimeInput
          icon="date"
          disabled={!["penaltie"].includes(section)}
@@ -46,7 +45,6 @@ export const Step0 = ({
          type="datetime-local"
          responsive={RESPONSIVE_CONFIG}
       />
-
       <FormikAutocomplete
          label="Persona de contraloría a cargo"
          name="person_contraloria"
@@ -57,7 +55,6 @@ export const Step0 = ({
          labelKey="text"
          disabled
       />
-
       <FormikAutocomplete
          label="Doctor"
          name="doctor_id"
@@ -68,7 +65,6 @@ export const Step0 = ({
          labelKey="name"
          disabled={!["penaltie"].includes(section)}
       />
-
       <FormikRadio
          name="group"
          label="Grupo"
@@ -81,7 +77,6 @@ export const Step0 = ({
          disabled={!["penaltie"].includes(section)}
          labelKey="name"
       />
-
       <FormikAutocomplete
          label="Protección Civil"
          name="civil_protection"
@@ -92,11 +87,17 @@ export const Step0 = ({
          disabled={!["penaltie"].includes(section)}
          labelKey="text"
       />
-
+      <FormikInput
+         icon="auto"
+         name="vehicle_security"
+         label="Vehículo de seguridad Pública"
+         disabled={!["penaltie"].includes(section)}
+         responsive={RESPONSIVE_CONFIG}
+      />
+      <FormikInput icon="auto" name="person_security" label="Persona de seguridad Pública" disabled={!["penaltie"].includes(section)} responsive={RESPONSIVE_CONFIG} />
       <FormikInput icon="auto" name="command_vehicle" label="Vehículo" disabled={!["penaltie"].includes(section)} responsive={RESPONSIVE_CONFIG} />
 
       <FormikInput icon="usuario-corbata" name="command_troops" label="Tropas" disabled={!["penaltie"].includes(section)} responsive={RESPONSIVE_CONFIG} />
-
       <FormikInput
          icon="usuario-corbata"
          name="command_details"
@@ -104,7 +105,6 @@ export const Step0 = ({
          disabled={!["penaltie"].includes(section)}
          responsive={RESPONSIVE_CONFIG}
       />
-
       <FormikInput
          icon="usuario-corbata"
          name="filter_supervisor"

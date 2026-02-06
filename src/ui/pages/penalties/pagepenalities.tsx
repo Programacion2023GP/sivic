@@ -41,7 +41,7 @@ const PagePenalities = ({ section }: { section: section }) => {
    const { location, address, getLocation, loading: LoadingCp } = useLocation();
 
    // Store principal
-   const { data, allData, loading, loadData, create, initialValues, editInitialValues, resetInitialValues, deleteRow, nextProccess, setInitialValues } = useAlcohol();
+   const { data, allData, loading, loadData, create, initialValues, editInitialValues, resetInitialValues, deleteRow, nextProccess, setInitialValues,images,setImages } = useAlcohol();
    // Store doctor
    const { doctor, fetchDoctor, loading: doctorLoading,  } = useDoctorStore();
    const apiDoc = useMemo(() => new DoctorApi(), []);
@@ -63,6 +63,9 @@ const PagePenalities = ({ section }: { section: section }) => {
       penaltie: () =>
          Yup.object({
             init_date: Yup.string().required("Campo obligatorio"),
+            person_security: Yup.string().required("Campo obligatorio"),
+            vehicle_security: Yup.string().required("Campo obligatorio"),
+
             final_date: Yup.string().required("Campo obligatorio"),
             doctor_id: Yup.string().required("Campo obligatorio"),
             group: Yup.number().required("Campo obligatorio").min(1, "campo obligatorio"),
@@ -94,26 +97,23 @@ const PagePenalities = ({ section }: { section: section }) => {
 
             time: Yup.string().required("Campo obligatorio"),
 
-            image_penaltie: Yup.mixed()
-               .required("Campo obligatorio")
-               .test("fileSize", "El archivo es demasiado pesado, máximo 2MB", (value) => {
-                  if (!value || !(value instanceof File)) return true;
-                  return value.size <= 2 * 1024 * 1024;
-               }),
+            image_penaltie: Yup.mixed().required("Campo obligatorio"),
+            // .test("fileSize", "El archivo es demasiado pesado, máximo 2MB", (value) => {
+            //    if (!value || !(value instanceof File)) return true;
+            //    return value.size <= 2 * 1024 * 1024;
+            // }),
 
-            images_evidences: Yup.mixed()
-               .required("Campo obligatorio")
-               .test("fileSize", "El archivo es demasiado pesado, máximo 2MB", (value) => {
-                  if (!value || !(value instanceof File)) return true;
-                  return value.size <= 2 * 1024 * 1024;
-               }),
+            images_evidences: Yup.mixed().required("Campo obligatorio"),
+            // .test("fileSize", "El archivo es demasiado pesado, máximo 2MB", (value) => {
+            //    if (!value || !(value instanceof File)) return true;
+            //    return value.size <= 2 * 1024 * 1024;
+            // }),
 
-            images_evidences_car: Yup.mixed()
-               .required("Campo obligatorio")
-               .test("fileSize", "El archivo es demasiado pesado, máximo 2MB", (value) => {
-                  if (!value || !(value instanceof File)) return true;
-                  return value.size <= 2 * 1024 * 1024;
-               })
+            images_evidences_car: Yup.mixed().required("Campo obligatorio")
+            // .test("fileSize", "El archivo es demasiado pesado, máximo 2MB", (value) => {
+            //    if (!value || !(value instanceof File)) return true;
+            //    return value.size <= 2 * 1024 * 1024;
+            // })
 
             // Yup.string()
             //    .notRequired()
