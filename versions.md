@@ -4,6 +4,117 @@
 
 ---
 
+## 🔧 **v4.0.5.7** · *🧪 Beta*
+📅 **Fecha:** 25 de febrero de 2026, 11:03 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.5.6** · *🧪 Beta*
+📅 **Fecha:** 24 de febrero de 2026, 10:06 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.5.5** · *🧪 Beta*
+📅 **Fecha:** 21 de febrero de 2026, 10:56 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.5.4** · *🧪 Beta*
+📅 **Fecha:** 20 de febrero de 2026, 9:33 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.5.3** · *🧪 Beta*
+📅 **Fecha:** 20 de febrero de 2026, 9:26 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.5.2** · *🧪 Beta*
+📅 **Fecha:** 19 de febrero de 2026, 9:31 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🧩 **v4.0.5.1** · *🧪 Beta*
+📅 **Fecha:** 19 de febrero de 2026, 8:35 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Patch
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.4.5** · *🧪 Beta*
+📅 **Fecha:** 12 de febrero de 2026, 10:03 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.4.4** · *🧪 Beta*
+📅 **Fecha:** 12 de febrero de 2026, 10:00 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.4.3** · *🧪 Beta*
+📅 **Fecha:** 12 de febrero de 2026, 9:30 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.4.2** · *🧪 Beta*
+📅 **Fecha:** 10 de febrero de 2026, 3:28 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🧩 **v4.0.4.1** · *🧪 Beta*
+📅 **Fecha:** 10 de febrero de 2026, 3:12 p.m.  
+👤 **Autor:** luis  
+🧭 **Tipo:** Patch
+
+**✨ Mejoras**
+- se cambio el mandado de city la ciudad localizacion y sidebar
+
+
+
+---
+
 ## 🔧 **v4.0.3.4** · *🧪 Beta*
 📅 **Fecha:** 6 de febrero de 2026, 3:12 p.m.  
 👤 **Autor:**   

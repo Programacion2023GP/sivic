@@ -1622,6 +1622,7 @@ type AutocompleteProps<T extends Record<string, any>> = {
    disabled?: boolean;
    padding?: boolean;
    handleModified?: (name: string, value: any) => void;
+   value?:string,
 };
 
 export const FormikAutocomplete = <T extends Record<string, any>>({
@@ -1634,6 +1635,7 @@ export const FormikAutocomplete = <T extends Record<string, any>>({
    responsive = { sm: 12, md: 12, lg: 12, xl: 12, "2xl": 12 },
    disabled = false,
    padding = true,
+value = null,
    handleModified
 }: AutocompleteProps<T>) => {
    const formik = useFormikContext<any>();
@@ -1675,7 +1677,12 @@ export const FormikAutocomplete = <T extends Record<string, any>>({
    useEffect(() => {
       setFilteredOptions(options);
    }, [options]);
-
+   useEffect(()=>{
+      if (value) {
+         console.log(name,value)
+         // formik.setFieldValue(name,value);
+      }
+   },[value])
    // Funciones para manejar paths anidados
    const getNestedValue = (obj: any, path: string[]) => path.reduce((acc, key) => (acc ? acc[key] : undefined), obj);
 

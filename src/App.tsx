@@ -1,7 +1,7 @@
 import { Sidebar } from "./ui/components/sidebar/CustomSidebar";
 import { SidebarItem } from "./ui/components/sidebar/CustomSidebarItem";
 import { Header } from "./ui/components/header/CustomHeader";
-import { useCallback, useEffect, useMemo, useState, lazy, Suspense } from "react";
+import { useCallback, useEffect, useMemo, useState, lazy, Suspense, useRef } from "react";
 import { FaUserTie } from "react-icons/fa6";
 import PageLogin from "./ui/pages/login/PageLogin";
 import "./App.css";
@@ -114,7 +114,26 @@ const MainLayout = () => {
       ],
       []
    );
+   const mainRef = useRef<HTMLElement>(null);
+   const handleMainClick = useCallback(
+      (e: MouseEvent) => {
+         if (open) {
+            setOpen(false);
+         }
+      },
+      [open, setOpen]
+   ); // ✅ open y setOpen en dependencias
 
+   useEffect(() => {
+      const element = mainRef.current;
+      if (!element) return;
+
+      element.addEventListener("click", handleMainClick);
+
+      return () => {
+         element.removeEventListener("click", handleMainClick);
+      };
+   }, [handleMainClick]); //
    const renderSidebarItems = (items: any[]) =>
       items.map((item, i) => (
          <PermissionPrefixRoute requiredPrefix={item.prefix} key={i}>
@@ -139,7 +158,7 @@ const MainLayout = () => {
          <div className="flex flex-col flex-1 min-w-0">
             <Header id="btn-menu" setOpenSidebar={toggleSidebar} userName={localStorage.getItem("name") || ""} />
 
-            <main className="flex-1 p-6 overflow-auto bg-white">
+            <main ref={mainRef} className="flex-1 p-6 overflow-auto bg-white">
                <Suspense fallback={<Spinner />}>
                   <Outlet />
                </Suspense>

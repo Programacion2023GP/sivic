@@ -203,7 +203,7 @@ export const penalizacionesMovilView: DataDisplayConfig = {
       },
       {
          key: "city",
-         label: "Ciudad",
+         label: "Colonia",
          type: "text",
          icon: <FiHome className="text-gray-700 text-lg" />,
          color: "bg-gray-50 border border-gray-100",

@@ -153,7 +153,7 @@ export const Step1 = ({
             labelKey="text"
             handleModified={handleOficialChange}
          />
-         {section == "penaltie" && (
+         {/* {section == "penaltie" && (
             <FormikInput
                icon="usuario-corbata"
                name="municipal_police"
@@ -161,7 +161,7 @@ export const Step1 = ({
                disabled={!["penaltie"].includes(section)}
                // responsive={RESPONSIVE_CONFIG}
             />
-         )}
+         )} */}
 
          {/* Sección: Datos del Detenido */}
          <div className="my-6">
@@ -246,7 +246,7 @@ export const Step1 = ({
                </div>
             </div>
          )}
-         <FormikInput disabled value={location?.address?.city} label="Lugar donde se encuentran" name="location" responsive={RESPONSIVE_CONFIG} />
+         <FormikInput disabled value={location?.address?.city} label="Lugar donde se encuentran" name="city" responsive={RESPONSIVE_CONFIG} />
 
          {/* Datos Personales del Detenido */}
          <FormikInput type="number" icon="cantidad" disabled={!["penaltie"].includes(section)} name="age" label="Edad" responsive={RESPONSIVE_CONFIG} />
@@ -264,8 +264,8 @@ export const Step1 = ({
          {["traffic"].includes(section) && <FormikInput icon="user" name="vehicle_brand" label="Marca Vehiculo" responsive={RESPONSIVE_CONFIG} />}
          {["penaltie"].includes(section) && (
             <>
-               <FormikInput label="N° de patrulla" name="patrol_unit_number" disabled={!["penaltie"].includes(section)} responsive={RESPONSIVE_CONFIG} />
-               <FormikInput label="Motivo de detención" disabled={true} value={"ALCOLIMETRO"} name="detention_reason" responsive={RESPONSIVE_CONFIG} />
+               {/* <FormikInput label="N° de patrulla" name="patrol_unit_number" disabled={!["penaltie"].includes(section)} responsive={RESPONSIVE_CONFIG} /> */}
+               <FormikInput label="Motivo de detención" disabled={true} value={"ALCOHOLIMETRO"} name="detention_reason" responsive={RESPONSIVE_CONFIG} />
             </>
          )}
          {section == "courts" && (

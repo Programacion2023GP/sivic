@@ -31,7 +31,7 @@ const PageCalendary = () => {
    const modules: ModuleConfig[] = [
       { name: "Juzgados", color: "#6A5ACD" },
       { name: "Transito Vialidad", color: "#FFD700" },
-      { name: "Alcolimetro", color: "#2E8B57" },
+      { name: "Alcoholimetro", color: "#2E8B57" },
       { name: "Seguridad publica", color: "#B22222" }
    ];
    const useCalendaryStore = useMemo(

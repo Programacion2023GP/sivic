@@ -341,6 +341,7 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                   { field: "id", headerName: "Folio", visibility: "always" },
                   {
                      field: "images_evidences",
+
                      priority: 1,
                      headerName: "Foto  ciudadano",
                      visibility: "always",
@@ -365,12 +366,15 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                   {
                      field: "time",
                      headerName: "Hora",
+                     filterType: "time",
                      visibility: "always",
                      renderField: (v) => <>{formatDatetime(`2025-01-01 ${v}`, true, DateFormat.H_MM_SS_A)}</>,
                      getFilterValue: (v) => formatDatetime(`2025-01-01 ${v}`, true, DateFormat.H_MM_SS_A)
                   },
                   {
                      field: "date",
+                     filterType: "date",
+
                      headerName: "Fecha",
                      visibility: "always",
                      renderField: (v) => <>{formatDatetime(`${v}`, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)}</>,
@@ -390,11 +394,13 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                   { field: "filter_supervisor", headerName: "Supervisor Filtro", visibility: "expanded" },
                   { field: "cp", headerName: "Código Postal", visibility: "expanded" },
                   { field: "city", headerName: "Ciudad", visibility: "expanded" },
+                  
                   ...(section == "general"
                      ? [
                           {
                              field: "days_passed",
                              headerName: "Días en proceso",
+
                              renderField: (field) =>
                                 field != null ? (
                                    <>
@@ -405,6 +411,14 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                           {
                              field: "current_process_id",
                              headerName: "Progreso",
+                             filterType: "select" as const, // 👈 as const
+                             filterOptions: [
+                                // Necesitas agregar esta propiedad
+                                { value: 1, label: "Contraloría" },
+                                { value: 2, label: "Tránsito" },
+                                { value: 3, label: "Seguridad" },
+                                { value: 4, label: "Juzgados" }
+                             ],
                              getFilterValue(value) {
                                 switch (value) {
                                    case 1:
@@ -453,7 +467,7 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                   {
                      field: "finish",
                      headerName: "Estado",
-                     visibility: "always",
+
                      renderField: (field) => (
                         <span
                            style={{
@@ -476,7 +490,13 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                               </>
                            )}
                         </span>
-                     )
+                     ),
+                     visibility: "always",
+                     filterType: "select",
+                     filterOptions: [
+                        { label: `Terminado`, value: "1" },
+                        { label: "Pendiente", value: "0" }
+                     ]
                   },
 
                   { field: "age", headerName: "Edad", visibility: "expanded" },
@@ -503,16 +523,19 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                      enabled: true,
                      filters: [
                         {
-                           field: "date",
+                           field: "fecha",
+                           dataField: "date",
                            type: "date",
                            label: "Fecha",
+
                            // defaultValue: "today",
                            showTodayButton: true,
                            showClearButton: true
                         },
 
                         {
-                           field: "date",
+                           field: "rango",
+                           dataField: "date",
                            type: "date-range",
                            label: "Rango de fechas"
                         },
@@ -528,7 +551,8 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                         //    ]
                         // },
                         {
-                           field: "current_process_id",
+                           dataField: "current_process_id",
+                           field: "select",
                            type: "select",
                            label: "Status",
                            options: [
@@ -544,7 +568,7 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                      }
                   },
                   listTile: {
-                     leading: (row) => <PhotoZoom src={row.image_penaltie} shape="circle" alt={row.image_penaltie} />,
+                     leading: (row) => <PhotoZoom src={String(row.images_evidences)} shape="circle" alt={String(row.images_evidences)} />,
                      title: (row) => <span className="font-semibold">{row.name || `Multa #${row.id}`}</span>,
                      subtitle: (row) => {
                         if (section != "general") {

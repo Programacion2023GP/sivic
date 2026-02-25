@@ -8,11 +8,16 @@ type RedirectData = {
    permisos: string[];
 };
 
-export const redirectRoute = (permisos: string[]): string => {
+export const redirectRoute = (permisos: unknown): string => {
+   if (!Array.isArray(permisos)) {
+      return "/";
+   }
+
    for (const module of MODULE_ORDER) {
       if (permisos.includes(module.permission)) {
          return module.route;
       }
    }
+
    return "/";
 };

@@ -59,7 +59,7 @@ export const sidebarConfig: readonly SidebarConfig[] = [
       children: [
          {
             type: "dropdown",
-            label: "Alcolimetros",
+            label: "Alcoholimetros",
             requiredPrefix: ["catalogo_dependencia_", "catalogo_doctor_"] as const,
             children: [
                {

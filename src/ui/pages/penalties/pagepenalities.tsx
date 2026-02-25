@@ -73,15 +73,14 @@ const PagePenalities = ({ section }: { section: section }) => {
 
             alcohol_concentration: Yup.number().typeError("Debe ser un número").required("Campo obligatorio").min(0.001, "Campo obligatorio"),
             name: Yup.string().required("Campo obligatorio").min(1, "El nombre es requerido"),
-            // person_oficial: Yup.string().required("Campo obligatorio").min(1, "Campo obligatorio"),
+            person_oficial: Yup.string().required("Campo obligatorio").min(1, "Campo obligatorio"),
             amountAlcohol: Yup.number().required("Campo obligatorio").min(0.001, "Debe ser minimo 0.1"),
             vehicle_service_type: Yup.string().required("Campo obligatorio").min(1, "Campo obligatorio"),
             age: Yup.number().required("Campo obligatorio").min(0.001, "Campo obligatorio"),
             number_of_passengers: Yup.number().required("Campo obligatorio").min(0.001, "Campo obligatorio"),
             plate_number: Yup.string().required("Campo obligatorio").min(1, "La placa es requerida"),
-            municipal_police: Yup.string().required("Campo obligatorio"),
             detention_reason: Yup.string().required("Campo obligatorio").min(1, "El motivo es requerida"),
-            patrol_unit_number: Yup.string().required("Campo obligatorio").min(1, "El numero de patrulla es requerida")
+            // patrol_unit_number: Yup.string().required("Campo obligatorio").min(1, "El numero de patrulla es requerida")
          }),
 
       traffic: () =>
@@ -327,7 +326,7 @@ const handleNext = useCallback(
                   : []),
                {
                   id: "Alcolimetro",
-                  label: "Alcolimetro",
+                  label: "Alcoholímetro",
                   content: (
                      <CompositePage
                         formDirection="modal"
@@ -428,7 +427,6 @@ const handleNext = useCallback(
                            <TableAlcoholCases
                               section={section}
                               handleEdit={handleEdit}
-                              
                               //   handleNext={handleNext}
                               handleDelete={handleDelete}
                               loadData={loadData}
