@@ -4,6 +4,15 @@
 
 ---
 
+## 🔧 **v4.0.5.8** · *🧪 Beta*
+📅 **Fecha:** 3 de marzo de 2026, 9:32 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
 ## 🔧 **v4.0.5.7** · *🧪 Beta*
 📅 **Fecha:** 25 de febrero de 2026, 11:03 a.m.  
 👤 **Autor:**   

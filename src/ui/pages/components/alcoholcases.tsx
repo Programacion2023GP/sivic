@@ -386,7 +386,7 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                   { field: "vehicle_service_type", headerName: "Tipo de Servicio Vehicular", visibility: "expanded" },
                   { field: "alcohol_concentration", headerName: "Concentración Alcohol", visibility: "expanded" },
                   { field: "group", headerName: "Grupo", visibility: "expanded" },
-                  { field: "municipal_police", headerName: "Policía Municipal", visibility: "expanded" },
+                  { field: "person_security", headerName: "Policía Municipal", visibility: "expanded" },
                   { field: "civil_protection", headerName: "Protección Civil", visibility: "expanded" },
                   { field: "command_vehicle", headerName: "Vehículo Comando", visibility: "expanded" },
                   { field: "command_troops", headerName: "Tropa Comando", visibility: "expanded" },
@@ -394,7 +394,7 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                   { field: "filter_supervisor", headerName: "Supervisor Filtro", visibility: "expanded" },
                   { field: "cp", headerName: "Código Postal", visibility: "expanded" },
                   { field: "city", headerName: "Ciudad", visibility: "expanded" },
-                  
+
                   ...(section == "general"
                      ? [
                           {

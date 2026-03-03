@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -19,7 +19,17 @@ import {
    FiActivity
 } from "react-icons/fi";
 import { RiDashboardLine, RiFileExcelFill } from "react-icons/ri";
-import { MdOutlineKeyboardArrowRight, MdOutlineKeyboardArrowLeft, MdOutlineViewKanban, MdOutlineTimeline, MdOutlineGridOn, MdOutlineViewCompact, MdOutlineViewAgenda, MdOutlineDashboard, MdPhotoLibrary } from "react-icons/md";
+import {
+   MdOutlineKeyboardArrowRight,
+   MdOutlineKeyboardArrowLeft,
+   MdOutlineViewKanban,
+   MdOutlineTimeline,
+   MdOutlineGridOn,
+   MdOutlineViewCompact,
+   MdOutlineViewAgenda,
+   MdOutlineDashboard,
+   MdPhotoLibrary
+} from "react-icons/md";
 import { PermissionRoute } from "../../../App";
 import { usePermissionsStore } from "../../../store/menu/menu.store";
 import { BsCardImage, BsGrid3X3GapFill, BsTable } from "react-icons/bs";
@@ -98,7 +108,8 @@ interface MobileConfig<T extends object> {
    };
 }
 
-type WebViewMode = "table" | "cards" | "kanban" | "gallery" | "timeline" | "modern-grid" | "compact-list" | "bento";interface PropsTable<T extends object> {
+type WebViewMode = "table" | "cards" | "kanban" | "gallery" | "timeline" | "modern-grid" | "compact-list" | "bento";
+interface PropsTable<T extends object> {
    data: T[];
    paginate: number[];
    columns: Column<T>[];
@@ -144,8 +155,8 @@ const CustomTable = <T extends object>({
    const [showBottomSheet, setShowBottomSheet] = useState<boolean>(false);
    const [selectedRowForSheet, setSelectedRowForSheet] = useState<T | null>(null);
    const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
-  const [viewMode, setViewMode] = useState<WebViewMode>(defaultView as WebViewMode);
-  const [webViewMode, setWebViewMode] = useState<WebViewMode>("table");
+   const [viewMode, setViewMode] = useState<WebViewMode>(defaultView as WebViewMode);
+   const [webViewMode, setWebViewMode] = useState<WebViewMode>("table");
 
    const hasPermission = usePermissionsStore((state) => state.hasPermission);
    const [mobileViewMode, setMobileViewMode] = useState<MobileViewMode>("list");
@@ -153,6 +164,7 @@ const CustomTable = <T extends object>({
    const [showMobileFilters, setShowMobileFilters] = useState(false);
    const [showMobileSettings, setShowMobileSettings] = useState(false);
    const [screenSize, setScreenSize] = useState<"xs" | "sm" | "md">("md");
+   const filterTimeoutRef = useRef(null);
 
    const [swipeData, setSwipeData] = useState<{
       index: number | null;
@@ -170,128 +182,143 @@ const CustomTable = <T extends object>({
    const [showFilterModal, setShowFilterModal] = useState(false);
    const [tempFilters, setTempFilters] = useState<Record<string, any>>({});
    const [activeFilters, setActiveFilters] = useState<Record<string, any>>({});
-useEffect(() => {
-   if (mobileConfig?.quickFilters?.filters) {
-      const initialFilters: Record<string, any> = {};
-      const initialActiveFilters: Record<string, any> = {};
+   const handleColumnFilterChange = (field: string, value: string) => {
+      if (filterTimeoutRef.current) clearTimeout(filterTimeoutRef.current);
+         console.log("aqui es",field,value)
+      filterTimeoutRef.current = setTimeout(() => {
+         setColumnFilters((prev) => ({ ...prev, [field]: value }));
+         setCurrentPage(1);
+      }, 300);
+   };
 
-      mobileConfig.quickFilters.filters.forEach((filter) => {
-         const field = String(filter.field);
-         let defaultValue = filter.defaultValue;
+   // Limpiar al desmontar
+   useEffect(() => {
+      return () => {
+         if (filterTimeoutRef.current) clearTimeout(filterTimeoutRef.current);
+      };
+   }, []);
+   useEffect(() => {
+      if (mobileConfig?.quickFilters?.filters) {
+         const initialFilters: Record<string, any> = {};
+         const initialActiveFilters: Record<string, any> = {};
 
-         // Procesar valores por defecto especiales
-         if (filter.type === "date") {
-            if (filter.defaultValue === "today") {
-               const today = new Date();
-               if (!isNaN(today.getTime())) {
-                  defaultValue = formatDateForInput(today);
+         mobileConfig.quickFilters.filters.forEach((filter) => {
+            const field = String(filter.field);
+            let defaultValue = filter.defaultValue;
+
+            // Procesar valores por defecto especiales
+            if (filter.type === "date") {
+               if (filter.defaultValue === "today") {
+                  const today = new Date();
+                  if (!isNaN(today.getTime())) {
+                     defaultValue = formatDateForInput(today);
+                  }
+               } else if (filter.defaultValue) {
+                  defaultValue = formatDateForInput(filter.defaultValue);
                }
-            } else if (filter.defaultValue) {
-               defaultValue = formatDateForInput(filter.defaultValue);
+            } else if (filter.type === "date-range" && filter.defaultRange) {
+               const start = filter.defaultRange.start ? formatDateForInput(filter.defaultRange.start) : "";
+               const end = filter.defaultRange.end ? formatDateForInput(filter.defaultRange.end) : "";
+
+               // Solo crear objeto si al menos una fecha es válida
+               if (start || end) {
+                  defaultValue = { start, end };
+               }
             }
-         } else if (filter.type === "date-range" && filter.defaultRange) {
-            const start = filter.defaultRange.start ? formatDateForInput(filter.defaultRange.start) : "";
-            const end = filter.defaultRange.end ? formatDateForInput(filter.defaultRange.end) : "";
 
-            // Solo crear objeto si al menos una fecha es válida
-            if (start || end) {
-               defaultValue = { start, end };
-            }
-         }
+            initialFilters[field] = defaultValue || "";
 
-         initialFilters[field] = defaultValue || "";
-
-         // Solo activar filtros con valores válidos
-         if (defaultValue && defaultValue !== "") {
-            if (typeof defaultValue === "object") {
-               // Para objetos de rango, verificar que tengan propiedades válidas
-               if (Object.keys(defaultValue).length > 0) {
+            // Solo activar filtros con valores válidos
+            if (defaultValue && defaultValue !== "") {
+               if (typeof defaultValue === "object") {
+                  // Para objetos de rango, verificar que tengan propiedades válidas
+                  if (Object.keys(defaultValue).length > 0) {
+                     initialActiveFilters[field] = defaultValue;
+                  }
+               } else {
                   initialActiveFilters[field] = defaultValue;
                }
-            } else {
-               initialActiveFilters[field] = defaultValue;
             }
+         });
+
+         setTempFilters(initialFilters);
+         setActiveFilters(initialActiveFilters);
+
+         // Ejecutar callback si hay filtros activos por defecto
+         if (Object.keys(initialActiveFilters).length > 0 && mobileConfig.quickFilters.onApply) {
+            setTimeout(() => {
+               mobileConfig.quickFilters!.onApply!(initialActiveFilters);
+            }, 100);
          }
-      });
-
-      setTempFilters(initialFilters);
-      setActiveFilters(initialActiveFilters);
-
-      // Ejecutar callback si hay filtros activos por defecto
-      if (Object.keys(initialActiveFilters).length > 0 && mobileConfig.quickFilters.onApply) {
-         setTimeout(() => {
-            mobileConfig.quickFilters!.onApply!(initialActiveFilters);
-         }, 100);
       }
-   }
-}, [mobileConfig?.quickFilters?.filters]);
-const formatDateRangeForDisplay = (dateString: string): string => {
-   if (!dateString) return "";
+   }, [mobileConfig?.quickFilters?.filters]);
+   const formatDateRangeForDisplay = (dateString: string): string => {
+      if (!dateString) return "";
 
-   // Crear fecha usando UTC para evitar desplazamiento
-   const [year, month, day] = dateString.split("-").map(Number);
-   const date = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+      // Crear fecha usando UTC para evitar desplazamiento
+      const [year, month, day] = dateString.split("-").map(Number);
+      const date = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
 
-   return date.toLocaleDateString("es-ES", {
-      year: "numeric",
-      month: "2-digit",
-      day: "2-digit",
-      timeZone: "UTC" // Forzar UTC
-   });
-};
+      return date.toLocaleDateString("es-ES", {
+         year: "numeric",
+         month: "2-digit",
+         day: "2-digit",
+         timeZone: "UTC" // Forzar UTC
+      });
+   };
    // Función helper para formatear fechas sin problemas de zona horaria
    // Agrega estas funciones al inicio del componente (después de los estados)
-  const formatDateForInput = (value: any): string => {
-     if (!value) return "";
+   const formatDateForInput = (value: any): string => {
+      if (!value) return "";
 
-     // Si ya está en formato YYYY-MM-DD, devolverlo tal cual
-     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-        return value;
-     }
+      // Si ya está en formato YYYY-MM-DD, devolverlo tal cual
+      if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+         return value;
+      }
 
-     try {
-        let year: number, month: number, day: number;
+      try {
+         let year: number, month: number, day: number;
 
-        if (value instanceof Date) {
-           if (isNaN(value.getTime())) return ""; // Fecha inválida
-           year = value.getFullYear();
-           month = value.getMonth() + 1;
-           day = value.getDate();
-        } else if (typeof value === "string") {
-           // Formato ISO datetime
-           if (value.includes("T")) {
-              const date = new Date(value);
-              if (isNaN(date.getTime())) return "";
-              year = date.getFullYear();
-              month = date.getMonth() + 1;
-              day = date.getDate();
-           } else {
-              // Intentar parsear manualmente
-              const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
-              if (match) {
-                 year = parseInt(match[1], 10);
-                 month = parseInt(match[2], 10);
-                 day = parseInt(match[3], 10);
-              } else {
-                 return "";
-              }
-           }
-        } else {
-           return "";
-        }
+         if (value instanceof Date) {
+            if (isNaN(value.getTime())) return ""; // Fecha inválida
+            year = value.getFullYear();
+            month = value.getMonth() + 1;
+            day = value.getDate();
+         } else if (typeof value === "string") {
+            // Formato ISO datetime
+            if (value.includes("T")) {
+               const date = new Date(value);
+               if (isNaN(date.getTime())) return "";
+               year = date.getFullYear();
+               month = date.getMonth() + 1;
+               day = date.getDate();
+            } else {
+               // Intentar parsear manualmente
+               const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+               if (match) {
+                  year = parseInt(match[1], 10);
+                  month = parseInt(match[2], 10);
+                  day = parseInt(match[3], 10);
+               } else {
+                  return "";
+               }
+            }
+         } else {
+            return "";
+         }
 
-        // Validar que los valores sean números válidos
-        if (isNaN(year) || isNaN(month) || isNaN(day)) return "";
+         // Validar que los valores sean números válidos
+         if (isNaN(year) || isNaN(month) || isNaN(day)) return "";
 
-        const monthStr = String(month).padStart(2, "0");
-        const dayStr = String(day).padStart(2, "0");
+         const monthStr = String(month).padStart(2, "0");
+         const dayStr = String(day).padStart(2, "0");
 
-        return `${year}-${monthStr}-${dayStr}`;
-     } catch (error) {
-        console.warn("Error formateando fecha:", error);
-        return "";
-     }
-  };
+         return `${year}-${monthStr}-${dayStr}`;
+      } catch (error) {
+         console.warn("Error formateando fecha:", error);
+         return "";
+      }
+   };
 
    const formatDateForDisplay = (date: Date | string): string => {
       let dateObj: Date;
@@ -311,46 +338,46 @@ const formatDateRangeForDisplay = (dateString: string): string => {
       });
    };
    // Handler para aplicar filtros
-  const handleApplyFilters = () => {
-     const cleanedFilters: Record<string, any> = {};
+   const handleApplyFilters = () => {
+      const cleanedFilters: Record<string, any> = {};
 
-     Object.entries(tempFilters).forEach(([key, value]) => {
-        if (value === "" || value == null) return;
+      Object.entries(tempFilters).forEach(([key, value]) => {
+         if (value === "" || value == null) return;
 
-        // Manejo especial para objetos de rango de fechas
-        if (typeof value === "object" && value !== null) {
-           // Si es un objeto vacío, ignorarlo
-           if (Object.keys(value).length === 0) return;
+         // Manejo especial para objetos de rango de fechas
+         if (typeof value === "object" && value !== null) {
+            // Si es un objeto vacío, ignorarlo
+            if (Object.keys(value).length === 0) return;
 
-           // Para date-range, validar que tenga fechas válidas
-           if (value.start || value.end) {
-              const startValid = !value.start || !isNaN(new Date(value.start).getTime());
-              const endValid = !value.end || !isNaN(new Date(value.end).getTime());
+            // Para date-range, validar que tenga fechas válidas
+            if (value.start || value.end) {
+               const startValid = !value.start || !isNaN(new Date(value.start).getTime());
+               const endValid = !value.end || !isNaN(new Date(value.end).getTime());
 
-              if (startValid && endValid) {
-                 // Solo guardar si al menos una fecha es válida
-                 const cleanedValue: any = {};
-                 if (value.start && startValid) cleanedValue.start = value.start;
-                 if (value.end && endValid) cleanedValue.end = value.end;
+               if (startValid && endValid) {
+                  // Solo guardar si al menos una fecha es válida
+                  const cleanedValue: any = {};
+                  if (value.start && startValid) cleanedValue.start = value.start;
+                  if (value.end && endValid) cleanedValue.end = value.end;
 
-                 if (Object.keys(cleanedValue).length > 0) {
-                    cleanedFilters[key] = cleanedValue;
-                 }
-              }
-           }
-        } else {
-           // Valores primitivos
-           cleanedFilters[key] = value;
-        }
-     });
+                  if (Object.keys(cleanedValue).length > 0) {
+                     cleanedFilters[key] = cleanedValue;
+                  }
+               }
+            }
+         } else {
+            // Valores primitivos
+            cleanedFilters[key] = value;
+         }
+      });
 
-     setActiveFilters(cleanedFilters);
-     setShowFilterModal(false);
+      setActiveFilters(cleanedFilters);
+      setShowFilterModal(false);
 
-     if (mobileConfig?.quickFilters?.onApply) {
-        mobileConfig.quickFilters.onApply(cleanedFilters);
-     }
-  };
+      if (mobileConfig?.quickFilters?.onApply) {
+         mobileConfig.quickFilters.onApply(cleanedFilters);
+      }
+   };
 
    // Handler para limpiar filtros
    const handleClearFilters = () => {
@@ -389,163 +416,163 @@ const formatDateRangeForDisplay = (dateString: string): string => {
       window.addEventListener("resize", checkViewport);
       return () => window.removeEventListener("resize", checkViewport);
    }, []);
-const colors = {
-   primary: "#9B2242", // Guinda principal
-   secondary: "#651D32", // Guinda secundario
-   grayCool: "#474C55",
-   gray: "#727372",
-   grayLight: "#B8B6AF",
-   black: "#130D0E"
-};
+   const colors = {
+      primary: "#9B2242", // Guinda principal
+      secondary: "#651D32", // Guinda secundario
+      grayCool: "#474C55",
+      gray: "#727372",
+      grayLight: "#B8B6AF",
+      black: "#130D0E"
+   };
    useEffect(() => {
       setCurrentPage(1);
       setSelectedRows(new Set());
    }, [data]);
    // Componente del modal de filtros (versión mejorada)
- const renderKanbanView = () => {
-    const groupField = columns[0]?.field; // Agrupación por primera columna
-    const grouped = currentRows.reduce(
-       (acc, row) => {
-          const key = String(row[groupField] || "Sin categoría");
-          if (!acc[key]) acc[key] = [];
-          acc[key].push(row);
-          return acc;
-       },
-       {} as Record<string, T[]>
-    );
+   const renderKanbanView = () => {
+      const groupField = columns[0]?.field; // Agrupación por primera columna
+      const grouped = currentRows.reduce(
+         (acc, row) => {
+            const key = String(row[groupField] || "Sin categoría");
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(row);
+            return acc;
+         },
+         {} as Record<string, T[]>
+      );
 
-    // Columnas para mostrar como chips (excluimos la de agrupación y acciones)
-    const chipColumns = columns
-       .filter((col) => col.field !== groupField)
-       .filter((col) => !col.headerName.toLowerCase().includes("acción"))
-       .slice(0, 3);
+      // Columnas para mostrar como chips (excluimos la de agrupación y acciones)
+      const chipColumns = columns
+         .filter((col) => col.field !== groupField)
+         .filter((col) => !col.headerName.toLowerCase().includes("acción"))
+         .slice(0, 3);
 
-    return (
-       <div className="p-6 min-h-screen" style={{ backgroundColor: colors.grayLight + "20" }}>
-          <div className="flex gap-6 overflow-x-auto pb-4">
-             {Object.entries(grouped).map(([category, items], colIdx) => (
-                <motion.div
-                   key={category}
-                   className="flex-shrink-0 w-80"
-                   initial={{ opacity: 0, y: 20 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   transition={{ delay: colIdx * 0.1 }}
-                >
-                   {/* HEADER DE COLUMNA */}
-                   <div className="bg-white rounded-t-lg px-5 py-4 shadow-sm" style={{ borderBottom: `3px solid ${colors.primary}` }}>
-                      <div className="flex items-center justify-between">
-                         <h3 className="font-semibold text-gray-800 text-sm uppercase tracking-wider">{category}</h3>
-                         <span className="text-white text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: colors.primary }}>
-                            {items.length}
-                         </span>
-                      </div>
-                   </div>
+      return (
+         <div className="p-6 min-h-screen" style={{ backgroundColor: colors.grayLight + "20" }}>
+            <div className="flex gap-6 overflow-x-auto pb-4">
+               {Object.entries(grouped).map(([category, items], colIdx) => (
+                  <motion.div
+                     key={category}
+                     className="flex-shrink-0 w-80"
+                     initial={{ opacity: 0, y: 20 }}
+                     animate={{ opacity: 1, y: 0 }}
+                     transition={{ delay: colIdx * 0.1 }}
+                  >
+                     {/* HEADER DE COLUMNA */}
+                     <div className="bg-white rounded-t-lg px-5 py-4 shadow-sm" style={{ borderBottom: `3px solid ${colors.primary}` }}>
+                        <div className="flex items-center justify-between">
+                           <h3 className="font-semibold text-gray-800 text-sm uppercase tracking-wider">{category}</h3>
+                           <span className="text-white text-xs font-bold px-2.5 py-1 rounded-full" style={{ backgroundColor: colors.primary }}>
+                              {items.length}
+                           </span>
+                        </div>
+                     </div>
 
-                   {/* TARJETAS */}
-                   <div
-                      className="bg-white/50 rounded-b-lg p-4 space-y-3 min-h-[28rem] max-h-[32rem] overflow-y-auto"
-                      style={{ backgroundColor: colors.grayLight + "10" }}
-                   >
-                      {items.map((row, idx) => (
-                         <motion.div
-                            key={idx}
-                            className="bg-white rounded-xl p-5 shadow-sm hover:shadow-xl transition-all cursor-pointer border border-gray-200/80"
-                            whileHover={{ y: -4 }}
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: idx * 0.05 }}
-                         >
-                            {/* TÍTULO (cardTitleField o primera columna no agrupada) */}
-                            <h4 className="font-bold text-gray-900 mb-1 line-clamp-2">{getDefaultTitle(row)}</h4>
+                     {/* TARJETAS */}
+                     <div
+                        className="bg-white/50 rounded-b-lg p-4 space-y-3 min-h-[28rem] max-h-[32rem] overflow-y-auto"
+                        style={{ backgroundColor: colors.grayLight + "10" }}
+                     >
+                        {items.map((row, idx) => (
+                           <motion.div
+                              key={idx}
+                              className="bg-white rounded-xl p-5 shadow-sm hover:shadow-xl transition-all cursor-pointer border border-gray-200/80"
+                              whileHover={{ y: -4 }}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: idx * 0.05 }}
+                           >
+                              {/* TÍTULO (cardTitleField o primera columna no agrupada) */}
+                              <h4 className="font-bold text-gray-900 mb-1 line-clamp-2">{getDefaultTitle(row)}</h4>
 
-                            {/* SUBTÍTULO (si existe) */}
-                            {getDefaultSubtitle(row) && <p className="text-sm text-gray-600 line-clamp-2 mb-3">{getDefaultSubtitle(row)}</p>}
+                              {/* SUBTÍTULO (si existe) */}
+                              {getDefaultSubtitle(row) && <p className="text-sm text-gray-600 line-clamp-2 mb-3">{getDefaultSubtitle(row)}</p>}
 
-                            {/* CHIPS: siguientes columnas relevantes */}
-                            <div className="flex flex-wrap gap-2 mb-3">
-                               {chipColumns.map((col) => {
-                                  const value = col.renderField ? col.renderField(row[col.field]) : String(row[col.field] || "-");
-                                  return (
-                                     <span
-                                        key={String(col.field)}
-                                        className="text-xs px-2.5 py-1 rounded-full truncate max-w-full"
-                                        style={{
-                                           backgroundColor: colors.grayLight + "30",
-                                           color: colors.grayCool
-                                        }}
-                                     >
-                                        {value}
-                                     </span>
-                                  );
-                               })}
-                            </div>
+                              {/* CHIPS: siguientes columnas relevantes */}
+                              <div className="flex flex-wrap gap-2 mb-3">
+                                 {chipColumns.map((col) => {
+                                    const value = col.renderField ? col.renderField(row[col.field]) : String(row[col.field] || "-");
+                                    return (
+                                       <span
+                                          key={String(col.field)}
+                                          className="text-xs px-2.5 py-1 rounded-full truncate max-w-full"
+                                          style={{
+                                             backgroundColor: colors.grayLight + "30",
+                                             color: colors.grayCool
+                                          }}
+                                       >
+                                          {value}
+                                       </span>
+                                    );
+                                 })}
+                              </div>
 
-                            {/* ACCIONES */}
-                            {actions && (
-                               <div className="flex gap-1 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
-                                  {actions(row)}
-                               </div>
-                            )}
-                         </motion.div>
-                      ))}
-                   </div>
-                </motion.div>
-             ))}
-          </div>
-       </div>
-    );
- };
+                              {/* ACCIONES */}
+                              {actions && (
+                                 <div className="flex gap-1 pt-3 border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                                    {actions(row)}
+                                 </div>
+                              )}
+                           </motion.div>
+                        ))}
+                     </div>
+                  </motion.div>
+               ))}
+            </div>
+         </div>
+      );
+   };
    // ==================== VISTA GALERÍA ====================
- const renderGalleryView = () => {
-    // Usamos las primeras 4 columnas para mostrar en la cuadrícula
-    const displayColumns = columns.slice(0, 4);
+   const renderGalleryView = () => {
+      // Usamos las primeras 4 columnas para mostrar en la cuadrícula
+      const displayColumns = columns.slice(0, 4);
 
-    return (
-       <div className="p-6 min-h-screen" style={{ backgroundColor: colors.grayLight + "20" }}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-             {currentRows.map((row, idx) => (
-                <motion.div key={idx} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.05 }}>
-                   <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all cursor-pointer">
-                      {/* HEADER CON GRADIENTE (colores corporativos) */}
-                      <div
-                         className="h-32 p-6 flex items-center justify-center relative"
-                         style={{
-                            background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`
-                         }}
-                      >
-                         <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-                            <span className="text-3xl font-bold text-white">{String(getDefaultTitle(row)).charAt(0).toUpperCase()}</span>
-                         </div>
-                      </div>
+      return (
+         <div className="p-6 min-h-screen" style={{ backgroundColor: colors.grayLight + "20" }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+               {currentRows.map((row, idx) => (
+                  <motion.div key={idx} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: idx * 0.05 }}>
+                     <div className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all cursor-pointer">
+                        {/* HEADER CON GRADIENTE (colores corporativos) */}
+                        <div
+                           className="h-32 p-6 flex items-center justify-center relative"
+                           style={{
+                              background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`
+                           }}
+                        >
+                           <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
+                              <span className="text-3xl font-bold text-white">{String(getDefaultTitle(row)).charAt(0).toUpperCase()}</span>
+                           </div>
+                        </div>
 
-                      {/* CONTENIDO */}
-                      <div className="p-5">
-                         <h3 className="font-bold text-xl text-gray-900 mb-2 line-clamp-2">{getDefaultTitle(row)}</h3>
+                        {/* CONTENIDO */}
+                        <div className="p-5">
+                           <h3 className="font-bold text-xl text-gray-900 mb-2 line-clamp-2">{getDefaultTitle(row)}</h3>
 
-                         {getDefaultSubtitle(row) && <p className="text-sm text-gray-600 mb-4 line-clamp-3">{getDefaultSubtitle(row)}</p>}
+                           {getDefaultSubtitle(row) && <p className="text-sm text-gray-600 mb-4 line-clamp-3">{getDefaultSubtitle(row)}</p>}
 
-                         {/* GRID DE INFORMACIÓN (columnas reales) */}
-                         <div className="grid grid-cols-2 gap-3 mb-4">
-                            {displayColumns.map((col) => (
-                               <div key={String(col.field)} className="rounded-lg p-3" style={{ backgroundColor: colors.grayLight + "20" }}>
-                                  <div className="text-xs text-gray-500 mb-1 truncate">{col.headerName}</div>
-                                  <div className="text-sm font-semibold text-gray-900 truncate">
-                                     {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] || "-")}
-                                  </div>
-                               </div>
-                            ))}
-                         </div>
+                           {/* GRID DE INFORMACIÓN (columnas reales) */}
+                           <div className="grid grid-cols-2 gap-3 mb-4">
+                              {displayColumns.map((col) => (
+                                 <div key={String(col.field)} className="rounded-lg p-3" style={{ backgroundColor: colors.grayLight + "20" }}>
+                                    <div className="text-xs text-gray-500 mb-1 truncate">{col.headerName}</div>
+                                    <div className="text-sm font-semibold text-gray-900 truncate">
+                                       {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] || "-")}
+                                    </div>
+                                 </div>
+                              ))}
+                           </div>
 
-                         {/* ACCIONES */}
-                         {actions && <div className="flex gap-2 justify-end pt-3 border-t border-gray-100">{actions(row)}</div>}
-                      </div>
-                   </div>
-                </motion.div>
-             ))}
-          </div>
-       </div>
-    );
- };
+                           {/* ACCIONES */}
+                           {actions && <div className="flex gap-2 justify-end pt-3 border-t border-gray-100">{actions(row)}</div>}
+                        </div>
+                     </div>
+                  </motion.div>
+               ))}
+            </div>
+         </div>
+      );
+   };
 
    // ==================== VISTA TIMELINE (HORIZONTAL) ====================
    const renderTimelineView = () => {
@@ -611,77 +638,77 @@ const colors = {
       );
    };
    // ==================== VISTA MODERN GRID ====================
- const renderModernGridView = () => {
-    return (
-       <div className="p-6 min-h-screen" style={{ backgroundColor: colors.secondary }}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-             {currentRows.map((row, idx) => (
-                <motion.div key={idx} className="group relative" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} whileHover={{ scale: 1.05 }}>
-                   {/* GLOW EFFECT */}
-                   <div
-                      className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-75 blur-md transition-all duration-500"
-                      style={{
-                         margin: "-4px",
-                         background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`
-                      }}
-                   />
+   const renderModernGridView = () => {
+      return (
+         <div className="p-6 min-h-screen" style={{ backgroundColor: colors.secondary }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+               {currentRows.map((row, idx) => (
+                  <motion.div key={idx} className="group relative" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} whileHover={{ scale: 1.05 }}>
+                     {/* GLOW EFFECT */}
+                     <div
+                        className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-75 blur-md transition-all duration-500"
+                        style={{
+                           margin: "-4px",
+                           background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`
+                        }}
+                     />
 
-                   {/* TARJETA */}
-                   <div className="relative bg-white rounded-2xl overflow-hidden shadow-xl cursor-pointer">
-                      <div
-                         className="h-40 relative overflow-hidden"
-                         style={{
-                            background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`
-                         }}
-                      >
-                         <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all" />
-                         <div className="absolute inset-0 flex items-center justify-center">
-                            <motion.div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center" whileHover={{ rotate: 360 }}>
-                               <span className="text-4xl font-bold text-white">{String(getDefaultTitle(row)).charAt(0).toUpperCase()}</span>
-                            </motion.div>
-                         </div>
-                         <div className="absolute top-3 right-3 bg-white/90 px-3 py-1 rounded-full text-xs font-bold" style={{ color: colors.primary }}>
-                            #{startIndex + idx + 1}
-                         </div>
-                      </div>
+                     {/* TARJETA */}
+                     <div className="relative bg-white rounded-2xl overflow-hidden shadow-xl cursor-pointer">
+                        <div
+                           className="h-40 relative overflow-hidden"
+                           style={{
+                              background: `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`
+                           }}
+                        >
+                           <div className="absolute inset-0 bg-black/20 group-hover:bg-black/10 transition-all" />
+                           <div className="absolute inset-0 flex items-center justify-center">
+                              <motion.div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center" whileHover={{ rotate: 360 }}>
+                                 <span className="text-4xl font-bold text-white">{String(getDefaultTitle(row)).charAt(0).toUpperCase()}</span>
+                              </motion.div>
+                           </div>
+                           <div className="absolute top-3 right-3 bg-white/90 px-3 py-1 rounded-full text-xs font-bold" style={{ color: colors.primary }}>
+                              #{startIndex + idx + 1}
+                           </div>
+                        </div>
 
-                      <div className="p-6">
-                         <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 group-hover" style={{ color: colors.black }}>
-                            {getDefaultTitle(row)}
-                         </h3>
+                        <div className="p-6">
+                           <h3 className="font-bold text-lg text-gray-900 mb-2 line-clamp-2 group-hover" style={{ color: colors.black }}>
+                              {getDefaultTitle(row)}
+                           </h3>
 
-                         {getDefaultSubtitle(row) && (
-                            <p className="text-sm mb-4 line-clamp-2" style={{ color: colors.gray }}>
-                               {getDefaultSubtitle(row)}
-                            </p>
-                         )}
+                           {getDefaultSubtitle(row) && (
+                              <p className="text-sm mb-4 line-clamp-2" style={{ color: colors.gray }}>
+                                 {getDefaultSubtitle(row)}
+                              </p>
+                           )}
 
-                         <div className="grid grid-cols-2 gap-3 mb-4">
-                            {columns.slice(0, 2).map((col) => (
-                               <div
-                                  key={String(col.field)}
-                                  className="text-center rounded-lg p-3 group-hover:bg-opacity-100 transition-colors"
-                                  style={{ backgroundColor: colors.grayLight + "30" }}
-                               >
-                                  <div className="text-xs mb-1 truncate" style={{ color: colors.grayCool }}>
-                                     {col.headerName}
-                                  </div>
-                                  <div className="text-sm font-bold truncate" style={{ color: colors.black }}>
-                                     {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] || "-")}
-                                  </div>
-                               </div>
-                            ))}
-                         </div>
+                           <div className="grid grid-cols-2 gap-3 mb-4">
+                              {columns.slice(0, 2).map((col) => (
+                                 <div
+                                    key={String(col.field)}
+                                    className="text-center rounded-lg p-3 group-hover:bg-opacity-100 transition-colors"
+                                    style={{ backgroundColor: colors.grayLight + "30" }}
+                                 >
+                                    <div className="text-xs mb-1 truncate" style={{ color: colors.grayCool }}>
+                                       {col.headerName}
+                                    </div>
+                                    <div className="text-sm font-bold truncate" style={{ color: colors.black }}>
+                                       {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] || "-")}
+                                    </div>
+                                 </div>
+                              ))}
+                           </div>
 
-                         {actions && <div className="flex gap-2 justify-center pt-3 border-t border-gray-100">{actions(row)}</div>}
-                      </div>
-                   </div>
-                </motion.div>
-             ))}
-          </div>
-       </div>
-    );
- };
+                           {actions && <div className="flex gap-2 justify-center pt-3 border-t border-gray-100">{actions(row)}</div>}
+                        </div>
+                     </div>
+                  </motion.div>
+               ))}
+            </div>
+         </div>
+      );
+   };
 
    // ==================== VISTA COMPACT LIST ====================
    const renderCompactListView = () => {
@@ -824,7 +851,6 @@ const colors = {
 
       // Presets comunes para date-range
       const commonPresets = [
-      
          { label: "Esta semana", start: thisWeekStart, end: today },
          { label: "Este mes", start: thisMonthStart, end: today },
          { label: "Mes pasado", start: lastMonthStart, end: lastMonthEnd }
@@ -875,7 +901,7 @@ const colors = {
                            }
 
                            // Valor actual o por defecto
-                          
+
                            const currentValue = tempFilters[field] !== undefined ? tempFilters[field] : defaultValue;
 
                            return (
@@ -1046,7 +1072,6 @@ const colors = {
          case "date-range":
             const rangeValue = currentValue || { start: "", end: "" };
             const presets = filterConfig.presets || [
-             
                { label: "Esta semana", start: new Date(new Date().setDate(new Date().getDate() - new Date().getDay())), end: new Date() },
                { label: "Este mes", start: new Date(new Date().getFullYear(), new Date().getMonth(), 1), end: new Date() },
                {
@@ -1259,60 +1284,58 @@ const colors = {
                let displayValue = value;
                let chipLabel = filterConfig.label || col?.headerName || field;
 
-             if (filterConfig.type === "date-range") {
-                // Validar que existan y sean válidas
-                if (!value?.start || !value?.end) return null;
+               if (filterConfig.type === "date-range") {
+                  // Validar que existan y sean válidas
+                  if (!value?.start || !value?.end) return null;
 
-                const startDate = new Date(value.start);
-                const endDate = new Date(value.end);
+                  const startDate = new Date(value.start);
+                  const endDate = new Date(value.end);
 
-                // Verificar que sean fechas válidas
-                if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-                   return null; // No mostrar chip si alguna fecha es inválida
-                }
+                  // Verificar que sean fechas válidas
+                  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+                     return null; // No mostrar chip si alguna fecha es inválida
+                  }
 
-                const formatUTCDate = (date) => {
-                   const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-                   return utcDate.toLocaleDateString("es-ES", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      timeZone: "UTC"
-                   });
-                };
+                  const formatUTCDate = (date) => {
+                     const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+                     return utcDate.toLocaleDateString("es-ES", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        timeZone: "UTC"
+                     });
+                  };
 
-                displayValue = `${formatUTCDate(startDate)} - ${formatUTCDate(endDate)}`;
-                chipLabel = filterConfig.label || col?.headerName || field;
-             } else if (filterConfig.type === "date") {
-                const date = new Date(value);
-               if (isNaN(date.getTime())) {
+                  displayValue = `${formatUTCDate(startDate)} - ${formatUTCDate(endDate)}`;
+                  chipLabel = filterConfig.label || col?.headerName || field;
+               } else if (filterConfig.type === "date") {
+                  const date = new Date(value);
+                  if (isNaN(date.getTime())) {
+                     return;
+                     // Aquí puedes procesar la fecha
+                  }
+                  const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 
-                 return
-                  // Aquí puedes procesar la fecha
+                  displayValue = utcDate.toLocaleDateString("es-ES", {
+                     year: "numeric",
+                     month: "short",
+                     day: "numeric",
+                     timeZone: "UTC"
+                  });
+               } else if (filterConfig.type === "select") {
+                  const option = filterConfig.options?.find((opt) => {
+                     // Comparación flexible para números/strings
+                     return String(opt.value) === String(value);
+                  });
+
+                  if (option) {
+                     displayValue = option.label;
+                  } else {
+                     displayValue = value;
+                  }
+               } else if (filterConfig.type === "time") {
+                  displayValue = value;
                }
-                const utcDate = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
-                 
-                displayValue = utcDate.toLocaleDateString("es-ES", {
-                   year: "numeric",
-                   month: "short",
-                   day: "numeric",
-                   timeZone: "UTC"
-                });
-               
-             } else if (filterConfig.type === "select") {
-                const option = filterConfig.options?.find((opt) => {
-                   // Comparación flexible para números/strings
-                   return String(opt.value) === String(value);
-                });
-
-                if (option) {
-                   displayValue = option.label;
-                } else {
-                   displayValue = value;
-                }
-             } else if (filterConfig.type === "time") {
-                displayValue = value;
-             }
 
                return (
                   <div key={field} className="flex items-center gap-2 bg-[#9B2242] text-white px-3 py-2 rounded-full text-sm">
@@ -1343,23 +1366,23 @@ const colors = {
    // Filtrado y ordenamiento
    const safeData = Array.isArray(data) ? data : [];
 
-const formatDateForComparison = (value: any): Date | null => {
-   if (!value) return null;
+   const formatDateForComparison = (value: any): Date | null => {
+      if (!value) return null;
 
-   try {
-      // Si es string en formato YYYY-MM-DD
-      if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
-         const [year, month, day] = value.split("-").map(Number);
-         // Crear fecha UTC a las 00:00:00
-         return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+      try {
+         // Si es string en formato YYYY-MM-DD
+         if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+            const [year, month, day] = value.split("-").map(Number);
+            // Crear fecha UTC a las 00:00:00
+            return new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+         }
+
+         // Resto del código...
+      } catch (error) {
+         console.warn("Error formateando fecha:", error);
+         return null;
       }
-
-      // Resto del código...
-   } catch (error) {
-      console.warn("Error formateando fecha:", error);
-      return null;
-   }
-};
+   };
    const filteredData = safeData
       .filter((row) =>
          globalFilter
@@ -1379,8 +1402,10 @@ const formatDateForComparison = (value: any): Date | null => {
             const raw = String(rawValue ?? "");
 
             if (col.filterType === "date") {
-               const cell = raw.includes("T") ? raw.split("T")[0] : raw.substring(0, 10);
-               return cell === filterValue;
+               const cellDate = formatDateForComparison(rawValue);
+               const filterDate = formatDateForComparison(filterValue);
+               if (!cellDate || !filterDate) return false;
+               return cellDate.getTime() === filterDate.getTime();
             }
 
             if (col.filterType === "time") {
@@ -1425,7 +1450,6 @@ const formatDateForComparison = (value: any): Date | null => {
                // Si tiene getFilterValue, buscar dentro del texto transformado
                if (col.getFilterValue) {
                   // const displayValue = col.getFilterValue(rawValue);
-                 
                }
                // Comparación directa flexible (número vs string)
                return String(rawValue) == String(filterValue);
@@ -1527,11 +1551,6 @@ const formatDateForComparison = (value: any): Date | null => {
    // Handlers
    const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
       setRowsPerPage(Number(e.target.value));
-      setCurrentPage(1);
-   };
-
-   const handleColumnFilterChange = (field: string, value: string) => {
-      setColumnFilters((prev) => ({ ...prev, [field]: value }));
       setCurrentPage(1);
    };
 
@@ -1827,198 +1846,229 @@ const formatDateForComparison = (value: any): Date | null => {
 
       return sizeMap[screenSize][mobileDensity];
    };
-const renderColumnFilterInput = (col: Column<T>) => {
-   const field = String(col.field);
-   const value = columnFilters[field] || "";
+ const isDateValid = (value: any): boolean => {
+    if (!value) return false;
 
-   const baseInput = "border-0 p-0 text-xs focus:outline-none focus:ring-0 bg-transparent w-full";
+    // Si es string en formato YYYY-MM-DD (del input)
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+       const [year, month, day] = value.split("-").map(Number);
+       // Validar que sea una fecha real (ej. no 2024-02-30)
+       const date = new Date(Date.UTC(year, month - 1, day));
+       return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+    }
 
-   switch (col.filterType) {
-      // ── FECHA ──────────────────────────────────────────
-      case "date":
-         return <input type="date" value={value} onChange={(e) => handleColumnFilterChange(field, e.target.value)} className={baseInput} />;
+    // Para cualquier otro valor que pueda ser convertido a Date
+    const date = new Date(value);
+    return date instanceof Date && !isNaN(date.getTime());
+ };
+ const [localValue, setLocalValue] = useState("");
 
-      // ── HORA ───────────────────────────────────────────
-      case "time":
-         return <input type="time" value={value} onChange={(e) => handleColumnFilterChange(field, e.target.value)} className={baseInput} />;
+   const renderColumnFilterInput = (col: Column<T>) => {
+      const field = String(col.field);
+      const value = columnFilters[field] || "";
 
-      // ── RANGO DE FECHAS ────────────────────────────────
-      case "date-range": {
-         const [startVal = "", endVal = ""] = value.split("|");
-         return (
-            <div className="flex flex-col gap-1 w-full">
+      const baseInput = "border-0 p-0 text-xs focus:outline-none focus:ring-0 bg-transparent w-full";
+
+      switch (col.filterType) {
+         // ── FECHA ──────────────────────────────────────────
+         case "date":
+            return (
                <input
                   type="date"
-                  value={startVal}
-                  onChange={(e) => handleColumnFilterChange(field, `${e.target.value}|${endVal}`)}
-                  className={`${baseInput} min-w-[110px]`}
+                  value={localValue}
+                  onChange={(e) => {
+                     const newValue = e.target.value;
+                     setLocalValue(newValue); // ← Actualiza el valor local siempre
+                     if (isDateValid(newValue)) {
+                        handleColumnFilterChange(field, newValue); // ← Solo aplica filtro si es válida
+                     }
+                  }}
+                  onBlur={() => {
+                     // Opcional: aplicar filtro cuando pierde el foco si hay un valor parcial
+                     if (localValue && !isDateValid(localValue)) {
+                        // Manejar valor inválido si quieres
+                     }
+                  }}
+                  className={baseInput}
                />
-               <input
-                  type="date"
-                  value={endVal}
-                  onChange={(e) => handleColumnFilterChange(field, `${startVal}|${e.target.value}`)}
-                  className={`${baseInput} min-w-[110px]`}
-               />
-            </div>
-         );
-      }
+            );
+         // ── HORA ───────────────────────────────────────────
+         case "time":
+            return <input type="time" value={value} onChange={(e) => handleColumnFilterChange(field, e.target.value)} className={baseInput} />;
 
-      case "select":
-         return (
-            <select value={value} onChange={(e) => handleColumnFilterChange(field, e.target.value)} className={`${baseInput} cursor-pointer`}>
-               <option value="">Todos</option>
-               {col.filterOptions?.map((opt) => (
-                  <option key={String(opt.value)} value={String(opt.value)}>
-                     {" "}
-                     {/* 👈 String() */}
-                     {opt.label}
-                  </option>
-               ))}
-            </select>
-         );
+         // ── RANGO DE FECHAS ────────────────────────────────
+         case "date-range": {
+            const [startVal = "", endVal = ""] = value.split("|");
+            return (
+               <div className="flex flex-col gap-1 w-full">
+                  <input
+                     type="date"
+                     value={startVal}
+                     onChange={(e) => handleColumnFilterChange(field, `${e.target.value}|${endVal}`)}
+                     className={`${baseInput} min-w-[110px]`}
+                  />
+                  <input
+                     type="date"
+                     value={endVal}
+                     onChange={(e) => handleColumnFilterChange(field, `${startVal}|${e.target.value}`)}
+                     className={`${baseInput} min-w-[110px]`}
+                  />
+               </div>
+            );
+         }
 
-      // ── AUTOCOMPLETE ───────────────────────────────────
-      case "autocomplete": {
-         const suggestions = col.filterOptions?.filter((opt) => opt.label.toLowerCase().includes(value.toLowerCase())) ?? [];
+         case "select":
+            return (
+               <select value={value} onChange={(e) => handleColumnFilterChange(field, e.target.value)} className={`${baseInput} cursor-pointer`}>
+                  <option value="">Todos</option>
+                  {col.filterOptions?.map((opt) => (
+                     <option key={String(opt.value)} value={String(opt.value)}>
+                        {" "}
+                        {/* 👈 String() */}
+                        {opt.label}
+                     </option>
+                  ))}
+               </select>
+            );
 
-         return (
-            <div className="relative w-full">
-               <input
-                  type="text"
-                  placeholder="Buscar..."
-                  value={value}
-                  onChange={(e) => handleColumnFilterChange(field, e.target.value)}
-                  className={`${baseInput} min-w-[100px]`}
-               />
-               {value && suggestions.length > 0 && (
-                  <div className="absolute top-full left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-40 overflow-y-auto min-w-[160px]">
-                     {suggestions.map((opt) => (
-                        <div
+         // ── AUTOCOMPLETE ───────────────────────────────────
+         case "autocomplete": {
+            const suggestions = col.filterOptions?.filter((opt) => opt.label.toLowerCase().includes(value.toLowerCase())) ?? [];
+
+            return (
+               <div className="relative w-full">
+                  <input
+                     type="text"
+                     placeholder="Buscar..."
+                     value={value}
+                     onChange={(e) => handleColumnFilterChange(field, e.target.value)}
+                     className={`${baseInput} min-w-[100px]`}
+                  />
+                  {value && suggestions.length > 0 && (
+                     <div className="absolute top-full left-0 z-50 bg-white border border-gray-200 rounded-lg shadow-xl mt-1 max-h-40 overflow-y-auto min-w-[160px]">
+                        {suggestions.map((opt) => (
+                           <div
+                              key={opt.value}
+                              className="px-3 py-2 text-xs hover:bg-[#9B2242] hover:text-white cursor-pointer transition-colors"
+                              onMouseDown={(e) => {
+                                 e.preventDefault();
+                                 handleColumnFilterChange(field, opt.value);
+                              }}
+                           >
+                              {opt.label}
+                           </div>
+                        ))}
+                     </div>
+                  )}
+               </div>
+            );
+         }
+
+         // ── MULTI-SELECT (chips seleccionables) ────────────
+         case "multi-select": {
+            const selected = value ? value.split(",").filter(Boolean) : [];
+            const toggle = (val: string) => {
+               const next = selected.includes(val) ? selected.filter((v) => v !== val) : [...selected, val];
+               handleColumnFilterChange(field, next.join(","));
+            };
+
+            return (
+               <div className="flex flex-wrap gap-1 max-w-[200px]">
+                  {col.filterOptions?.map((opt) => {
+                     const active = selected.includes(opt.value);
+                     return (
+                        <button
                            key={opt.value}
-                           className="px-3 py-2 text-xs hover:bg-[#9B2242] hover:text-white cursor-pointer transition-colors"
                            onMouseDown={(e) => {
                               e.preventDefault();
-                              handleColumnFilterChange(field, opt.value);
+                              toggle(opt.value);
                            }}
+                           className={`text-[10px] px-2 py-0.5 rounded-full border transition-all ${
+                              active ? "bg-[#9B2242] text-white border-[#9B2242]" : "bg-white text-gray-600 border-gray-300 hover:border-[#9B2242]"
+                           }`}
                         >
                            {opt.label}
-                        </div>
-                     ))}
-                  </div>
-               )}
-            </div>
-         );
-      }
+                        </button>
+                     );
+                  })}
+               </div>
+            );
+         }
 
-      // ── MULTI-SELECT (chips seleccionables) ────────────
-      case "multi-select": {
-         const selected = value ? value.split(",").filter(Boolean) : [];
-         const toggle = (val: string) => {
-            const next = selected.includes(val) ? selected.filter((v) => v !== val) : [...selected, val];
-            handleColumnFilterChange(field, next.join(","));
-         };
+         // ── RANGO NUMÉRICO ─────────────────────────────────
+         case "number-range": {
+            const [minVal = "", maxVal = ""] = value.split("|");
+            return (
+               <div className="flex items-center gap-1 w-full">
+                  <input
+                     type="number"
+                     placeholder="Min"
+                     value={minVal}
+                     onChange={(e) => handleColumnFilterChange(field, `${e.target.value}|${maxVal}`)}
+                     className={`${baseInput} w-14 min-w-0`}
+                  />
+                  <span className="text-gray-400 text-xs">–</span>
+                  <input
+                     type="number"
+                     placeholder="Max"
+                     value={maxVal}
+                     onChange={(e) => handleColumnFilterChange(field, `${minVal}|${e.target.value}`)}
+                     className={`${baseInput} w-14 min-w-0`}
+                  />
+               </div>
+            );
+         }
 
-         return (
-            <div className="flex flex-wrap gap-1 max-w-[200px]">
-               {col.filterOptions?.map((opt) => {
-                  const active = selected.includes(opt.value);
-                  return (
-                     <button
-                        key={opt.value}
-                        onMouseDown={(e) => {
-                           e.preventDefault();
-                           toggle(opt.value);
-                        }}
-                        className={`text-[10px] px-2 py-0.5 rounded-full border transition-all ${
-                           active ? "bg-[#9B2242] text-white border-[#9B2242]" : "bg-white text-gray-600 border-gray-300 hover:border-[#9B2242]"
-                        }`}
-                     >
-                        {opt.label}
-                     </button>
-                  );
-               })}
-            </div>
-         );
-      }
+         // ── BOOLEANO (toggle Sí/No) ────────────────────────
+         case "boolean":
+            return (
+               <select value={value} onChange={(e) => handleColumnFilterChange(field, e.target.value)} className={`${baseInput} cursor-pointer`}>
+                  <option value="">Todos</option>
+                  <option value="true">✅ Sí</option>
+                  <option value="false">❌ No</option>
+               </select>
+            );
 
-      // ── RANGO NUMÉRICO ─────────────────────────────────
-      case "number-range": {
-         const [minVal = "", maxVal = ""] = value.split("|");
-         return (
-            <div className="flex items-center gap-1 w-full">
+         // ── TEXTO (default) ────────────────────────────────
+         default:
+            return (
                <input
-                  type="number"
-                  placeholder="Min"
-                  value={minVal}
-                  onChange={(e) => handleColumnFilterChange(field, `${e.target.value}|${maxVal}`)}
-                  className={`${baseInput} w-14 min-w-0`}
+                  type="text"
+                  placeholder="Filtrar..."
+                  value={value}
+                  onChange={(e) => handleColumnFilterChange(field, e.target.value)}
+                  className={`${baseInput} min-w-[100px] max-w-[140px]`}
                />
-               <span className="text-gray-400 text-xs">–</span>
-               <input
-                  type="number"
-                  placeholder="Max"
-                  value={maxVal}
-                  onChange={(e) => handleColumnFilterChange(field, `${minVal}|${e.target.value}`)}
-                  className={`${baseInput} w-14 min-w-0`}
-               />
-            </div>
-         );
+            );
       }
-
-      // ── BOOLEANO (toggle Sí/No) ────────────────────────
-      case "boolean":
-         return (
-            <select value={value} onChange={(e) => handleColumnFilterChange(field, e.target.value)} className={`${baseInput} cursor-pointer`}>
-               <option value="">Todos</option>
-               <option value="true">✅ Sí</option>
-               <option value="false">❌ No</option>
-            </select>
-         );
-
-      // ── TEXTO (default) ────────────────────────────────
-      default:
-         return (
-            <input
-               type="text"
-               placeholder="Filtrar..."
-               value={value}
-               onChange={(e) => handleColumnFilterChange(field, e.target.value)}
-               className={`${baseInput} min-w-[100px] max-w-[140px]`}
-            />
-         );
-   }
-};
+   };
    // VISTA DE TABLA EXPANDIBLE (Desktop)
-    const renderTableView = () => {
-       const visibleColumns = getVisibleColumns("compact");
-       const hiddenColumns = getHiddenColumns();
-       const showExpansion = shouldShowExpansion();
+   const renderTableView = () => {
+      const visibleColumns = getVisibleColumns("compact");
+      const hiddenColumns = getHiddenColumns();
+      const showExpansion = shouldShowExpansion();
 
-       return (
-          <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
-             <table className="w-full min-w-max border-separate border-spacing-0">
-                <thead className="bg-gradient-to-b from-gray-50 to-gray-100">
-                   <tr>
-                      {showExpansion && <th className="w-12 px-2 py-4 rounded-tl-xl"></th>}
-                      {visibleColumns.map((col) => (
-                         <th
-                            key={String(col.field)}
-                            className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider select-none whitespace-nowrap border-b border-gray-200"
-                         >
-                            <div className="flex flex-col space-y-2">
-                               <span className="flex items-center gap-1.5 cursor-pointer hover:text-gray-900 transition-colors" onClick={() => handleSort(col.field)}>
-                                  {col.headerName}
-                                  {sortConfig.field === col.field && (
-                                     <motion.span
-                                        initial={{ rotate: 0 }}
-                                        animate={{ rotate: sortConfig.direction === "asc" ? 0 : 180 }}
-                                        transition={{ duration: 0.2 }}
-                                     >
-                                        <FiChevronUp className="flex-shrink-0 text-gray-500" />
-                                     </motion.span>
-                                  )}
-                               </span>
-                               {/* <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-300 px-2 py-1.5 focus-within:ring-2 focus-within:ring-[#9B2242]/30 focus-within:border-[#9B2242] transition-all">
+      return (
+         <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white shadow-sm">
+            <table className="w-full min-w-max border-separate border-spacing-0">
+               <thead className="bg-gradient-to-b from-gray-50 to-gray-100">
+                  <tr>
+                     {showExpansion && <th className="w-12 px-2 py-4 rounded-tl-xl"></th>}
+                     {visibleColumns.map((col) => (
+                        <th
+                           key={String(col.field)}
+                           className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider select-none whitespace-nowrap border-b border-gray-200"
+                        >
+                           <div className="flex flex-col space-y-2">
+                              <span className="flex items-center gap-1.5 cursor-pointer hover:text-gray-900 transition-colors" onClick={() => handleSort(col.field)}>
+                                 {col.headerName}
+                                 {sortConfig.field === col.field && (
+                                    <motion.span initial={{ rotate: 0 }} animate={{ rotate: sortConfig.direction === "asc" ? 0 : 180 }} transition={{ duration: 0.2 }}>
+                                       <FiChevronUp className="flex-shrink-0 text-gray-500" />
+                                    </motion.span>
+                                 )}
+                              </span>
+                              {/* <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-300 px-2 py-1.5 focus-within:ring-2 focus-within:ring-[#9B2242]/30 focus-within:border-[#9B2242] transition-all">
                                   <FiSearch className="text-gray-400 text-xs flex-shrink-0" />
                                   <input
                                      type="text"
@@ -2035,187 +2085,183 @@ const renderColumnFilterInput = (col: Column<T>) => {
                                      />
                                   )}
                                </div> */}
-                               <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-300 px-2 py-1.5 focus-within:ring-2 focus-within:ring-[#9B2242]/30 focus-within:border-[#9B2242] transition-all">
-                                  {col.filterType !== "date-range" && <FiSearch className="text-gray-400 text-xs flex-shrink-0" />}
-                                  {renderColumnFilterInput(col)}
-                                  {columnFilters[String(col.field)] && (
-                                     <FiX
-                                        className="text-gray-400 cursor-pointer hover:text-gray-600 flex-shrink-0"
-                                        onClick={() => clearColumnFilter(String(col.field))}
-                                        size={14}
-                                     />
-                                  )}
-                               </div>
-                            </div>
-                         </th>
-                      ))}
-                      {actions && (
-                         <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200 rounded-tr-xl">
-                            Acciones
-                         </th>
-                      )}
-                   </tr>
-                </thead>
-                <tbody className={`divide-y divide-gray-100 ${striped ? "[&>tr:nth-child(even)]:bg-gray-50/50" : ""}`}>
-                   {currentRows.map((row, idx) => {
-                      const isExpanded = expandedRows.has(idx);
-                      return (
-                         <React.Fragment key={idx}>
-                            <motion.tr
-                               className={`
+                              <div className="flex items-center gap-1 bg-white rounded-lg border border-gray-300 px-2 py-1.5 focus-within:ring-2 focus-within:ring-[#9B2242]/30 focus-within:border-[#9B2242] transition-all">
+                                 {col.filterType !== "date-range" && <FiSearch className="text-gray-400 text-xs flex-shrink-0" />}
+                                 {renderColumnFilterInput(col)}
+                                 {columnFilters[String(col.field)] && (
+                                    <FiX
+                                       className="text-gray-400 cursor-pointer hover:text-gray-600 flex-shrink-0"
+                                       onClick={() => clearColumnFilter(String(col.field))}
+                                       size={14}
+                                    />
+                                 )}
+                              </div>
+                           </div>
+                        </th>
+                     ))}
+                     {actions && (
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-b border-gray-200 rounded-tr-xl">
+                           Acciones
+                        </th>
+                     )}
+                  </tr>
+               </thead>
+               <tbody className={`divide-y divide-gray-100 ${striped ? "[&>tr:nth-child(even)]:bg-gray-50/50" : ""}`}>
+                  {currentRows.map((row, idx) => {
+                     const isExpanded = expandedRows.has(idx);
+                     return (
+                        <React.Fragment key={idx}>
+                           <motion.tr
+                              className={`
                       transition-all duration-200
                       ${selectedRows.has(idx) ? "bg-cyan-50/80 border-l-4 border-l-cyan-500" : ""}
                       ${hoverable ? "hover:bg-gray-50/80 hover:scale-[1.001]" : ""}
                       ${isExpanded ? "bg-blue-50/50" : ""}
                       ${showExpansion ? "cursor-pointer" : ""}
                     `}
-                               onClick={() => showExpansion && toggleRowExpansion(idx)}
-                               whileHover={{ y: -1 }}
-                               transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                            >
-                               {showExpansion && (
-                                  <td className="px-2 py-3.5 border-b border-gray-200">
-                                     <motion.div
-                                        animate={{ rotate: isExpanded ? 180 : 0 }}
-                                        transition={{ duration: 0.2 }}
-                                        className="text-gray-400 hover:text-gray-600"
-                                     >
-                                        <FiChevronDown size={18} />
-                                     </motion.div>
-                                  </td>
-                               )}
-                               {visibleColumns.map((col) => (
-                                  <td key={String(col.field)} className="px-4 py-3.5 text-sm text-gray-800 whitespace-nowrap border-b border-gray-200">
-                                     <div className="max-w-[200px] truncate" title={String(row[col.field] ?? "")}>
-                                        {col.renderField ? col.renderField(row[col.field]) : highlight(String(row[col.field] ?? ""))}
-                                     </div>
-                                  </td>
-                               ))}
-                               {actions && (
-                                  <td className="px-4 py-3.5 text-sm whitespace-nowrap border-b border-gray-200" onClick={(e) => e.stopPropagation()}>
-                                     <div className="flex flex-wrap gap-1">{actions(row)}</div>
-                                  </td>
-                               )}
-                            </motion.tr>
-                            {isExpanded && showExpansion && (
-                               <motion.tr
-                                  initial={{ opacity: 0, height: 0 }}
-                                  animate={{ opacity: 1, height: "auto" }}
-                                  exit={{ opacity: 0, height: 0 }}
-                                  className="bg-blue-50/30"
-                               >
-                                  <td colSpan={visibleColumns.length + (showExpansion ? 1 : 0) + (actions ? 1 : 0)} className="px-6 py-5">
-                                     <div className="mb-3 text-sm font-semibold text-gray-700 flex items-center gap-2">
-                                        <FiEye className="text-[#9B2242]" />
-                                        Información adicional
-                                     </div>
-                                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
-                                        {hiddenColumns.map((col) => (
-                                           <div key={String(col.field)} className="space-y-1">
-                                              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{col.headerName}</div>
-                                              <div className="text-sm text-gray-900 break-words bg-white p-2 rounded-md shadow-sm">
-                                                 {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] ?? "-")}
-                                              </div>
-                                           </div>
-                                        ))}
-                                     </div>
-                                  </td>
-                               </motion.tr>
-                            )}
-                         </React.Fragment>
-                      );
-                   })}
-                </tbody>
-             </table>
-          </div>
-       );
-    };
-
+                              onClick={() => showExpansion && toggleRowExpansion(idx)}
+                              whileHover={{ y: -1 }}
+                              transition={{ type: "spring", stiffness: 400, damping: 25 }}
+                           >
+                              {showExpansion && (
+                                 <td className="px-2 py-3.5 border-b border-gray-200">
+                                    <motion.div
+                                       animate={{ rotate: isExpanded ? 180 : 0 }}
+                                       transition={{ duration: 0.2 }}
+                                       className="text-gray-400 hover:text-gray-600"
+                                    >
+                                       <FiChevronDown size={18} />
+                                    </motion.div>
+                                 </td>
+                              )}
+                              {visibleColumns.map((col) => (
+                                 <td key={String(col.field)} className="px-4 py-3.5 text-sm text-gray-800 whitespace-nowrap border-b border-gray-200">
+                                    <div className="max-w-[200px] truncate" title={String(row[col.field] ?? "")}>
+                                       {col.renderField ? col.renderField(row[col.field]) : highlight(String(row[col.field] ?? ""))}
+                                    </div>
+                                 </td>
+                              ))}
+                              {actions && (
+                                 <td className="px-4 py-3.5 text-sm whitespace-nowrap border-b border-gray-200" onClick={(e) => e.stopPropagation()}>
+                                    <div className="flex flex-wrap gap-1">{actions(row)}</div>
+                                 </td>
+                              )}
+                           </motion.tr>
+                           {isExpanded && showExpansion && (
+                              <motion.tr
+                                 initial={{ opacity: 0, height: 0 }}
+                                 animate={{ opacity: 1, height: "auto" }}
+                                 exit={{ opacity: 0, height: 0 }}
+                                 className="bg-blue-50/30"
+                              >
+                                 <td colSpan={visibleColumns.length + (showExpansion ? 1 : 0) + (actions ? 1 : 0)} className="px-6 py-5">
+                                    <div className="mb-3 text-sm font-semibold text-gray-700 flex items-center gap-2">
+                                       <FiEye className="text-[#9B2242]" />
+                                       Información adicional
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5">
+                                       {hiddenColumns.map((col) => (
+                                          <div key={String(col.field)} className="space-y-1">
+                                             <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{col.headerName}</div>
+                                             <div className="text-sm text-gray-900 break-words bg-white p-2 rounded-md shadow-sm">
+                                                {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] ?? "-")}
+                                             </div>
+                                          </div>
+                                       ))}
+                                    </div>
+                                 </td>
+                              </motion.tr>
+                           )}
+                        </React.Fragment>
+                     );
+                  })}
+               </tbody>
+            </table>
+         </div>
+      );
+   };
 
    // VISTA DE TARJETAS (Desktop)
-  const renderCardsView = () => {
-    const visibleColumns = getVisibleColumns("compact");
-    const hiddenColumns = getHiddenColumns();
-    const showExpansion = shouldShowExpansion();
+   const renderCardsView = () => {
+      const visibleColumns = getVisibleColumns("compact");
+      const hiddenColumns = getHiddenColumns();
+      const showExpansion = shouldShowExpansion();
 
-    return (
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-4">
-        {currentRows.map((row, idx) => (
-          <motion.div
-            key={idx}
-            className="bg-white rounded-2xl border border-gray-200 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden"
-            whileHover={{ y: -4, scale: 1.02 }}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: "spring", stiffness: 300, damping: 20 }}
-          >
-            <div className="h-2 bg-gradient-to-r from-[#9B2242] to-[#651D32]" />
-            <div className="p-5">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-xl font-bold text-gray-900 truncate">{getDefaultTitle(row)}</h3>
-                  {getDefaultSubtitle(row) && (
-                    <p className="text-sm text-gray-600 mt-1 line-clamp-2">{getDefaultSubtitle(row)}</p>
-                  )}
-                </div>
-                {actions && (
-                  <div className="flex gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
-                    {actions(row)}
-                  </div>
-                )}
-              </div>
-              <div className="space-y-3 mb-4">
-                {visibleColumns
-                  .filter((col) => col.visibility === "always" || !col.visibility)
-                  .slice(0, 4)
-                  .map((col) => (
-                    <div key={String(col.field)} className="flex justify-between items-center">
-                      <span className="text-xs font-medium text-gray-500">{col.headerName}:</span>
-                      <span className="text-sm font-semibold text-gray-900 text-right max-w-[150px] truncate">
-                        {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] ?? "-")}
-                      </span>
-                    </div>
-                  ))}
-              </div>
-              {showExpansion && (
-                <button
-                  onClick={() => toggleRowExpansion(idx)}
-                  className="w-full py-2.5 text-sm text-[#9B2242] hover:text-[#7A1B35] font-medium border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
-                >
-                  <FiEye size={14} />
-                  {expandedRows.has(idx) ? "Ver menos" : `Ver ${hiddenColumns.length} campos más`}
-                </button>
-              )}
-              {expandedRows.has(idx) && showExpansion && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="mt-4 pt-4 border-t border-gray-100"
-                >
-                  <div className="mb-3 text-sm font-semibold text-gray-700 flex items-center gap-2">
-                    <FiGrid className="text-[#9B2242]" />
-                    Detalles extendidos
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    {hiddenColumns.map((col) => (
-                      <div key={String(col.field)} className="space-y-1">
-                        <div className="text-xs font-semibold text-gray-500 uppercase">{col.headerName}</div>
-                        <div className="text-gray-900 break-words bg-gray-50 p-2 rounded-lg">
-                          {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] ?? "-")}
+      return (
+         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 p-4">
+            {currentRows.map((row, idx) => (
+               <motion.div
+                  key={idx}
+                  className="bg-white rounded-2xl border border-gray-200 shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden"
+                  whileHover={{ y: -4, scale: 1.02 }}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 20 }}
+               >
+                  <div className="h-2 bg-gradient-to-r from-[#9B2242] to-[#651D32]" />
+                  <div className="p-5">
+                     <div className="flex items-start justify-between mb-4">
+                        <div className="flex-1 min-w-0">
+                           <h3 className="text-xl font-bold text-gray-900 truncate">{getDefaultTitle(row)}</h3>
+                           {getDefaultSubtitle(row) && <p className="text-sm text-gray-600 mt-1 line-clamp-2">{getDefaultSubtitle(row)}</p>}
                         </div>
-                      </div>
-                    ))}
+                        {actions && (
+                           <div className="flex gap-1 ml-2" onClick={(e) => e.stopPropagation()}>
+                              {actions(row)}
+                           </div>
+                        )}
+                     </div>
+                     <div className="space-y-3 mb-4">
+                        {visibleColumns
+                           .filter((col) => col.visibility === "always" || !col.visibility)
+                           .slice(0, 4)
+                           .map((col) => (
+                              <div key={String(col.field)} className="flex justify-between items-center">
+                                 <span className="text-xs font-medium text-gray-500">{col.headerName}:</span>
+                                 <span className="text-sm font-semibold text-gray-900 text-right max-w-[150px] truncate">
+                                    {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] ?? "-")}
+                                 </span>
+                              </div>
+                           ))}
+                     </div>
+                     {showExpansion && (
+                        <button
+                           onClick={() => toggleRowExpansion(idx)}
+                           className="w-full py-2.5 text-sm text-[#9B2242] hover:text-[#7A1B35] font-medium border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors flex items-center justify-center gap-2"
+                        >
+                           <FiEye size={14} />
+                           {expandedRows.has(idx) ? "Ver menos" : `Ver ${hiddenColumns.length} campos más`}
+                        </button>
+                     )}
+                     {expandedRows.has(idx) && showExpansion && (
+                        <motion.div
+                           initial={{ opacity: 0, height: 0 }}
+                           animate={{ opacity: 1, height: "auto" }}
+                           exit={{ opacity: 0, height: 0 }}
+                           className="mt-4 pt-4 border-t border-gray-100"
+                        >
+                           <div className="mb-3 text-sm font-semibold text-gray-700 flex items-center gap-2">
+                              <FiGrid className="text-[#9B2242]" />
+                              Detalles extendidos
+                           </div>
+                           <div className="grid grid-cols-2 gap-3 text-sm">
+                              {hiddenColumns.map((col) => (
+                                 <div key={String(col.field)} className="space-y-1">
+                                    <div className="text-xs font-semibold text-gray-500 uppercase">{col.headerName}</div>
+                                    <div className="text-gray-900 break-words bg-gray-50 p-2 rounded-lg">
+                                       {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] ?? "-")}
+                                    </div>
+                                 </div>
+                              ))}
+                           </div>
+                        </motion.div>
+                     )}
                   </div>
-                </motion.div>
-              )}
-            </div>
-          </motion.div>
-        ))}
-      </div>
-    );
-  };
-
+               </motion.div>
+            ))}
+         </div>
+      );
+   };
 
    // VISTA MÓVIL - Lista Normal (PROFESIONAL CON LÍNEA DE ACENTO)
    const renderMobileListView = (hasPermission: any) => {
@@ -2490,85 +2536,85 @@ const renderColumnFilterInput = (col: Column<T>) => {
    };
 
    // VISTA MÓVIL - Timeline Vertical
- const renderMobileTimelineView = () => {
-    const textSize = getDensityTextSize();
+   const renderMobileTimelineView = () => {
+      const textSize = getDensityTextSize();
 
-    return (
-       <motion.div className={`${screenSize === "xs" ? "p-3" : "p-4"} bg-gray-50 min-h-screen`} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <div className="relative">
-             {/* LÍNEA VERTICAL - absoluta pero alineada con flex */}
-             <div
-                className="absolute top-0 bottom-0 w-0.5"
-                style={{
-                   left: "28px", // = 1.75rem → coincide con el ancho del punto
-                   backgroundColor: colors.grayLight
-                }}
-             />
+      return (
+         <motion.div className={`${screenSize === "xs" ? "p-3" : "p-4"} bg-gray-50 min-h-screen`} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+            <div className="relative">
+               {/* LÍNEA VERTICAL - absoluta pero alineada con flex */}
+               <div
+                  className="absolute top-0 bottom-0 w-0.5"
+                  style={{
+                     left: "28px", // = 1.75rem → coincide con el ancho del punto
+                     backgroundColor: colors.grayLight
+                  }}
+               />
 
-             <div className="space-y-4">
-                {currentRows.map((row, idx) => (
-                   <motion.div
-                      key={idx}
-                      className="flex gap-4"
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: idx * 0.06, type: "spring", stiffness: 300 }}
-                      onClick={(e) => handleTileTap(row, e)}
-                   >
-                      {/* PUNTO - ancho fijo, centrado verticalmente con pt-2 */}
-                      <div className="flex-shrink-0 w-7 flex justify-center pt-2">
-                         <div
-                            className="w-3 h-3 rounded-full border-2 border-white shadow-md"
-                            style={{
-                               backgroundColor: colors.primary,
-                               borderColor: colors.grayLight
-                            }}
-                         />
-                      </div>
+               <div className="space-y-4">
+                  {currentRows.map((row, idx) => (
+                     <motion.div
+                        key={idx}
+                        className="flex gap-4"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: idx * 0.06, type: "spring", stiffness: 300 }}
+                        onClick={(e) => handleTileTap(row, e)}
+                     >
+                        {/* PUNTO - ancho fijo, centrado verticalmente con pt-2 */}
+                        <div className="flex-shrink-0 w-7 flex justify-center pt-2">
+                           <div
+                              className="w-3 h-3 rounded-full border-2 border-white shadow-md"
+                              style={{
+                                 backgroundColor: colors.primary,
+                                 borderColor: colors.grayLight
+                              }}
+                           />
+                        </div>
 
-                      {/* TARJETA - ocupa el resto del espacio */}
-                      <motion.div
-                         className="flex-1 bg-white rounded-xl p-4 shadow-sm border border-gray-200"
-                         whileHover={{
-                            x: 4,
-                            boxShadow: "0 8px 16px -4px rgba(0,0,0,0.12)"
-                         }}
-                         whileTap={{ scale: 0.98 }}
-                      >
-                         <div className="flex items-start gap-3 flex-w">
-                            {/* LEADING (opcional) */}
-                            {mobileConfig?.listTile?.leading && <div className="flex-shrink-0 mt-0.5">{mobileConfig.listTile.leading(row)}</div>}
+                        {/* TARJETA - ocupa el resto del espacio */}
+                        <motion.div
+                           className="flex-1 bg-white rounded-xl p-4 shadow-sm border border-gray-200"
+                           whileHover={{
+                              x: 4,
+                              boxShadow: "0 8px 16px -4px rgba(0,0,0,0.12)"
+                           }}
+                           whileTap={{ scale: 0.98 }}
+                        >
+                           <div className="flex items-start gap-3 flex-w">
+                              {/* LEADING (opcional) */}
+                              {mobileConfig?.listTile?.leading && <div className="flex-shrink-0 mt-0.5">{mobileConfig.listTile.leading(row)}</div>}
 
-                            {/* CONTENIDO PRINCIPAL */}
-                            <div className="flex-1 min-w-0">
-                               {/* TÍTULO */}
-                               <div className={`${textSize.title} font-semibold break-words mb-1`} style={{ color: colors.black }}>
-                                  {mobileConfig?.listTile?.title ? mobileConfig.listTile.title(row) : getDefaultTitle(row)}
-                               </div>
+                              {/* CONTENIDO PRINCIPAL */}
+                              <div className="flex-1 min-w-0">
+                                 {/* TÍTULO */}
+                                 <div className={`${textSize.title} font-semibold break-words mb-1`} style={{ color: colors.black }}>
+                                    {mobileConfig?.listTile?.title ? mobileConfig.listTile.title(row) : getDefaultTitle(row)}
+                                 </div>
 
-                               {/* SUBTÍTULO */}
-                               {mobileConfig?.listTile?.subtitle && (
-                                  <div className={`${textSize.subtitle} text-gray-600 line-clamp-2 break-words`} style={{ color: colors.gray }}>
-                                     {mobileConfig.listTile.subtitle(row)}
-                                  </div>
-                               )}
+                                 {/* SUBTÍTULO */}
+                                 {mobileConfig?.listTile?.subtitle && (
+                                    <div className={`${textSize.subtitle} text-gray-600 line-clamp-2 break-words`} style={{ color: colors.gray }}>
+                                       {mobileConfig.listTile.subtitle(row)}
+                                    </div>
+                                 )}
 
-                               {/* TRAILING (opcional, separado) */}
-                               {mobileConfig?.listTile?.trailing && (
-                                  <div className="mt-3 pt-2 border-t" style={{ borderColor: colors.grayLight + "40" }}>
-                                     {mobileConfig.listTile.trailing(row)}
-                                  </div>
-                               )}
-                            </div>
-                         </div>
-                      </motion.div>
-                   </motion.div>
-                ))}
-             </div>
-          </div>
-       </motion.div>
-    );
- };
+                                 {/* TRAILING (opcional, separado) */}
+                                 {mobileConfig?.listTile?.trailing && (
+                                    <div className="mt-3 pt-2 border-t" style={{ borderColor: colors.grayLight + "40" }}>
+                                       {mobileConfig.listTile.trailing(row)}
+                                    </div>
+                                 )}
+                              </div>
+                           </div>
+                        </motion.div>
+                     </motion.div>
+                  ))}
+               </div>
+            </div>
+         </motion.div>
+      );
+   };
 
    // VISTA MÓVIL - Lista con Detalles Expandibles
    // VISTA MÓVIL - Lista con Detalles Expandibles (MEJORADA)
@@ -3027,7 +3073,7 @@ const renderColumnFilterInput = (col: Column<T>) => {
             <div className="flex flex-col gap-3 mb-4 p-4 bg-gray-50 rounded-lg">
                {headerActions && <div className="flex flex-wrap gap-2 w-full">{headerActions()}</div>}
 
-            <div className="flex flex-col sm:flex-row gap-2 w-full">
+               <div className="flex flex-col sm:flex-row gap-2 w-full">
                   <div className="flex bg-white items-center flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-cyan-400 transition-all">
                      <FiSearch className="text-gray-400 mr-2 flex-shrink-0" />
                      <input
@@ -3041,27 +3087,25 @@ const renderColumnFilterInput = (col: Column<T>) => {
                   </div>
 
                   <div className="flex gap-2 flex-shrink-0">
-                 
-                 
-                      {conditionExcel ? (
-                         <PermissionRoute requiredPermission={conditionExcel}>
-                            <button
-                               onClick={exportToExcel}
-                               className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm font-medium whitespace-nowrap"
-                            >
-                               <RiFileExcelFill className="text-lg" />
-                               <span className="hidden sm:inline">Exportar</span>
-                            </button>
-                         </PermissionRoute>
-                      ) : (
-                         <button
-                            onClick={exportToExcel}
-                            className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm font-medium whitespace-nowrap"
-                         >
-                            <RiFileExcelFill className="text-lg" />
-                            <span className="hidden sm:inline">Exportar</span>
-                         </button>
-                      )}
+                     {conditionExcel ? (
+                        <PermissionRoute requiredPermission={conditionExcel}>
+                           <button
+                              onClick={exportToExcel}
+                              className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm font-medium whitespace-nowrap"
+                           >
+                              <RiFileExcelFill className="text-lg" />
+                              <span className="hidden sm:inline">Exportar</span>
+                           </button>
+                        </PermissionRoute>
+                     ) : (
+                        <button
+                           onClick={exportToExcel}
+                           className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition text-sm font-medium whitespace-nowrap"
+                        >
+                           <RiFileExcelFill className="text-lg" />
+                           <span className="hidden sm:inline">Exportar</span>
+                        </button>
+                     )}
                      {(globalFilter || Object.values(columnFilters).some(Boolean)) && (
                         <button
                            onClick={clearAllFilters}
@@ -3072,7 +3116,7 @@ const renderColumnFilterInput = (col: Column<T>) => {
                         </button>
                      )}
                   </div>
-               </div> 
+               </div>
             </div>
          )}
 
@@ -3082,9 +3126,8 @@ const renderColumnFilterInput = (col: Column<T>) => {
                renderLoading()
             ) : error ? (
                renderError()
-            ) : currentRows.length === 0 ? (
-               renderEmpty()
-            ) : isMobile ? (
+            ) 
+             : isMobile ? (
                <div className="overflow-y-auto">
                   {mobileViewMode === "list" && renderMobileListView(hasPermission)}
                   {mobileViewMode === "compact-list" && renderMobileCompactListView(hasPermission)}
