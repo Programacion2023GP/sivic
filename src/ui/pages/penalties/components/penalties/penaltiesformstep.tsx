@@ -77,7 +77,8 @@ export const Step0 = ({
          disabled={!["penaltie"].includes(section)}
          labelKey="name"
       />
-      <FormikAutocomplete
+      <FormikInput icon="auto" label="Protección Civil" name="civil_protection" disabled={!["penaltie"].includes(section)} responsive={RESPONSIVE_CONFIG} />
+      {/* <FormikAutocomplete
          label="Protección Civil"
          name="civil_protection"
          options={proteccionCivil.employes}
@@ -86,7 +87,7 @@ export const Step0 = ({
          idKey="value"
          disabled={!["penaltie"].includes(section)}
          labelKey="text"
-      />
+      /> */}
       <FormikInput
          icon="auto"
          name="vehicle_security"
@@ -142,7 +143,9 @@ export const Step1 = ({
 
          <FormikNativeTimeInput type="date" name="date" label="Fecha de Operativo" disabled={!["penaltie"].includes(section)} responsive={RESPONSIVE_CONFIG} />
 
-         <FormikAutocomplete
+         <FormikInput icon="cantidad" responsive={RESPONSIVE_CONFIG} name="municipal_police" disabled={!["penaltie"].includes(section)} label="Oficial" />
+
+         {/* <FormikAutocomplete
             label="Oficial"
             name="person_oficial"
             options={oficiales.employes}
@@ -152,7 +155,7 @@ export const Step1 = ({
             idKey="value"
             labelKey="text"
             handleModified={handleOficialChange}
-         />
+         /> */}
          {/* {section == "penaltie" && (
             <FormikInput
                icon="usuario-corbata"

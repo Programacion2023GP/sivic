@@ -38,8 +38,8 @@ import { TbLayoutKanban } from "react-icons/tb";
 interface Column<T extends object> {
    field: keyof T;
    headerName: string;
-   renderField?: <K extends keyof T>(value: T[K]) => React.ReactNode;
-   getFilterValue?: <K extends keyof T>(value: T[K]) => string;
+   renderField?: <K extends keyof T>(value: T[K],row:T) => React.ReactNode;
+   getFilterValue?: <K extends keyof T>(value: T[K],row:T) => string;
    visibility?: "always" | "desktop" | "expanded" | "mobile";
    priority?: number;
    filterType?: "text" | "number" | "date" | "time" | "datetime-local" | "select" | "boolean" | "date-range" | "autocomplete" | "number-range" | "multi-select";
@@ -128,7 +128,76 @@ interface PropsTable<T extends object> {
 
 type MobileViewMode = "list" | "compact-list" | "cards" | "mini-cards" | "timeline" | "detailed-list";
 type MobileDensity = "compact" | "comfortable" | "spacious";
+// Fuera de CustomTable, antes de que empiece el componente
+const DebouncedTextInput = ({
+   value,
+   onChange,
+   placeholder,
+   className
+}: {
+   value: string;
+   onChange: (val: string) => void;
+   placeholder?: string;
+   className?: string;
+}) => {
+   const [localVal, setLocalVal] = React.useState(value);
+   const timerRef = React.useRef<any>(null);
+   const isTypingRef = React.useRef(false); // ← clave: saber si el usuario está escribiendo
 
+   // Solo sincronizar desde afuera si el usuario NO está escribiendo
+   // (ej: cuando se limpia el filtro con el botón X)
+   React.useEffect(() => {
+      if (!isTypingRef.current) {
+         setLocalVal(value);
+      }
+   }, [value]);
+
+   return (
+      <input
+         type="text"
+         placeholder={placeholder}
+         value={localVal}
+         onChange={(e) => {
+            const newVal = e.target.value;
+            isTypingRef.current = true; // ← marcar que el usuario está escribiendo
+            setLocalVal(newVal); // ← actualiza display inmediatamente
+            if (timerRef.current) clearTimeout(timerRef.current);
+            timerRef.current = setTimeout(() => {
+               onChange(newVal);
+               isTypingRef.current = false; // ← ya terminó, permitir sync externo
+            }, 300);
+         }}
+         className={className}
+      />
+   );
+};;
+const DebouncedDateInput = ({ value, onChange, className }: { value: string; onChange: (val: string) => void; className?: string }) => {
+   const [localVal, setLocalVal] = React.useState(value);
+   const isTypingRef = React.useRef(false);
+
+   React.useEffect(() => {
+      if (!isTypingRef.current) {
+         setLocalVal(value); // ← se sincroniza cuando viene de afuera (botón X, limpiar)
+      }
+   }, [value]);
+
+   return (
+      <input
+         type="date"
+         value={localVal}
+         onChange={(e) => {
+            const newVal = e.target.value;
+            isTypingRef.current = true;
+            setLocalVal(newVal);
+            onChange(newVal); // ← sin debounce, date no necesita
+            setTimeout(() => {
+               isTypingRef.current = false;
+            }, 100);
+         }}
+         className={className}
+      />
+   );
+};
 const CustomTable = <T extends object>({
    data,
    columns,
@@ -491,7 +560,7 @@ const CustomTable = <T extends object>({
                               {/* CHIPS: siguientes columnas relevantes */}
                               <div className="flex flex-wrap gap-2 mb-3">
                                  {chipColumns.map((col) => {
-                                    const value = col.renderField ? col.renderField(row[col.field]) : String(row[col.field] || "-");
+                                    const value = col.renderField ? col.renderField(row[col.field],row) : String(row[col.field] || "-");
                                     return (
                                        <span
                                           key={String(col.field)}
@@ -557,7 +626,7 @@ const CustomTable = <T extends object>({
                                  <div key={String(col.field)} className="rounded-lg p-3" style={{ backgroundColor: colors.grayLight + "20" }}>
                                     <div className="text-xs text-gray-500 mb-1 truncate">{col.headerName}</div>
                                     <div className="text-sm font-semibold text-gray-900 truncate">
-                                       {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] || "-")}
+                                       {col.renderField ? col.renderField(row[col.field],row) : String(row[col.field] || "-")}
                                     </div>
                                  </div>
                               ))}
@@ -622,7 +691,7 @@ const CustomTable = <T extends object>({
                                     {col.headerName}:
                                  </span>
                                  <span className="text-sm font-semibold text-gray-900 truncate text-right">
-                                    {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] || "-")}
+                                    {col.renderField ? col.renderField(row[col.field],row) : String(row[col.field] || "-")}
                                  </span>
                               </div>
                            ))}
@@ -694,7 +763,7 @@ const CustomTable = <T extends object>({
                                        {col.headerName}
                                     </div>
                                     <div className="text-sm font-bold truncate" style={{ color: colors.black }}>
-                                       {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] || "-")}
+                                       {col.renderField ? col.renderField(row[col.field],row) : String(row[col.field] || "-")}
                                     </div>
                                  </div>
                               ))}
@@ -744,7 +813,7 @@ const CustomTable = <T extends object>({
                                  <div key={String(col.field)} className="flex flex-col">
                                     <span className="text-xs text-gray-500 mb-1 truncate">{col.headerName}</span>
                                     <span className="text-sm font-semibold text-gray-900 truncate">
-                                       {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] || "-")}
+                                       {col.renderField ? col.renderField(row[col.field],row) : String(row[col.field] || "-")}
                                     </span>
                                  </div>
                               ))}
@@ -815,7 +884,7 @@ const CustomTable = <T extends object>({
                                     <div key={String(col.field)} className="flex items-center justify-between text-sm">
                                        <span className="text-gray-600 truncate">{col.headerName}:</span>
                                        <span className="font-semibold text-gray-900 truncate ml-2 max-w-xs">
-                                          {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] || "-")}
+                                          {col.renderField ? col.renderField(row[col.field],row) : String(row[col.field] || "-")}
                                        </span>
                                     </div>
                                  ))}
@@ -1388,7 +1457,7 @@ const CustomTable = <T extends object>({
          globalFilter
             ? columns.some((col) => {
                  const rawValue = row?.[col.field];
-                 const value = col.getFilterValue ? col.getFilterValue(rawValue) : String(rawValue ?? "");
+                 const value = col.getFilterValue ? col.getFilterValue(rawValue,row) : String(rawValue ?? "");
                  return value.toLowerCase().includes(globalFilter.toLowerCase());
               })
             : true
@@ -1449,14 +1518,14 @@ const CustomTable = <T extends object>({
             if (col.filterType === "select") {
                // Si tiene getFilterValue, buscar dentro del texto transformado
                if (col.getFilterValue) {
-                  // const displayValue = col.getFilterValue(rawValue);
+                  // const displayValue = col.getFilterValue(rawValue,row);
                }
                // Comparación directa flexible (número vs string)
                return String(rawValue) == String(filterValue);
             }
 
             // text, autocomplete, default
-            const value = col.getFilterValue ? col.getFilterValue(rawValue) : raw;
+            const value = col.getFilterValue ? col.getFilterValue(rawValue,row) : raw;
             return value.toLowerCase().includes(filterValue.toLowerCase());
          })
       )
@@ -1523,11 +1592,11 @@ const CustomTable = <T extends object>({
                const cellNumber = Number(rawValue);
                return cellNumber === Number(filterValue);
             } else if (filterConfig?.type === "text") {
-               const cellValue = col.getFilterValue ? col.getFilterValue(rawValue) : rawValueStr;
+               const cellValue = col.getFilterValue ? col.getFilterValue(rawValue,row) : rawValueStr;
                return cellValue.toLowerCase().includes(String(filterValue).toLowerCase());
             } else {
                // Por defecto, búsqueda de texto (solo si NO es un tipo específico ya manejado)
-               const cellValue = col.getFilterValue ? col.getFilterValue(rawValue) : rawValueStr;
+               const cellValue = col.getFilterValue ? col.getFilterValue(rawValue,row) : rawValueStr;
                return cellValue.toLowerCase().includes(String(filterValue).toLowerCase());
             }
          })
@@ -1704,7 +1773,7 @@ const CustomTable = <T extends object>({
          columns.forEach((col) => {
             try {
                if (col.renderField) {
-                  const renderedValue = col.renderField(row[col.field]);
+                  const renderedValue = col.renderField(row[col.field],row);
 
                   let stringValue = "";
 
@@ -1725,7 +1794,7 @@ const CustomTable = <T extends object>({
 
                   obj[String(col.headerName)] = stringValue;
                } else {
-                  obj[String(col.headerName)] = col.getFilterValue ? col.getFilterValue(row[col.field]) : row[col.field];
+                  obj[String(col.headerName)] = col.getFilterValue ? col.getFilterValue(row[col.field],row) : row[col.field];
                }
             } catch (error) {
                console.warn(`Error al procesar columna ${String(col.field)}:`, error);
@@ -1866,29 +1935,16 @@ const CustomTable = <T extends object>({
    const renderColumnFilterInput = (col: Column<T>) => {
       const field = String(col.field);
       const value = columnFilters[field] || "";
+      const baseInput = "border-0 p-0 text-xs focus:outline-none focus:ring-0 bg-transparent w-full"; // ← aquí está baseInput
 
-      const baseInput = "border-0 p-0 text-xs focus:outline-none focus:ring-0 bg-transparent w-full";
 
       switch (col.filterType) {
          // ── FECHA ──────────────────────────────────────────
          case "date":
             return (
-               <input
-                  type="date"
-                  value={localValue}
-                  onChange={(e) => {
-                     const newValue = e.target.value;
-                     setLocalValue(newValue); // ← Actualiza el valor local siempre
-                     if (isDateValid(newValue)) {
-                        handleColumnFilterChange(field, newValue); // ← Solo aplica filtro si es válida
-                     }
-                  }}
-                  onBlur={() => {
-                     // Opcional: aplicar filtro cuando pierde el foco si hay un valor parcial
-                     if (localValue && !isDateValid(localValue)) {
-                        // Manejar valor inválido si quieres
-                     }
-                  }}
+               <DebouncedDateInput
+                  value={value} // ← value viene de columnFilters[field]
+                  onChange={(val) => handleColumnFilterChange(field, val)}
                   className={baseInput}
                />
             );
@@ -2032,11 +2088,10 @@ const CustomTable = <T extends object>({
          // ── TEXTO (default) ────────────────────────────────
          default:
             return (
-               <input
-                  type="text"
-                  placeholder="Filtrar..."
+               <DebouncedTextInput
                   value={value}
-                  onChange={(e) => handleColumnFilterChange(field, e.target.value)}
+                  onChange={(val) => handleColumnFilterChange(field, val)}
+                  placeholder="Filtrar..."
                   className={`${baseInput} min-w-[100px] max-w-[140px]`}
                />
             );
@@ -2137,7 +2192,7 @@ const CustomTable = <T extends object>({
                               {visibleColumns.map((col) => (
                                  <td key={String(col.field)} className="px-4 py-3.5 text-sm text-gray-800 whitespace-nowrap border-b border-gray-200">
                                     <div className="max-w-[200px] truncate" title={String(row[col.field] ?? "")}>
-                                       {col.renderField ? col.renderField(row[col.field]) : highlight(String(row[col.field] ?? ""))}
+                                       {col.renderField ? col.renderField(row[col.field],row) : highlight(String(row[col.field] ?? ""))}
                                     </div>
                                  </td>
                               ))}
@@ -2164,7 +2219,7 @@ const CustomTable = <T extends object>({
                                           <div key={String(col.field)} className="space-y-1">
                                              <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide">{col.headerName}</div>
                                              <div className="text-sm text-gray-900 break-words bg-white p-2 rounded-md shadow-sm">
-                                                {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] ?? "-")}
+                                                {col.renderField ? col.renderField(row[col.field],row) : String(row[col.field] ?? "-")}
                                              </div>
                                           </div>
                                        ))}
@@ -2219,7 +2274,7 @@ const CustomTable = <T extends object>({
                               <div key={String(col.field)} className="flex justify-between items-center">
                                  <span className="text-xs font-medium text-gray-500">{col.headerName}:</span>
                                  <span className="text-sm font-semibold text-gray-900 text-right max-w-[150px] truncate">
-                                    {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] ?? "-")}
+                                    {col.renderField ? col.renderField(row[col.field],row) : String(row[col.field] ?? "-")}
                                  </span>
                               </div>
                            ))}
@@ -2249,7 +2304,7 @@ const CustomTable = <T extends object>({
                                  <div key={String(col.field)} className="space-y-1">
                                     <div className="text-xs font-semibold text-gray-500 uppercase">{col.headerName}</div>
                                     <div className="text-gray-900 break-words bg-gray-50 p-2 rounded-lg">
-                                       {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] ?? "-")}
+                                       {col.renderField ? col.renderField(row[col.field],row) : String(row[col.field] ?? "-")}
                                     </div>
                                  </div>
                               ))}
@@ -2718,7 +2773,7 @@ const CustomTable = <T extends object>({
                                              <div key={String(col.field)} className="bg-gray-50 rounded-xl p-3">
                                                 <div className="text-xs font-semibold text-gray-500 uppercase mb-1">{col.headerName}</div>
                                                 <div className="text-sm font-medium text-gray-900 line-clamp-2">
-                                                   {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] ?? "-")}
+                                                   {col.renderField ? col.renderField(row[col.field],row) : String(row[col.field] ?? "-")}
                                                 </div>
                                              </div>
                                           ))}
@@ -2744,7 +2799,7 @@ const CustomTable = <T extends object>({
                                              <div key={String(col.field)} className="flex items-start justify-between py-2 border-b border-gray-100 last:border-b-0">
                                                 <span className="text-sm text-gray-600 font-medium flex-1">{col.headerName}</span>
                                                 <span className="text-sm text-gray-900 font-medium text-right flex-1">
-                                                   {col.renderField ? col.renderField(row[col.field]) : String(row[col.field] ?? "-")}
+                                                   {col.renderField ? col.renderField(row[col.field],row) : String(row[col.field] ?? "-")}
                                                 </span>
                                              </div>
                                           ))}
@@ -2788,7 +2843,7 @@ const CustomTable = <T extends object>({
                                                    <span className="text-gray-500">{col.headerName}:</span>
                                                    <span className="text-gray-900 font-medium truncate max-w-[80px]">
                                                       {col.renderField
-                                                         ? col.renderField(cellValue)
+                                                         ? col.renderField(cellValue,row)
                                                          : String(cellValue).substring(0, 15) + (String(cellValue).length > 15 ? "..." : "")}
                                                    </span>
                                                 </div>

@@ -4,6 +4,69 @@
 
 ---
 
+## 🔧 **v4.0.5.15** · *🧪 Beta*
+📅 **Fecha:** 20 de marzo de 2026, 1:25 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.5.14** · *🧪 Beta*
+📅 **Fecha:** 14 de marzo de 2026, 4:21 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.5.13** · *🧪 Beta*
+📅 **Fecha:** 14 de marzo de 2026, 4:16 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.5.12** · *🧪 Beta*
+📅 **Fecha:** 9 de marzo de 2026, 8:44 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.5.11** · *🧪 Beta*
+📅 **Fecha:** 5 de marzo de 2026, 4:17 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.5.10** · *🧪 Beta*
+📅 **Fecha:** 5 de marzo de 2026, 4:09 p.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
+## 🔧 **v4.0.5.9** · *🧪 Beta*
+📅 **Fecha:** 4 de marzo de 2026, 9:07 a.m.  
+👤 **Autor:**   
+🧭 **Tipo:** Build
+
+_Sin cambios registrados._
+
+---
+
 ## 🔧 **v4.0.5.8** · *🧪 Beta*
 📅 **Fecha:** 3 de marzo de 2026, 9:32 a.m.  
 👤 **Autor:**   

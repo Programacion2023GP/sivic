@@ -99,7 +99,7 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                 </CustomButton>
               </Tooltip> */}
                         {row.finish != 1 && (
-                           <PermissionRoute requiredPermission={"multas_actualizar"}>
+                           <PermissionRoute requiredPermission={["multas_actualizar", "transito_vialidad__actualizar", "juzgados_actualizar"]}>
                               <Tooltip content="Continuar">
                                  <CustomButton
                                     size="sm"
@@ -193,7 +193,7 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                      <FaRegFilePdf />
                   </CustomButton>
                   {row.finish != 1 && (
-                     <PermissionRoute requiredPermission={["multas_actualizar", "seguridad_publica_editar", "seguridad_publica_actualizar", "juzgados_actualizar"]}>
+                     <PermissionRoute requiredPermission={["multas_actualizar", "transito_vialidad__actualizar", "juzgados_actualizar"]}>
                         <Tooltip content="Continuar">
                            <CustomButton
                               size="sm"
@@ -288,7 +288,7 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                />
             </CustomModal>
          )}
-         <PermissionRoute requiredPermission={["multas_ver", "juzgados_ver", "transito_vialidad__ver", "seguridad_publica_ver"]}>
+         <PermissionRoute requiredPermission={["reports_dashboard_general", "multas_ver", "juzgados_ver", "transito_vialidad__ver", "seguridad_publica_ver"]}>
             <div className="absolute z-20 right-4 bottom-4">
                <PermissionRoute requiredPermission={["multas_crear", "juzgados_crear", "transito_vialidad__crear", "seguridad_publica_crear"]}>
                   <FloatingActionButton
@@ -368,8 +368,8 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
                      headerName: "Hora",
                      filterType: "time",
                      visibility: "always",
-                     renderField: (v) => <>{formatDatetime(`2025-01-01 ${v}`, true, DateFormat.H_MM_SS_A)}</>,
-                     getFilterValue: (v) => formatDatetime(`2025-01-01 ${v}`, true, DateFormat.H_MM_SS_A)
+                     renderField: (v, row) => <>{formatDatetime(`${row.created_at}`, true, DateFormat.H_MM_SS_A)}</>,
+                     getFilterValue: (v, row) => formatDatetime(`${row.created_at}`, true, DateFormat.H_MM_SS_A)
                   },
                   {
                      field: "date",
@@ -377,12 +377,12 @@ const TableAlcoholCases = ({ loadData, resetInitialValues, setUiState, buttons, 
 
                      headerName: "Fecha",
                      visibility: "always",
-                     renderField: (v) => <>{formatDatetime(`${v}`, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)}</>,
-                     getFilterValue: (v) => formatDatetime(`${v}`, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)
+                     renderField: (v, row) => <>{formatDatetime(`${row.created_at}`, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)}</>,
+                     getFilterValue: (v, row) => formatDatetime(`${row.created_at}`, true, DateFormat.DDDD_DD_DE_MMMM_DE_YYYY)
                   },
                   { field: "person_contraloria", headerName: "Contraloría", visibility: "expanded" },
                   { field: "oficial_payroll", headerName: "Nómina Oficial", visibility: "expanded" },
-                  { field: "person_oficial", headerName: "Oficial", visibility: "expanded" },
+                  { field: "municipal_police", headerName: "Oficial", visibility: "expanded" },
                   { field: "vehicle_service_type", headerName: "Tipo de Servicio Vehicular", visibility: "expanded" },
                   { field: "alcohol_concentration", headerName: "Concentración Alcohol", visibility: "expanded" },
                   { field: "group", headerName: "Grupo", visibility: "expanded" },

@@ -100,15 +100,15 @@ const MainLayout = () => {
             ]
          },
          {
-            prefix: "reports_",
+            prefix: "reports_dashboard_",
             label: "Reportes",
             children: [
-               { route: "/reportes/general", prefix: "reports_", icon: <FaChartLine />, label: "General" },
-               { route: "/reportes/reicidencias", prefix: "reports_", icon: <FaChartLine />, label: "Recidencias" },
-               { route: "/reportes/mapa", prefix: "reports_", icon: <FaChartLine />, label: "Mapa" },
-               { route: "/reportes/calendario", prefix: "reports_", icon: <FaChartLine />, label: "Calendario" },
+               { route: "/reportes/general", prefix: "reports_dashboard_general", icon: <FaChartLine />, label: "General" },
+               { route: "/reportes/reicidencias", prefix: "reports_dashboard_recidencias", icon: <FaChartLine />, label: "Recidencias" },
+               { route: "/reportes/mapa", prefix: "reports_dashboard_mapa", icon: <FaChartLine />, label: "Mapa" },
+               { route: "/reportes/calendario", prefix: "reports_dashboard_calendario", icon: <FaChartLine />, label: "Calendario" },
 
-               { route: "/reportes/dashboard", prefix: "reports_", icon: <FaChartLine />, label: "Reporte Dinámico" }
+               { route: "/reportes/dashboard", prefix: "reports_dashboard_dinamico", icon: <FaChartLine />, label: "Reporte Dinámico" }
             ]
          }
       ],
